@@ -1,31 +1,32 @@
-name: Deploy FastAPI App to Azure VM
+name: Deploy to Azure VM
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main_test
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.VM_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
 
-    - name: SSH and deploy to Azure VM
-      run: |
-        ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-          set -e
-          cd ~/myapp
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
-        EOF
+      - name: Copy project files to VM
+        run: |
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/fastapi_app/
 
+      - name: Restart Docker containers on VM
+        run: |
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd /home/${{ secrets.VM_USER }}/fastapi_app
+            docker compose down
+            docker compose up -d --build
+          EOF
