@@ -1,32 +1,110 @@
-name: Deploy to Azure VM
+# GitHub Actions workflow for deploying Python app to VM
+name: Build and deploy Python app to VM
 
 on:
   push:
     branches:
       - main_test
+  workflow_dispatch:
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+      
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: |
+          source venv/bin/activate
+          pip install -r requirements.txt
+        
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+      
+      # 가상환경 제외하고 패키징
+      - name: Create deployment package
+        run: |
+          tar -czf deployment.tar.gz --exclude='venv' --exclude='.git' --exclude='__pycache__' .
+      
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: deployment.tar.gz
+
   deploy:
     runs-on: ubuntu-latest
-
+    needs: build
+    environment:
+      name: 'Production'
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+      
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.VM_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
-
-      - name: Copy project files to VM
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to VM
         run: |
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ \
-            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/fastapi_app/
-
-      - name: Restart Docker containers on VM
+          # VM에 배포 디렉토리 생성 및 백업
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
+            # 기존 앱 백업 (선택사항)
+            if [ -d ~/fastapi_app ]; then
+              cp -r ~/fastapi_app ~/fastapi_app_backup_$(date +%Y%m%d_%H%M%S)
+            fi
+            
+            # 배포 디렉토리 생성
+            mkdir -p ~/fastapi_app
+          "
+          
+          # 파일 전송
+          scp deployment.tar.gz ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/
+          
+          # VM에서 압축 해제 및 설정
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
+            # 기존 파일 정리 후 새 파일 압축 해제
+            cd ~/fastapi_app
+            rm -rf * .??*
+            cd ~/
+            tar -xzf deployment.tar.gz -C ~/fastapi_app/
+            rm deployment.tar.gz
+            
+            # 가상환경 재생성 및 의존성 설치
+            cd ~/fastapi_app
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            # 애플리케이션 재시작 (systemd 서비스가 있는 경우)
+            sudo systemctl restart fastapi-app || echo 'Service restart failed or not configured'
+            
+            # 또는 PM2를 사용하는 경우
+            # pm2 restart fastapi-app || echo 'PM2 restart failed or not configured'
+            
+            echo 'Deployment completed successfully'
+          "
+      
+      - name: Health Check
         run: |
-          ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            cd /home/${{ secrets.VM_USER }}/fastapi_app
-            docker compose down
-            docker compose up -d --build
-          EOF
+          # 배포 후 헬스체크 (선택사항)
+          sleep 10
+          curl -f http://${{ secrets.VM_HOST }}:8000/health || echo 'Health check endpoint not available'
