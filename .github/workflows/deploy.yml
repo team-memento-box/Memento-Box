@@ -28,8 +28,16 @@ jobs:
       
       - name: Install dependencies
         run: |
+          cd Memento-Box/app
+          python -m venv venv
           source venv/bin/activate
-          pip install -r Memento-Box/app/requirements.txt
+          pip install -r requirements.txt
+      
+      # 디버깅용
+      - name: List project directory structure
+        run: |
+          pwd
+          ls -R
               
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       
