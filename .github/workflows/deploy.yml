@@ -5,7 +5,7 @@ on:
     branches:
       - main_test
   workflow_dispatch:
-
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,17 +31,17 @@ jobs:
           pwd
           ls -al
           ls -R
-
+          
       - name: Create deployment package (app 폴더 기준)
         run: |
           tar --exclude='venv' --exclude='__pycache__' -czf deployment.tar.gz -C app .
-
+      
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: deployment.tar.gz
-
+          
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -61,11 +61,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
-
       
       - name: SSH Debug
-        run: ssh -vvv user@server "echo 'Connection successful'"
-
+        run: ssh -vvv ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "echo 'Connection successful'"
   
       - name: Deploy to VM
         run: |
@@ -74,31 +72,24 @@ jobs:
             if [ -d ~/fastapi_app ]; then
               cp -r ~/fastapi_app ~/fastapi_app_backup_$(date +%Y%m%d_%H%M%S)
             fi
-
             # 배포 디렉토리 준비
             rm -rf ~/fastapi_app/*
             mkdir -p ~/fastapi_app
           "
-
           # 배포 파일 전송
           scp deployment.tar.gz ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/
-
           # VM에서 압축 해제 및 환경 구성
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
             tar -xzf ~/deployment.tar.gz -C ~/fastapi_app/
             rm ~/deployment.tar.gz
-
             cd ~/fastapi_app
             python3 -m venv venv
             source venv/bin/activate
             pip install -r requirements.txt
-
             # systemd로 서비스 자동 재시작
             sudo systemctl restart fastapi-app || echo 'Service restart failed or not configured'
-
             echo 'Deployment completed successfully'
           "
-
       - name: Health Check
         run: |
           sleep 10
