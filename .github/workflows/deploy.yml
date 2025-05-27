@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           source venv/bin/activate
-          pip install -r requirements.txt
-        
+          pip install -r Memento-Box/app/requirements.txt
+              
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       
       # 가상환경 제외하고 패키징
@@ -92,7 +92,7 @@ jobs:
             cd ~/fastapi_app
             python3 -m venv venv
             source venv/bin/activate
-            pip install -r requirements.txt
+            pip install -r Memento-Box/app/requirements.txt
             
             # 애플리케이션 재시작 (systemd 서비스가 있는 경우)
             sudo systemctl restart fastapi-app || echo 'Service restart failed or not configured'
