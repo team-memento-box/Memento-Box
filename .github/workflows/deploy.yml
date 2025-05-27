@@ -37,6 +37,7 @@ jobs:
       - name: List project directory structure
         run: |
           pwd
+          ls -al
           ls -R
               
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
