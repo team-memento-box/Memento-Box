@@ -5,7 +5,8 @@ services:
     build: ./app
     container_name: fastapi_app
     ports:
-      - "8000:8000"
+      - "8001:8000" 
+    command: gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000
     depends_on:
       - postgres
       - mongo
@@ -19,12 +20,12 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydb
-    networks:  
-      - custom_network
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - custom_network
 
   mongo:
     image: mongo:6
@@ -52,8 +53,6 @@ volumes:
   pgdata:
   mongodata:
 
-networks:  
-  custom_network:  
-    external: true  
-
-
+networks:
+  custom_network:
+    external: true
