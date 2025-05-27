@@ -34,7 +34,7 @@ jobs:
 
       - name: Create deployment package (app 폴더 기준)
         run: |
-          tar -czf deployment.tar.gz -C app . --exclude='venv' --exclude='__pycache__'
+          tar --exclude='venv' --exclude='__pycache__' -czf deployment.tar.gz -C app .
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
