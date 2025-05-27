@@ -52,10 +52,37 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # SSH 키를 임시 파일에 저장하여 형식 확인
+          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa.tmp
+          # 키 시작과 끝 라인 확인 및 수정
+          sed -i 's/-----BEGIN OPENSSH PRIVATE KEY-----/-----BEGIN OPENSSH PRIVATE KEY-----/' ~/.ssh/id_rsa.tmp
+          sed -i 's/-----END OPENSSH PRIVATE KEY-----/-----END OPENSSH PRIVATE KEY-----/' ~/.ssh/id_rsa.tmp
+          # 최종 키 파일로 이동
+          mv ~/.ssh/id_rsa.tmp ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+          # 키 파일 검증
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Key validation failed"
+      
+      - name: Debug SSH key
+        run: |
+          echo "SSH key file info:"
+          ls -la ~/.ssh/id_rsa
+          echo "First few lines of key:"
+          head -n 2 ~/.ssh/id_rsa
+          echo "Last few lines of key:"
+          tail -n 2 ~/.ssh/id_rsa
+          echo "Key validation:"
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Key validation failed - checking if it's RSA format"
+          # RSA 형식인지 확인
+          if grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/id_rsa; then
+            echo "RSA format detected"
+          elif grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_rsa; then
+            echo "OpenSSH format detected"
+          else
+            echo "Unknown key format"
+          fi
       
       - name: SSH Debug
         run: ssh -vvv -i ~/.ssh/id_rsa ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "echo 'Connection successful'"
