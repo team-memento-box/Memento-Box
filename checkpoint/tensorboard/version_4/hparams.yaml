@@ -1,0 +1,105 @@
+model:
+  _target_: fish_speech.models.text2semantic.lit_module.TextToSemantic
+  model:
+    _target_: fish_speech.models.text2semantic.llama.BaseTransformer.from_pretrained
+    path: checkpoints/fish-speech-1.5
+    load_weights: true
+    max_length: 2048
+    lora_config:
+      _target_: fish_speech.models.text2semantic.lora.LoraConfig
+      r: 8
+      lora_alpha: 16
+      lora_dropout: 0.01
+  optimizer:
+    _target_: torch.optim.AdamW
+    _partial_: true
+    lr: 0.0001
+    weight_decay: 0
+    betas:
+    - 0.9
+    - 0.95
+    eps: 1.0e-05
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.LambdaLR
+    _partial_: true
+    lr_lambda:
+      _target_: fish_speech.scheduler.get_constant_schedule_with_warmup_lr_lambda
+      _partial_: true
+      num_warmup_steps: 10
+model/params/total: 644092416
+model/params/trainable: 6171136
+model/params/non_trainable: 637921280
+data:
+  _target_: fish_speech.datasets.semantic.SemanticDataModule
+  train_dataset:
+    _target_: fish_speech.datasets.semantic.AutoTextSemanticInstructionIterableDataset
+    proto_files:
+    - data/protos
+    tokenizer:
+      _target_: fish_speech.tokenizer.FishTokenizer
+      model_path: checkpoints/fish-speech-1.5/tokenizer.tiktoken
+    causal: true
+    max_length: 2048
+    use_speaker: false
+    interactive_prob: 0.7
+  val_dataset:
+    _target_: fish_speech.datasets.semantic.AutoTextSemanticInstructionIterableDataset
+    proto_files:
+    - data/protos
+    tokenizer:
+      _target_: fish_speech.tokenizer.FishTokenizer
+      model_path: checkpoints/fish-speech-1.5/tokenizer.tiktoken
+    causal: true
+    max_length: 2048
+    use_speaker: false
+    interactive_prob: 0.7
+  num_workers: 4
+  batch_size: 1
+  tokenizer:
+    _target_: fish_speech.tokenizer.FishTokenizer
+    model_path: checkpoints/fish-speech-1.5/tokenizer.tiktoken
+  max_length: 2048
+trainer:
+  _target_: lightning.pytorch.trainer.Trainer
+  default_root_dir: results/my_voice_project
+  accelerator: gpu
+  num_nodes: 1
+  devices: 1
+  strategy: auto
+  precision: 16-mixed
+  check_val_every_n_epoch: null
+  val_check_interval: 500
+  max_steps: 200
+  benchmark: true
+  accumulate_grad_batches: 2
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  limit_val_batches: 5
+callbacks:
+  model_checkpoint:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    dirpath: results/my_voice_project/checkpoints
+    filename: step_{step:09d}
+    save_last: false
+    save_top_k: 5
+    monitor: step
+    mode: max
+    every_n_epochs: null
+    every_n_train_steps: 500
+    auto_insert_metric_name: false
+  model_summary:
+    _target_: lightning.pytorch.callbacks.ModelSummary
+    max_depth: 2
+  learning_rate_monitor:
+    _target_: lightning.pytorch.callbacks.LearningRateMonitor
+    logging_interval: step
+    log_momentum: false
+  grad_norm_monitor:
+    _target_: fish_speech.callbacks.GradNormMonitor
+    norm_type: 2
+    logging_interval: step
+extras: null
+task_name: null
+tags: null
+ckpt_path: null
+seed: null
