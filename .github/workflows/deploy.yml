@@ -26,12 +26,11 @@ jobs:
           python -m venv venv
           source venv/bin/activate
       
-      - name: Install dependencies
+      - name: Set up and install dependencies
         run: |
-          cd Memento-Box/app
           python -m venv venv
           source venv/bin/activate
-          pip install -r requirements.txt
+          pip install -r app/requirements.txt
       
       # 디버깅용
       - name: List project directory structure
