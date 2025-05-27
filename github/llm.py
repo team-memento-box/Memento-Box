@@ -7,6 +7,10 @@ from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+from PIL import Image
+import numpy as np
 
 # 환경 변수 로드
 load_dotenv()
@@ -405,6 +409,222 @@ severity 기준:
         
         return answer, False  # 대화 계속
     
+    def generate_mobile_report(self, image_path, output_dir="reports"):
+        """모바일 화면에 최적화된 리포트 생성"""
+        
+        # 한글 폰트 설정 (시스템에 있는 한글 폰트 찾기)
+        try:
+            # Windows
+            font_path = "C:/Windows/Fonts/malgun.ttf"
+            if not os.path.exists(font_path):
+                # macOS
+                font_path = "/System/Library/Fonts/AppleGothic.ttf"
+                if not os.path.exists(font_path):
+                    # Linux (Ubuntu)
+                    font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+            
+            if os.path.exists(font_path):
+                font_prop = fm.FontProperties(fname=font_path)
+                plt.rcParams['font.family'] = font_prop.get_name()
+            else:
+                # 기본 폰트 사용
+                plt.rcParams['font.family'] = 'DejaVu Sans'
+        except:
+            plt.rcParams['font.family'] = 'DejaVu Sans'
+        
+        plt.rcParams['axes.unicode_minus'] = False
+        
+        # 리포트 디렉토리 생성
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 전체 답변 횟수 계산
+        total_responses = len(self.conversation_turns)
+        
+        if total_responses == 0:
+            print("대화가 진행되지 않았습니다.")
+            return None
+        
+        # 심각도별 분류
+        severity_counts = {"mild": 0, "moderate": 0, "severe": 0}
+        for response in self.strange_responses:
+            severity_counts[response.severity] += 1
+        
+        # 위험도 점수 계산
+        risk_score = (severity_counts['mild'] * 1 + 
+                     severity_counts['moderate'] * 3 + 
+                     severity_counts['severe'] * 5)
+        max_risk_score = self.strange_response_count * 5 if self.strange_response_count > 0 else 1
+        risk_percentage = (risk_score / max_risk_score * 100) if max_risk_score > 0 else 0
+        
+        # 모바일 화면에 최적화된 세로형 레이아웃 생성
+        fig = plt.figure(figsize=(9, 16), facecolor='#f8f9fa')  # 더 깔끔한 배경색
+        
+        # 전체 타이틀 추가
+        fig.suptitle('🧠 치매 진단 대화 분석 리포트', fontsize=18, fontweight='bold', y=0.98, color='#2c3e50')
+        
+        # 1. 상단: 원본 이미지 표시
+        ax1 = plt.subplot2grid((6, 2), (0, 0), colspan=2, rowspan=1)
+        try:
+            img = Image.open(image_path)
+            # 이미지 크기 조정 (모바일 화면에 맞게)
+            img.thumbnail((500, 300), Image.Resampling.LANCZOS)
+            ax1.imshow(img)
+            ax1.axis('off')
+            # 이미지 테두리 추가
+            for spine in ax1.spines.values():
+                spine.set_visible(True)
+                spine.set_linewidth(2)
+                spine.set_color('#34495e')
+        except Exception as e:
+            ax1.text(0.5, 0.5, f'📷 이미지 로드 실패\n{os.path.basename(image_path)}', 
+                    ha='center', va='center', fontsize=12, 
+                    bbox=dict(boxstyle="round,pad=0.5", facecolor="#e74c3c", alpha=0.8, edgecolor='none'))
+            ax1.set_xlim(0, 1)
+            ax1.set_ylim(0, 1)
+            ax1.axis('off')
+        
+        # 2. 왼쪽: 주요 수치 표시
+        ax2 = plt.subplot2grid((6, 2), (1, 0), rowspan=2)
+        ax2.axis('off')
+        
+        # 수치 정보 텍스트 (더 깔끔하게)
+        stats_text = f"""📊 대화 분석 결과
+
+▪ 전체 답변: {total_responses}회
+▪ 이상 답변: {self.strange_response_count}회 ({(self.strange_response_count/total_responses*100):.1f}%)
+▪ 위험도: {risk_percentage:.1f}% ({risk_score}/{max_risk_score}점)
+
+심각도별 분류:
+  🟡 경미: {severity_counts['mild']}회
+  🟠 보통: {severity_counts['moderate']}회  
+  🔴 심각: {severity_counts['severe']}회"""
+        
+        ax2.text(0.05, 0.95, stats_text, fontsize=12, va='top', 
+                bbox=dict(boxstyle="round,pad=0.8", facecolor="#ecf0f1", alpha=0.9, 
+                         edgecolor='#bdc3c7', linewidth=1.5))
+        
+        # 3. 오른쪽: 상세 기록 예시
+        ax3 = plt.subplot2grid((6, 2), (1, 1), rowspan=2)
+        ax3.axis('off')
+        
+        # 상세 기록 예시 텍스트
+        detail_examples = "📝 상세 기록 예시\n\n"
+        
+        if self.strange_response_count > 0:
+            # 최대 3개 예시만 표시
+            examples_to_show = min(3, len(self.strange_responses))
+            for i, response in enumerate(self.strange_responses[:examples_to_show]):
+                severity_emoji = {"mild": "🟡", "moderate": "🟠", "severe": "🔴"}
+                detail_examples += f"{severity_emoji[response.severity]} [{response.severity.upper()}]\n"
+                detail_examples += f"Q: {response.question[:25]}...\n"
+                detail_examples += f"A: {response.answer[:25]}...\n\n"
+            
+            if len(self.strange_responses) > 3:
+                detail_examples += f"... 외 {len(self.strange_responses) - 3}건 더"
+        else:
+            detail_examples += "✅ 이상 답변이 감지되지\n    않았습니다.\n\n정상적인 대화가\n진행되었습니다."
+        
+        ax3.text(0.05, 0.95, detail_examples, fontsize=11, va='top',
+                bbox=dict(boxstyle="round,pad=0.8", facecolor="#fff3cd" if self.strange_response_count > 0 else "#d4edda", 
+                         alpha=0.9, edgecolor='#ffeaa7' if self.strange_response_count > 0 else '#c3e6cb', linewidth=1.5))
+        
+        # 4. 왼쪽 하단: 전체 대화 분석 바 그래프
+        ax4 = plt.subplot2grid((6, 2), (3, 0), rowspan=2)
+        
+        categories = ['정상\n답변', '이상\n답변']
+        counts = [total_responses - self.strange_response_count, self.strange_response_count]
+        colors = ['#27ae60', '#e74c3c']  # 더 선명한 색상
+        
+        bars1 = ax4.bar(categories, counts, color=colors, alpha=0.8, width=0.6, edgecolor='white', linewidth=2)
+        ax4.set_title('💬 전체 대화 분석', fontsize=13, fontweight='bold', pad=15, color='#2c3e50')
+        ax4.set_ylabel('답변 횟수', fontsize=11, color='#34495e')
+        
+        # 바 위에 숫자 표시 (더 깔끔하게)
+        for bar, count in zip(bars1, counts):
+            height = bar.get_height()
+            ax4.text(bar.get_x() + bar.get_width()/2., height + 0.2,
+                    f'{count}회', ha='center', va='bottom', fontsize=11, fontweight='bold', color='#2c3e50')
+        
+        # 그래프 스타일링
+        ax4.set_ylim(0, max(counts) * 1.3)
+        ax4.grid(axis='y', alpha=0.2, linestyle='--')
+        ax4.spines['top'].set_visible(False)
+        ax4.spines['right'].set_visible(False)
+        ax4.tick_params(colors='#34495e')
+        
+        # 5. 오른쪽 하단: 심각도별 이상 답변 바 그래프
+        ax5 = plt.subplot2grid((6, 2), (3, 1), rowspan=2)
+        
+        if self.strange_response_count > 0:
+            severity_labels = ['경미', '보통', '심각']
+            severity_values = [severity_counts['mild'], severity_counts['moderate'], severity_counts['severe']]
+            severity_colors = ['#f39c12', '#e67e22', '#e74c3c']  # 더 선명한 색상
+            
+            bars2 = ax5.bar(severity_labels, severity_values, color=severity_colors, alpha=0.8, 
+                           width=0.6, edgecolor='white', linewidth=2)
+            ax5.set_title('⚠️ 이상 답변 심각도', fontsize=13, fontweight='bold', pad=15, color='#2c3e50')
+            ax5.set_ylabel('답변 횟수', fontsize=11, color='#34495e')
+            
+            # 바 위에 숫자 표시
+            for bar, count in zip(bars2, severity_values):
+                height = bar.get_height()
+                if height > 0:
+                    ax5.text(bar.get_x() + bar.get_width()/2., height + 0.05,
+                            f'{count}회', ha='center', va='bottom', fontsize=11, fontweight='bold', color='#2c3e50')
+            
+            ax5.set_ylim(0, max(severity_values) * 1.4 if max(severity_values) > 0 else 1)
+            ax5.grid(axis='y', alpha=0.2, linestyle='--')
+            ax5.spines['top'].set_visible(False)
+            ax5.spines['right'].set_visible(False)
+            ax5.tick_params(colors='#34495e')
+        else:
+            ax5.text(0.5, 0.5, '✅ 이상 답변 없음', ha='center', va='center', 
+                    fontsize=13, fontweight='bold', color='#27ae60', transform=ax5.transAxes,
+                    bbox=dict(boxstyle="round,pad=0.5", facecolor="#d4edda", alpha=0.8, edgecolor='#c3e6cb'))
+            ax5.set_xlim(0, 1)
+            ax5.set_ylim(0, 1)
+            ax5.axis('off')
+        
+        # 전체 레이아웃 조정
+        plt.tight_layout(rect=[0, 0.08, 1, 0.95], pad=2.0)
+        
+        # 6. 하단: 권장사항 (더 눈에 띄게)
+        if severity_counts['severe'] >= 2 or risk_percentage > 80:
+            recommendation = "🚨 전문의 상담 시급"
+            rec_color = '#e74c3c'
+            bg_color = '#fadbd8'
+        elif severity_counts['severe'] >= 1 or risk_percentage > 60:
+            recommendation = "⚠️ 주의 관찰 필요"
+            rec_color = '#e67e22'
+            bg_color = '#fdeaa7'
+        elif risk_percentage > 40:
+            recommendation = "💛 정기적 관찰 권장"
+            rec_color = '#f39c12'
+            bg_color = '#fcf3cf'
+        else:
+            recommendation = "✅ 양호한 상태"
+            rec_color = '#27ae60'
+            bg_color = '#d5f4e6'
+        
+        # 권장사항 박스 (더 크고 눈에 띄게)
+        fig.text(0.5, 0.04, recommendation, ha='center', va='center', 
+                fontsize=16, fontweight='bold', color=rec_color,
+                bbox=dict(boxstyle="round,pad=1.0", facecolor=bg_color, alpha=0.9, 
+                         edgecolor=rec_color, linewidth=2))
+        
+        # 파일명 생성
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        image_basename = os.path.splitext(os.path.basename(image_path))[0]
+        report_filename = os.path.join(output_dir, f"{image_basename}_mobile_report_{timestamp}.png")
+        
+        # 고해상도로 저장 (모바일 화면용)
+        plt.savefig(report_filename, dpi=200, bbox_inches='tight', 
+                    facecolor='#f8f9fa', edgecolor='none', format='png')
+        plt.close()
+        
+        print(f"📱 모바일 리포트가 생성되었습니다: {report_filename}")
+        return report_filename
+    
     def get_conversation_summary(self):
         """대화 종료 후 이상한 답변 요약 제공"""
         # 전체 답변 횟수 계산
@@ -668,6 +888,14 @@ if __name__ == "__main__":
         
         if story:
             print(f"\n=== 생성된 추억 이야기 ===\n{story}\n")
+        
+        # 📱 모바일 리포트 생성 (새로 추가된 기능)
+        print("\n📱 모바일 리포트를 생성하는 중...")
+        mobile_report_file = llm_chat.generate_mobile_report(img_path)
+        
+        if mobile_report_file:
+            print(f"✅ 모바일 리포트가 성공적으로 생성되었습니다!")
+            print(f"📂 파일 경로: {mobile_report_file}")
         
         # 콘솔에도 요약 출력
         print(llm_chat.get_conversation_summary())
