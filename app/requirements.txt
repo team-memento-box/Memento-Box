@@ -1,3 +1,6 @@
 fastapi
 gunicorn
 uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
