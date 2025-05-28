@@ -1,7 +1,7 @@
-from sqlalchemy import Column, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
-from .database import Base
+from ..database import Base
+from sqlalchemy.orm import relationship
 
 class Mention(Base):
     """

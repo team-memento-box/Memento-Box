@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
-from .database import Base
+from ..database import Base
+from sqlalchemy.orm import relationship
 
 class AnomaliesReport(Base):
     """
@@ -23,6 +23,6 @@ class AnomaliesReport(Base):
     # 이상대화 구간
     event_interval = Column(String, nullable=True)
     # 접근 가족 (서비스 접근 권한 - 보호자)
-    family_id = Column(String, ForeignKey('families.id'))
+    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # Mention ↔ AnomaliesReport 역참조 # anomalies_report.mention.question_answer
     mention = relationship("Mention", back_populates="anomalies_reports")

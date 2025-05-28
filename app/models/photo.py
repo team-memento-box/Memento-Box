@@ -1,7 +1,6 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
-from .database import Base
+from ..database import Base
 
 class Photo(Base):
     """
@@ -33,7 +32,7 @@ class Photo(Base):
     # 요약 음성 주소
     summary_voice = Column(Text, nullable=True)
     # 사진 접근 가능 가족 id
-    family_id = Column(String, ForeignKey('families.id'))
+    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # 업로드 일자
     uploaded_at = Column(DateTime)
     # Family ↔ Photo 역참조 # photo.family.family_code

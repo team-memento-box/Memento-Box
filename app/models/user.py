@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
-from .database import Base
+from ..database import Base
 
 class User(Base):
     """
@@ -27,7 +27,7 @@ class User(Base):
     # 프로필 사진
     profile_img = Column(Text, nullable=True)
     # 가족 id (by. code)
-    family_id = Column(String, ForeignKey('families.id'))
+    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # 가족 역할: 할머니/할아버지, 손자/손녀/자녀 > 접근권한 설정
     family_role = Column(String)
     # 목소리 vector 학습 정보: 할머니/할아버지만 저장
