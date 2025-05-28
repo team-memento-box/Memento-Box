@@ -9,6 +9,6 @@ async def root():
 
 
 @app.get("/test")
-async def root():
+async def test():
     return {"this": "is test"}
 
