@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  fish-speech:
+    build:
+      context: ./fish-speech-docker-test
+      dockerfile: dockerfile
+    container_name: fish-speech
+    volumes:
+      - ./fish-speech-docker-test/checkpoints:/app/checkpoints
+      - ./shared/input_wav:/app/input_wav
+      - ./shared/output_wav:/app/output_wav
+      - ./shared/model_output:/app/model_output
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
