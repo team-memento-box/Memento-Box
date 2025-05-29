@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-from ..database import Base
+from app.database import Base
 from sqlalchemy.orm import relationship
 
 class AnomaliesReport(Base):
