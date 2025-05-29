@@ -4,7 +4,7 @@ services:
   fish-speech:
     build:
       context: ./fish-speech-docker-test
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: fish-speech
     volumes:
       - ./fish-speech-docker-test/checkpoints:/app/checkpoints
@@ -14,10 +14,26 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+
+  webserver:
+    build:
+      context: ./webserver
+    container_name: webserver
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./shared/input_wav:/app/input_wav
+      - ./shared/output_wav:/app/output_wav
+    depends_on:
+      - fish-speech
+      - db
+
+  db:
+    image: postgres:15
+    container_name: db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ttsdb
+    ports:
+      - "5432:5432"
