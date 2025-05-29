@@ -4,6 +4,7 @@ from ..database import Base
 from sqlalchemy.orm import relationship
 
 class AnomaliesReport(Base):
+    
     """
     anomalies_reports 테이블 모델
 
