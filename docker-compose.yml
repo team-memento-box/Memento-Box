@@ -14,6 +14,8 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+    networks:
+      - ttsnet
 
   webserver:
     build:
@@ -27,6 +29,22 @@ services:
     depends_on:
       - fish-speech
       - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/ttsdb  
+    networks:
+      - ttsnet  
+
+  
+  dialog-service:
+    build:
+      context: ./dialog-service
+    container_name: dialog-service
+    ports:
+      - "6060:6060"
+    env_file:
+      - ./dialog-service/.env
+    networks:
+      - ttsnet
 
   db:
     image: postgres:15
@@ -37,3 +55,8 @@ services:
       POSTGRES_DB: ttsdb
     ports:
       - "5432:5432"
+    networks:
+      - ttsnet 
+
+networks:
+  ttsnet:

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from openai_client import ask_openai
 from database import SessionLocal, Message as DBMessage, Report, init_db
 from datetime import datetime
 from pydantic import BaseModel
@@ -36,11 +37,17 @@ async def chat_endpoint(chat: ChatRequest):
 
     # 2. 종료 처리
     if messages[-1].content.strip().lower() in ["종료", "그만", "끝"]:
-        report_text = "이것은 테스트 리포트입니다. 실제로는 OpenAI가 생성한 스크립트가 여기에 들어갑니다."
+        full_chat = [{"role": m.role, "content": m.content} for m in messages]
+        full_chat.insert(0, {
+            "role": "system",
+            "content": "지금까지 사용자와 너가 나눈 대화를 토대로 사용자의 입장에서 할머니가 옛날이야기를 하는 느낌으로 스크립트 만들어줘"
+        })
+
+        report = await ask_openai(full_chat)
 
         db_report = Report(
             user_id=user_id,
-            content=report_text,
+            content=report,
             timestamp=datetime.utcnow()
         )
         db.add(db_report)
@@ -48,12 +55,14 @@ async def chat_endpoint(chat: ChatRequest):
 
         return {
             "type": "report",
-            "response": report_text
+            "response": report
         }
 
     # 3. 일반 응답
-    dummy_response = "이것은 OpenAI 없이 반환된 테스트 응답입니다."
+    formatted_messages = [{"role": m.role, "content": m.content} for m in messages]
+    response = await ask_openai(formatted_messages)
+
     return {
         "type": "chat",
-        "response": dummy_response
+        "response": response
     }
