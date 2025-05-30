@@ -4,6 +4,8 @@ import 'screens/signin_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/gallery_screen.dart';
 import 'screens/add_photo_screen.dart';
+import 'screens/conversation_screen.dart'; // ✅ 새로 만든 대화 스크린 import
+import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,13 +21,15 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: '/home', // 초기 화면 경로
+      initialRoute: '/intro', // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
       routes: {
         '/home': (context) => const HomeUpdateScreen(),
         // '/signin': (context) => const SigninScreen(),
         '/gallery': (context) => const GalleryScreen(),
         '/addphoto': (context) => const AddPhotoScreen(),
-        // 필요 시 다른 화면들도 여기에 추가
+        '/conversation': (context) =>
+            const PhotoConversationScreen(), // ✅ 0530 고권아 추가
+        '/intro': (context) => const IntroScreen(), // ✅ 0530 고권아 추가
       },
     );
   }
