@@ -28,8 +28,8 @@ class Mention(Base):
     }
     # mention id (질답 1쌍으로 관리)
     id = Column(UUID(as_uuid=True), primary_key=True)
-    # 종속 사진 id
-    photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
+    # 관계 회기 id
+    conv_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
     # 질답쌍 {q_text:txt, a_text:txt, q_voice: url, a_voice: url}
     question_answer = Column(JSON, nullable=True)
     # 기록일자
@@ -37,5 +37,4 @@ class Mention(Base):
     # Photo ↔ Mention 역참조 # mention.photo.photo_name
     # photo = relationship("Photo", back_populates="mentions")
     # Mention ↔ AnomaliesReport 역참조 # mention.anomalies_reports
-    anomalies_reports = relationship("AnomaliesReport", back_populates="mention", cascade="all, delete-orphan")
 

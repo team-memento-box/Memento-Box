@@ -5,6 +5,8 @@ from app.database import Base
 class Photo(Base):
     """
     photos 테이블 모델
+
+    photos - conversations (연속된 대화 1회기) - mention (대화 질답)
     """
     __tablename__ = 'photos'
     __table_args__ = {

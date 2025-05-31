@@ -1,14 +1,12 @@
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
-from sqlalchemy.orm import relationship
 
 class AnomaliesReport(Base):
     
     """
     anomalies_reports 테이블 모델
 
-    anomalies_reports는 mention에, mention은 photo에 종속된 구조
     """
     __tablename__ = 'anomalies_reports'
     __table_args__ = {
@@ -19,11 +17,11 @@ class AnomaliesReport(Base):
     }
     # 이상현상 id
     id = Column(UUID(as_uuid=True), primary_key=True)
-    # 이상현상 대화 내용
-    mention_id = Column(UUID(as_uuid=True), ForeignKey('mentions.id'))
+    # 관계 대화 회기 id
+    conv_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id'))
+    # 이상대화 내용
+    event_report = Column(Text, nullable=True)
     # 이상대화 구간
     event_interval = Column(String, nullable=True)
-    # 접근 가족 (서비스 접근 권한 - 보호자)
-    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
-    # Mention ↔ AnomaliesReport 역참조 # anomalies_report.mention.question_answer
-    mention = relationship("Mention", back_populates="anomalies_reports")
+    
+    

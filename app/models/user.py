@@ -26,12 +26,10 @@ class User(Base):
     birthday = Column(DateTime)
     # 프로필 사진
     profile_img = Column(Text, nullable=True)
-    # 가족 id (by. code)
+    # 관계 가족 id
     family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # 가족 역할: 할머니/할아버지, 손자/손녀/자녀 > 접근권한 설정
     family_role = Column(String)
-    # 목소리 vector 학습 정보: 할머니/할아버지만 저장
-    speak_vector = Column(Text, nullable=True)
     # 계정 생성일자
     created_at = Column(DateTime, default=datetime) # 자동생성 부여
     # Family ↔ User 역참조 # user.family.family_code

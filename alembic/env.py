@@ -34,7 +34,7 @@ config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # ⬇️ 7. ORM Base 및 모델들 import
 from app.database import Base
-from app.models import user, photo, family, mention, anomalies_report
+from app.models import user, photo, family, conversation, mention, anomalies_report
 
 target_metadata = Base.metadata
 

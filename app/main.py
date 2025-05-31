@@ -11,4 +11,3 @@ async def root():
 @app.get("/test")
 async def test():
     return {"this": "is test"}
-

@@ -24,6 +24,6 @@ class Family(Base):
     # 가족 생성 일자
     created_at = Column(DateTime, default=datetime) # 자동생성 부여
     # Family ↔ User 역참조 # family.members[0].username
-    # members = relationship("User", back_populates="family")
+    # members = relationship("User", back_populates="families")
     # Family ↔ Photo 역참조 # family.photos
-    # photos = relationship("Photo", back_populates="family")
+    # photos = relationship("Photo", back_populates="families")
