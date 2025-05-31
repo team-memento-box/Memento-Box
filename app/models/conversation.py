@@ -3,12 +3,12 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 from sqlalchemy.orm import relationship
 
-class AnomaliesReport(Base):
+class Conversation(Base):
     
     """
     conversations 테이블 모델
 
-    대화 흐름 기반의 이상현상 보고를 고려
+    대화 흐름 기반의 이상현상 보고를 고려함
     """
     __tablename__ = 'conversations'
     __table_args__ = {
