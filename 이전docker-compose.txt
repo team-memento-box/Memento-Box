@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  fish-speech:
+    build:
+      context: ./fish-speech-docker-test
+      dockerfile: Dockerfile
+    container_name: fish-speech
+    volumes:
+      - ./fish-speech-docker-test/checkpoints:/app/checkpoints
+      - ./shared/input_wav:/app/input_wav
+      - ./shared/output_wav:/app/output_wav
+      - ./shared/model_output:/app/model_output
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    networks:
+      - ttsnet
+
+  webserver:
+    build:
+      context: ./webserver
+    container_name: webserver
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./shared/input_wav:/app/input_wav
+      - ./shared/output_wav:/app/output_wav
+    depends_on:
+      - fish-speech
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/ttsdb  
+    networks:
+      - ttsnet  
+
+  
+  dialog-service:
+    build:
+      context: ./dialog-service
+    container_name: dialog-service
+    ports:
+      - "6060:6060"
+    env_file:
+      - ./dialog-service/.env
+    networks:
+      - ttsnet
+
+  db:
+    image: postgres:15
+    container_name: db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ttsdb
+    ports:
+      - "5432:5432"
+    networks:
+      - ttsnet 
+
+networks:
+  ttsnet:
