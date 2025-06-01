@@ -1,7 +1,7 @@
 # Dialog-Service README
 
-이 문서는 FastAPI 기반 음성(STT → GPT → TTS) 챗봇 백엔드를 실행하기 위한 가이드입니다.  
-프로젝트는 다음 주요 구성요소로 이루어져 있습니다:
+이 문서는 FastAPI 기반 음성(STT → GPT → TTS) 챗봇 백엔드를 실행하기 위한 가이드라인임  
+프로젝트는 다음 주요 구성요소로 이루어져 있음:
 
 - **`main.py`**: 텍스트 및 음성 전용 엔드포인트(` /chat`, `/chat_audio`) 구현  
 - **`openai_client.py`**: Azure Speech SDK 및 Azure OpenAI 호출(STT, GPT, TTS) 로직  
@@ -15,7 +15,7 @@
 
 ## 사전 준비
 
-- **Python 3.10 이상** (권장)  
+- ~~**Python 3.10 이상**~~(어차피 docker써서 상관없음)
 - **PostgreSQL** (예: 로컬 또는 원격)  
 - **FFmpeg** (로컬 실행 시 시스템에 설치 필요, Docker를 이용하면 Dockerfile에서 자동 설치됨)  
 - **Azure 리소스**  
