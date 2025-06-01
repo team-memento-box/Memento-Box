@@ -10,25 +10,6 @@
 - **`requirements.txt`**: Python 의존성 목록  
 - **`Dockerfile`**: 컨테이너 빌드를 위한 설정 (Python 3.10-slim + FFmpeg 설치)
 
----
-
-## 목차
-
-1. [사전 준비](#사전-준비)  
-2. [프로젝트 클론 & 디렉터리 구조](#프로젝트-클론--디렉터리-구조)  
-3. [환경 변수 구성](#환경-변수-구성)  
-4. [로컬에서 실행하기](#로컬에서-실행하기)  
-   1. [Python 가상환경 설정](#python-가상환경-설정)  
-   2. [의존성 설치](#의존성-설치)  
-   3. [데이터베이스 초기화](#데이터베이스-초기화)  
-   4. [서버 실행 (uvicorn)](#서버-실행-uvicorn)  
-5. [Docker 컨테이너로 실행하기](#docker-컨테이너로-실행하기)  
-   1. [이미지 빌드](#이미지-빌드)  
-   2. [컨테이너 실행](#컨테이너-실행)  
-6. [API 사용 예시](#api-사용-예시)  
-   1. [텍스트 채팅: `/chat`](#텍스트-채팅-chat)  
-   2. [음성 채팅: `/chat_audio`](#음성-채팅-chat_audio)  
-7. [추가 참고사항](#추가-참고사항)  
 
 ---
 
@@ -43,8 +24,41 @@
 
 ---
 
-## 프로젝트 클론 & 디렉터리 구조
+## 프로젝트 클론
 
 ```bash
 git clone <REPO_URL>
-cd dialog-service
+```
+---
+## 환경 변수 구성
+
+```bash
+# PostgreSQL 연결 URL
+DATABASE_URL=postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>:<DB_PORT>/<DB_NAME>
+
+# Azure OpenAI
+AZURE_OPENAI_KEY=<YOUR_AZURE_OPENAI_KEY>
+AZURE_OPENAI_ENDPOINT=<YOUR_AZURE_OPENAI_ENDPOINT_URL>   # 예: https://<리소스이름>.openai.azure.com/openai/deployments/<DEPLOYMENT_NAME>/chat/completions?api-version=2023-05-15
+
+# Azure Speech (STT/TTS)
+AZURE_SPEECH_KEY=<YOUR_AZURE_SPEECH_KEY>
+AZURE_SPEECH_REGION=<YOUR_AZURE_SPEECH_REGION>          # 예: koreacentral
+```
+
+## 실행
+### 컨테이너 실행
+```bash
+cd docker-project
+docker-compose up --build
+```
+### 결과 확인(SwaggerUI)
+swaggerui로 확인 가능
+- `http://localhost:6060/docs` : gpt 대화 및 db저장
+- `http://localhost:8000/docs` : webserver(리포트 저장된 db 기반 음성 스토리텔링 추론)
+이후에 8000번 port에 합칠 예정
+
+
+# 주의사항
+- gpu 리소스 없을 경우 fish-speech 모델 추론 속도가 매우 느릴 수 있음
+- gpt와 대화 tts 결과는 따로 저장안됨(swaggerui에서 걍 다운받으셈)
+- 스토리텔링.wav 파일은 `shared/output_wav`에 저장(파일명은 uuid)
