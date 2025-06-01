@@ -27,7 +27,7 @@
 ## 프로젝트 클론
 
 ```bash
-git clone <REPO_URL>
+git clone --single-branch --branch dockertest https://github.com/team-memento-box/Memento-Box.git
 ```
 ---
 ## 환경 변수 구성
