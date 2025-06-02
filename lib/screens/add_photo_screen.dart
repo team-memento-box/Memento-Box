@@ -1,11 +1,100 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../widgets/tap_widget.dart';
 
-class AddPhotoScreen extends StatelessWidget {
+class AddPhotoScreen extends StatefulWidget {
   const AddPhotoScreen({super.key});
 
   @override
+  State<AddPhotoScreen> createState() => _AddPhotoScreenState();
+}
+
+class _AddPhotoScreenState extends State<AddPhotoScreen> {
+  // 연도/계절 상태
+  final List<String> years = ['2023', '2024', '2025', '2026', '2027'];
+  final List<String> seasons = ['봄', '여름', '가을', '겨울'];
+
+  int selectedYearIndex = 2; // 기본값 2025
+  int selectedSeasonIndex = 1; // 기본값 여름
+
+  void _showYearSeasonPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 250,
+          child: Row(
+            children: [
+              // 연도 선택
+              Expanded(
+                child: CupertinoPicker(
+                  scrollController: FixedExtentScrollController(
+                    initialItem: selectedYearIndex,
+                  ),
+                  itemExtent: 40,
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      selectedYearIndex = index;
+                    });
+                  },
+                  children: years
+                      .map(
+                        (y) => Center(
+                          child: Text(
+                            y,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              // 계절 선택
+              Expanded(
+                child: CupertinoPicker(
+                  scrollController: FixedExtentScrollController(
+                    initialItem: selectedSeasonIndex,
+                  ),
+                  itemExtent: 40,
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      selectedSeasonIndex = index;
+                    });
+                  },
+                  children: seasons
+                      .map(
+                        (s) => Center(
+                          child: Text(
+                            s,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    String selectedText =
+        '${years[selectedYearIndex]} ${seasons[selectedSeasonIndex]}';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -30,18 +119,20 @@ class AddPhotoScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 연도/계절 선택
-              Row(
-                children: const [
-                  Text(
-                    '연도',
-                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
-                  ),
-                  SizedBox(width: 20),
-                  Text(
-                    '계절',
-                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
-                  ),
-                ],
+              GestureDetector(
+                onTap: _showYearSeasonPicker,
+                child: Row(
+                  children: [
+                    Text(
+                      selectedText,
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Icon(Icons.keyboard_arrow_down),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
