@@ -161,7 +161,7 @@ class ContentHeaderWidget extends StatelessWidget {
       width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: const Color.fromARGB(255, 255, 255, 255),
         boxShadow: const [
           BoxShadow(color: Color(0x19777777), blurRadius: 5, spreadRadius: 0),
         ],
@@ -170,7 +170,7 @@ class ContentHeaderWidget extends StatelessWidget {
         AppConstants.infoMessage,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: Colors.white,
+          color: Color.fromARGB(255, 0, 0, 0),
           fontSize: 13,
           fontFamily: 'Pretendard',
           fontWeight: FontWeight.w600,
@@ -241,7 +241,7 @@ class ReportItemWidget extends StatelessWidget {
                   fontSize: 16,
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w500,
-                  height: 1.3,
+                  height: 1.8,
                 ),
               ),
             ),
