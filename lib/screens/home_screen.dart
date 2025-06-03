@@ -7,9 +7,9 @@ class HomeUpdateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
+    // final size = MediaQuery.of(context).size;
+    // final width = size.width;
+    // final height = size.height;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),

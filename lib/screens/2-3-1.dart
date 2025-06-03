@@ -1,6 +1,7 @@
 // lib/screens/picture_guardian_transcript.dart
 import 'package:flutter/material.dart';
-import 'picture_guardian_llm.dart'; // 원본 오디오 화면 import
+// import 'picture_guardian_llm.dart'; // 원본 오디오 화면 import
+// import '2-3-3.dart';
 
 class ConversationTranscriptScreen extends StatefulWidget {
   const ConversationTranscriptScreen({Key? key}) : super(key: key);
@@ -242,14 +243,14 @@ class _ConversationTranscriptScreenState
   }
 
   Widget _buildContentOverlay() {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Positioned(
-          left: 0,
-          top: 400, // 사진이 더 많이 보이도록 아래로 조정
-          bottom: 80, // 하단 네비게이션까지 연결
+    return Positioned(
+      left: 0,
+      top: 400, // 사진이 더 많이 보이도록 아래로 조정
+      bottom: 80, // 하단 네비게이션까지 연결
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
           child: Container(
             width: 375,
             decoration: BoxDecoration(

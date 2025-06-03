@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memento_box_app/screens/home_screen.dart';
 import 'screens/signin_screen.dart';
-import 'screens/home_screen.dart';
+// import 'screens/home_screen.dart';
 import 'screens/gallery_screen.dart';
 import 'screens/add_photo_screen.dart';
 import 'screens/conversation_screen.dart'; // ✅ 새로 만든 대화 스크린 import
