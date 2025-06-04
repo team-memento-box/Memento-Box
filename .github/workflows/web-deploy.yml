@@ -27,13 +27,13 @@ jobs:
           python-version: '3.12.3'
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: ./app
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Build Docker image (Optional step)
-        working-directory: ./backend
+        working-directory: ./app
         run: |
           docker build -t fastapi_app:latest .
 
