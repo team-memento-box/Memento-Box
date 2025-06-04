@@ -100,3 +100,11 @@ class BottomNavItem {
 
   BottomNavItem({required this.label, required this.icon});
 }
+
+// 하단 네비게이션 아이템 모델
+class BottomNavItem {
+  final String label;
+  final IconData icon;
+
+  BottomNavItem({required this.label, required this.icon});
+}

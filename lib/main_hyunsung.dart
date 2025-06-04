@@ -8,7 +8,6 @@ import 'screens/conversation_screen.dart'; // ✅ 새로 만든 대화 스크린
 import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 import
 import 'screens/report_main.dart'; // ✅ 새로 만든 보고서 스크린 import
 import 'screens/report_detail.dart'; // ✅ 새로 만든 보고서 상세 스크린 import
-
 import 'screens/photo_detail_screen.dart'; // ✅ 새로 만든 사진 보호자 스크린 import
 import 'screens/2-3.dart'; // ✅ 새로 만든 사진 보호자 듣기 스크린 import
 import 'screens/2-3-3.dart'; // ✅ 새로 만든 대화 내용 스크린 import
@@ -25,6 +24,7 @@ class MyCustomApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
       initialRoute: '/pictureGuardian', // ✅ 앱 실행 시 보고서 목록이 처음 뜨도록
       routes: {
         // '/kakao': (context) => const KakaoSigninScreen(), // ✅ 카카오 로그인 화면 라우트 추가
