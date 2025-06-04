@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+asyncpg
+psycopg2
+python-dotenv
+alembic
+pydantic==1.10.13
+azure-storage-blob
+aiohttp
+aiofiles

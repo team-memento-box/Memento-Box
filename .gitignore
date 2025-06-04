@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Environments
+.env
+*.env
+envs/
+.venv/
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Alembic
+alembic/versions/
+
+# IDE
+.vscode/
+.idea/
+
+# Others
+uploads/
+test/__pycache__/
