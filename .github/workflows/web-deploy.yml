@@ -31,15 +31,15 @@ jobs:
       - name: Build Docker image (Optional)
         run: docker build -t fastapi_app:latest ./app
 
-      - name: Create deployment zip (includes root files)
+      - name: Create deployment archive (.tar.gz)
         run: |
-          zip -r release.zip app docker-compose.yml .env -x "app/venv/*" "app/__pycache__/*"
+          tar -czf release.tar.gz app docker-compose.yml .env
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: fastapi-artifact
-          path: release.zip
+          path: release.tar.gz
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,18 +51,19 @@ jobs:
         with:
           name: fastapi-artifact
 
-      - name: Copy zip to Azure VM via SCP
+      - name: Copy archive to Azure VM via SCP
         run: |
           echo "${{ secrets.SSH_KEY }}" > private_key
           chmod 600 private_key
-          scp -i private_key -o StrictHostKeyChecking=no release.zip ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/release.zip
+          scp -i private_key -o StrictHostKeyChecking=no release.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/release.tar.gz
 
       - name: SSH and deploy on Azure VM
         run: |
           ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
             rm -rf ~/fastapi_deploy_temp
-            unzip -q ~/release.zip -d ~/fastapi_deploy_temp
+            mkdir -p ~/fastapi_deploy_temp
+            tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
             cd ~/fastapi_deploy_temp
             docker-compose down
             docker-compose up -d --build
