@@ -25,7 +25,7 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: Routes.home, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
+      initialRoute: Routes.conversation, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
       routes: {
         Routes.home: (context) => const HomeUpdateScreen(),
         Routes.startSelect: (context) => const StartSelectScreen(),

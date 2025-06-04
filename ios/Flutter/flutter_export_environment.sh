@@ -1,9 +1,9 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=C:\Users\OH\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\Users\OH\Desktop\Microsoft AI School\app-dev\memento_box_app"
+export "FLUTTER_ROOT=/Users/gwona/flutterSDK/flutter"
+export "FLUTTER_APPLICATION_PATH=/Users/gwona/Downloads/Memento-Box-oh"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
-export "FLUTTER_TARGET=lib\main.dart"
+export "FLUTTER_TARGET=lib/main.dart"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.0.0"
 export "FLUTTER_BUILD_NUMBER=1"
