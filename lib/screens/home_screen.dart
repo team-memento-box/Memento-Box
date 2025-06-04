@@ -1,6 +1,11 @@
+// 작성자: OH
+// 작성일: 2025.05
+
 import 'package:flutter/material.dart';
 import '../widgets/image_card_widget.dart';
 import '../widgets/tap_widget.dart';
+import '../widgets/group_bar_widget.dart';
+import '../data/user_data.dart';
 
 class HomeUpdateScreen extends StatelessWidget {
   const HomeUpdateScreen({super.key});
@@ -13,23 +18,7 @@ class HomeUpdateScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(80.0),
-        child: AppBar(
-          title: const Text(
-            '화목한 우리 가족^~^',
-            style: TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'Pretendard',
-              letterSpacing: 0,
-              color: Colors.white,
-            ),
-          ),
-          centerTitle: true,
-          backgroundColor: const Color(0xFF00C8B8),
-        ),
-      ),
+      appBar: const GroupBar(title: user_title),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
