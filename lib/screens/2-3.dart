@@ -1,7 +1,10 @@
 // lib/screens/picture_guardian_listen.dart
 import 'package:flutter/material.dart';
-import 'picture_guardian_transcript.dart'; // 🎯 텍스트 대화 내용 화면
-import 'picture_guardian_llm.dart'; // 🎯 원본 오디오 화면
+import '2-3-3.dart'; // 🎯 텍스트 대화 내용 화면
+import '2-3-1.dart'; // 🎯 원본 오디오 화면
+import '../widgets/tap_widget.dart';
+import '../widgets/group_bar_widget.dart';
+import '../data/user_data.dart';
 
 class ConversationPlaybackScreen extends StatefulWidget {
   const ConversationPlaybackScreen({Key? key}) : super(key: key);

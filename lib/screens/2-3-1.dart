@@ -1,6 +1,6 @@
 // lib/screens/picture_guardian_transcript.dart
 import 'package:flutter/material.dart';
-import 'picture_guardian_llm.dart'; // 원본 오디오 화면 import
+import '2-3-1.dart'; // 원본 오디오 화면 import
 
 class ConversationTranscriptScreen extends StatefulWidget {
   const ConversationTranscriptScreen({Key? key}) : super(key: key);

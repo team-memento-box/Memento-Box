@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/routes.dart';
+import '../utils/styles.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -11,32 +13,80 @@ class CustomBottomNavBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       selectedItemColor: const Color(0xFF00C8B8),
-      unselectedItemColor: const Color(0xFF555555),
+      unselectedItemColor: const Color(0xFF777777),
+      selectedLabelStyle: tapLabelStyle,
+      unselectedLabelStyle: tapLabelStyle,
       onTap: (index) {
         switch (index) {
           case 0:
-            Navigator.pushReplacementNamed(context, '/home');
+            Navigator.pushReplacementNamed(context, Routes.home);
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, '/gallery');
+            Navigator.pushReplacementNamed(context, Routes.gallery);
             break;
           case 2:
-            Navigator.pushReplacementNamed(context, '/addphoto');
+            Navigator.pushReplacementNamed(context, Routes.addPhoto);
             break;
           case 3:
-            Navigator.pushReplacementNamed(context, '/report');
+            Navigator.pushReplacementNamed(context, Routes.report);
             break;
           case 4:
-            Navigator.pushReplacementNamed(context, '/profile');
+            Navigator.pushReplacementNamed(context, Routes.profile);
             break;
         }
       },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-        BottomNavigationBarItem(icon: Icon(Icons.photo), label: '사진첩'),
-        BottomNavigationBarItem(icon: Icon(Icons.add), label: '사진 추가'),
-        BottomNavigationBarItem(icon: Icon(Icons.receipt), label: '보고서'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: '나의 정보'),
+      items: [
+        BottomNavigationBarItem(
+          icon: Image.asset('assets/icons/Home.png'),
+          activeIcon: Image.asset(
+            'assets/icons/Home_fill.png',
+            color: const Color(0xFF00C8B8), // 덮어씌울 색상
+            colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          ),
+          label: '홈',
+        ),
+        BottomNavigationBarItem(
+          icon: Image.asset('assets/icons/Image.png'),
+          activeIcon: Image.asset(
+            'assets/icons/Image_fill.png',
+            color: const Color(0xFF00C8B8), // 덮어씌울 색상
+            colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          ),
+          label: '사진첩',
+        ),
+        BottomNavigationBarItem(
+          icon: Image.asset('assets/icons/Add.png'),
+          activeIcon: Image.asset(
+            'assets/icons/Add_fill.png',
+            color: const Color(0xFF00C8B8), // 덮어씌울 색상
+            colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          ),
+          label: '사진 추가',
+        ),
+        BottomNavigationBarItem(
+          icon: Image.asset('assets/icons/Invoice.png'),
+          activeIcon: Image.asset(
+            'assets/icons/Invoice_fill.png',
+            color: const Color(0xFF00C8B8), // 덮어씌울 색상
+            colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          ),
+          label: '보고서',
+        ),
+        BottomNavigationBarItem(
+          icon: Image.asset('assets/icons/User.png'),
+          // activeIcon: Image.asset(
+          //   'assets/icons/User_fill.png',
+          //   color: const Color(0xFF00C8B8), // 덮어씌울 색상
+          //   colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          // ),
+          label: '나의 정보',
+        ),
+
+        // BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
+        // BottomNavigationBarItem(icon: Icon(Icons.photo), label: '사진첩'),
+        // BottomNavigationBarItem(icon: Icon(Icons.add), label: '사진 추가'),
+        // BottomNavigationBarItem(icon: Icon(Icons.receipt), label: '보고서'),
+        // BottomNavigationBarItem(icon: Icon(Icons.person), label: '나의 정보'),
       ],
     );
   }

@@ -1,3 +1,6 @@
+// 작성자: OH
+// 작성일: 2025.05
+
 import 'package:flutter/material.dart';
 
 class NewsCard extends StatelessWidget {

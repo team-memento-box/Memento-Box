@@ -1,5 +1,12 @@
+// 작성자: OH
+// 작성일: 2025.05
+// 수정일: 2025.06.03
+
 import 'package:flutter/material.dart';
 import '../widgets/tap_widget.dart';
+import '../widgets/group_bar_widget.dart';
+import '../utils/styles.dart';
+import '../data/user_data.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -159,19 +166,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          '화목한 우리 가족^~^',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-            fontFamily: 'Pretendard',
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: const GroupBar(title: user_title),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
@@ -180,25 +175,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
             const SizedBox(height: 16),
             const Row(
               children: [
-                Text(
-                  '2025년',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                    color: Color(0xFF111111),
-                  ),
-                ),
+                Text('2025년', style: maxContentStyle),
                 SizedBox(width: 20),
-                Text(
-                  '봄',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Pretendard',
-                    color: Color(0xFF111111),
-                  ),
-                ),
+                Text('봄', style: maxContentStyle),
               ],
             ),
             const SizedBox(height: 12),
@@ -213,11 +192,19 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 ),
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () => _showScriptBottomSheet(context),
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/photoDetail',
+                        arguments: 0,
+                      );
+
+                      // Navigator.pushNamed(context, '/listenRec', arguments: 0);
+                    }, // 사진 클릭했을 때 상세페이지로 이동
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.asset(
-                        'assets/photos/1.jpg',
+                        'assets/photos/3.png',
                         fit: BoxFit.cover,
                       ),
                     ),

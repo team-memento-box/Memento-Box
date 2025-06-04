@@ -1,229 +1,229 @@
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:flutter/material.dart';
+// import 'package:url_launcher/url_launcher.dart';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class KakaoSigninScreen extends StatelessWidget {
-  const KakaoSigninScreen({super.key});
+// class KakaoSigninScreen extends StatelessWidget {
+//   const KakaoSigninScreen({super.key});
 
-  Future<void> _launchKakaoLogin() async {
-    final clientId = dotenv.env['KAKAO_CLIENT_ID'];
-    final redirectUri = dotenv.env['KAKAO_REDIRECT_URI'];
+//   Future<void> _launchKakaoLogin() async {
+//     final clientId = dotenv.env['KAKAO_CLIENT_ID'];
+//     final redirectUri = dotenv.env['KAKAO_REDIRECT_URI'];
 
-    print("🔐 [DEBUG] KAKAO_CLIENT_ID: $clientId");
-    print("🔐 [DEBUG] KAKAO_REDIRECT_URI: $redirectUri");
+//     print("🔐 [DEBUG] KAKAO_CLIENT_ID: $clientId");
+//     print("🔐 [DEBUG] KAKAO_REDIRECT_URI: $redirectUri");
 
-    final Uri url = Uri.parse(
-      "https://kauth.kakao.com/oauth/authorize"
-      "?client_id=$clientId"
-      "&redirect_uri=$redirectUri"
-      "&response_type=code",
-    );
+//     final Uri url = Uri.parse(
+//       "https://kauth.kakao.com/oauth/authorize"
+//       "?client_id=$clientId"
+//       "&redirect_uri=$redirectUri"
+//       "&response_type=code",
+//     );
 
-    print("🌐 [DEBUG] 최종 호출 URL: $url");
+//     print("🌐 [DEBUG] 최종 호출 URL: $url");
 
-    if (await canLaunchUrl(url)) {
-      print("🚀 [DEBUG] URL launch 시도 중...");
-      await launchUrl(url);
-      print("✅ [DEBUG] URL launch 성공!");
-    } else {
-      print("❌ [ERROR] URL launch 실패: $url");
-      throw 'URL을 열 수 없습니다: $url';
-    }
-  }
+//     if (await canLaunchUrl(url)) {
+//       print("🚀 [DEBUG] URL launch 시도 중...");
+//       await launchUrl(url);
+//       print("✅ [DEBUG] URL launch 성공!");
+//     } else {
+//       print("❌ [ERROR] URL launch 실패: $url");
+//       throw 'URL을 열 수 없습니다: $url';
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            _buildStatusBar(),
-            _buildProfileImage(),
-            _buildWelcomeText(),
-            _buildButtons(),
-            _buildHomeIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       body: SafeArea(
+//         child: Stack(
+//           children: [
+//             _buildStatusBar(),
+//             _buildProfileImage(),
+//             _buildWelcomeText(),
+//             _buildButtons(),
+//             _buildHomeIndicator(),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
-  Widget _buildStatusBar() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '9:41',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'SF Pro',
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  width: 25,
-                  height: 13,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 1),
-                    borderRadius: BorderRadius.circular(4.3),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  width: 21,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+//   Widget _buildStatusBar() {
+//     return Positioned(
+//       top: 0,
+//       left: 0,
+//       right: 0,
+//       child: Padding(
+//         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//           children: [
+//             const Text(
+//               '9:41',
+//               style: TextStyle(
+//                 fontSize: 17,
+//                 fontWeight: FontWeight.w600,
+//                 fontFamily: 'SF Pro',
+//               ),
+//             ),
+//             Row(
+//               children: [
+//                 Container(
+//                   width: 25,
+//                   height: 13,
+//                   decoration: BoxDecoration(
+//                     border: Border.all(color: Colors.black, width: 1),
+//                     borderRadius: BorderRadius.circular(4.3),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 4),
+//                 Container(
+//                   width: 21,
+//                   height: 9,
+//                   decoration: BoxDecoration(
+//                     color: Colors.black,
+//                     borderRadius: BorderRadius.circular(2.5),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
-  Widget _buildProfileImage() {
-    return Positioned(
-      top: 153,
-      left: 30,
-      child: SizedBox(
-        width: 88,
-        height: 88,
-        child: Image.asset("assets/images/temp_logo.png", fit: BoxFit.cover),
-      ),
-    );
-  }
+//   Widget _buildProfileImage() {
+//     return Positioned(
+//       top: 153,
+//       left: 30,
+//       child: SizedBox(
+//         width: 88,
+//         height: 88,
+//         child: Image.asset("assets/images/temp_logo.png", fit: BoxFit.cover),
+//       ),
+//     );
+//   }
 
-  Widget _buildWelcomeText() {
-    return Positioned(
-      top: 269,
-      left: 30,
-      right: 30,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            '보호자/피보호자님,',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Pretendard',
-            ),
-          ),
-          SizedBox(height: 16),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: '소중한 '),
-                TextSpan(
-                  text: '우리 가족의 추억 기록',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: '을 위해 간편 가입으로 '),
-                TextSpan(
-                  text: '메멘토 박스',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: '를 시작하세요.'),
-              ],
-            ),
-            style: TextStyle(
-              fontSize: 19,
-              fontFamily: 'Pretendard',
-              height: 1.5,
-              letterSpacing: -1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+//   Widget _buildWelcomeText() {
+//     return Positioned(
+//       top: 269,
+//       left: 30,
+//       right: 30,
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: const [
+//           Text(
+//             '보호자/피보호자님,',
+//             style: TextStyle(
+//               fontSize: 21,
+//               fontWeight: FontWeight.w500,
+//               fontFamily: 'Pretendard',
+//             ),
+//           ),
+//           SizedBox(height: 16),
+//           Text.rich(
+//             TextSpan(
+//               children: [
+//                 TextSpan(text: '소중한 '),
+//                 TextSpan(
+//                   text: '우리 가족의 추억 기록',
+//                   style: TextStyle(fontWeight: FontWeight.w700),
+//                 ),
+//                 TextSpan(text: '을 위해 간편 가입으로 '),
+//                 TextSpan(
+//                   text: '메멘토 박스',
+//                   style: TextStyle(fontWeight: FontWeight.w700),
+//                 ),
+//                 TextSpan(text: '를 시작하세요.'),
+//               ],
+//             ),
+//             style: TextStyle(
+//               fontSize: 19,
+//               fontFamily: 'Pretendard',
+//               height: 1.5,
+//               letterSpacing: -1,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
-  Widget _buildButtons() {
-    return Positioned(
-      top: 459,
-      left: 30,
-      right: 30,
-      child: Column(
-        children: [
-          _buildLoginButton(
-            '카카오로 계속하기',
-            const Color(0xFFF9E007),
-            Colors.black,
-            onTap: _launchKakaoLogin, // ✅ 연동
-          ),
-          const SizedBox(height: 15),
-          _buildLoginButton('네이버로 계속하기', const Color(0xFF57B04B), Colors.white),
-          const SizedBox(height: 15),
-          _buildLoginButton(
-            '구글로 계속하기',
-            Colors.white,
-            const Color(0xFF111111),
-            border: const BorderSide(color: Color(0xFFAEAEAE), width: 1),
-          ),
-        ],
-      ),
-    );
-  }
+//   Widget _buildButtons() {
+//     return Positioned(
+//       top: 459,
+//       left: 30,
+//       right: 30,
+//       child: Column(
+//         children: [
+//           _buildLoginButton(
+//             '카카오로 계속하기',
+//             const Color(0xFFF9E007),
+//             Colors.black,
+//             onTap: _launchKakaoLogin, // ✅ 연동
+//           ),
+//           const SizedBox(height: 15),
+//           _buildLoginButton('네이버로 계속하기', const Color(0xFF57B04B), Colors.white),
+//           const SizedBox(height: 15),
+//           _buildLoginButton(
+//             '구글로 계속하기',
+//             Colors.white,
+//             const Color(0xFF111111),
+//             border: const BorderSide(color: Color(0xFFAEAEAE), width: 1),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
-  Widget _buildLoginButton(
-    String text,
-    Color bgColor,
-    Color textColor, {
-    BorderSide? border,
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap, // ✅ 눌렀을 때 동작
-      child: Container(
-        width: double.infinity,
-        height: 60,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20),
-          border: border != null ? Border.fromBorderSide(border) : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Pretendard',
-            color: textColor,
-          ),
-        ),
-      ),
-    );
-  }
+//   Widget _buildLoginButton(
+//     String text,
+//     Color bgColor,
+//     Color textColor, {
+//     BorderSide? border,
+//     VoidCallback? onTap,
+//   }) {
+//     return GestureDetector(
+//       onTap: onTap, // ✅ 눌렀을 때 동작
+//       child: Container(
+//         width: double.infinity,
+//         height: 60,
+//         decoration: BoxDecoration(
+//           color: bgColor,
+//           borderRadius: BorderRadius.circular(20),
+//           border: border != null ? Border.fromBorderSide(border) : null,
+//         ),
+//         alignment: Alignment.center,
+//         child: Text(
+//           text,
+//           style: TextStyle(
+//             fontSize: 20,
+//             fontWeight: FontWeight.w600,
+//             fontFamily: 'Pretendard',
+//             color: textColor,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
 
-  Widget _buildHomeIndicator() {
-    return Positioned(
-      bottom: 10,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: Container(
-          width: 139,
-          height: 5,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(100),
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   Widget _buildHomeIndicator() {
+//     return Positioned(
+//       bottom: 10,
+//       left: 0,
+//       right: 0,
+//       child: Center(
+//         child: Container(
+//           width: 139,
+//           height: 5,
+//           decoration: BoxDecoration(
+//             color: Colors.black,
+//             borderRadius: BorderRadius.circular(100),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
