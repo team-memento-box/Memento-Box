@@ -1,47 +1,247 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:just_audio/just_audio.dart';
 
-class ReportDetailScreen extends StatelessWidget {
-  const ReportDetailScreen({Key? key}) : super(key: key);
+// TODO: 실제 API 연동 시 사용할 설정값들
+// const String API_BASE_URL = 'https://your-api-server.com/api';
+// const String AUDIO_STREAM_URL = 'https://your-audio-server.com/stream';
+
+class ReportDetailScreen extends StatefulWidget {
+  final String? fileName;
+  final String? filePath;
+
+  const ReportDetailScreen({Key? key, this.fileName, this.filePath})
+    : super(key: key);
+
+  @override
+  State<ReportDetailScreen> createState() => _ReportDetailScreenState();
+}
+
+class _ReportDetailScreenState extends State<ReportDetailScreen> {
+  String fileContent = '';
+  bool isLoading = true;
+  bool isPlaying = false;
+  String? audioFilePath;
+  Duration currentPosition = Duration.zero;
+  Duration totalDuration = Duration.zero;
+  bool isAudioLoaded = false;
+
+  late AudioPlayer audioPlayer;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration?>? _durationSub;
+  StreamSubscription<bool>? _playingSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAudio();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    _playingSub?.cancel();
+    audioPlayer.dispose();
+    super.dispose();
+  }
+
+  void _initAudio() {
+    audioPlayer = AudioPlayer();
+    _positionSub = audioPlayer.positionStream.listen((pos) {
+      if (mounted) setState(() => currentPosition = pos);
+    });
+    _durationSub = audioPlayer.durationStream.listen((dur) {
+      if (mounted && dur != null) setState(() => totalDuration = dur);
+    });
+    _playingSub = audioPlayer.playingStream.listen((playing) {
+      if (mounted) setState(() => isPlaying = playing);
+    });
+  }
+
+  // TODO: 실제 보고서 데이터를 가져오는 함수 예시
+  // Future<Map<String, dynamic>> fetchReportData(String reportId) async {
+  //   final response = await http.get(Uri.parse('${API_BASE_URL}/reports/$reportId'));
+  //   return json.decode(response.body);
+  // }
+
+  Future<void> _loadData() async {
+    try {
+      final content = await _getContent();
+      await _loadAudio();
+      setState(() {
+        fileContent = content;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        fileContent = '파일 읽기 오류: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  // TODO: 실제 오디오 파일 API에서 가져오는 함수 예시
+  // Future<String> fetchAudioUrl(String reportId) async {
+  //   final response = await http.get(Uri.parse('${API_BASE_URL}/audio/$reportId'));
+  //   return json.decode(response.body)['audioUrl'];
+  // }
+
+  Future<void> _loadAudio() async {
+    if (widget.filePath?.isEmpty ?? true) return;
+
+    final basePath = _getAudioPath(widget.filePath!);
+    final audioPath = await _findAudio(basePath);
+
+    if (audioPath != null) {
+      setState(() => audioFilePath = audioPath);
+      await _setAudio(audioPath);
+    } else {
+      setState(() => isAudioLoaded = false);
+    }
+  }
+
+  Future<void> _setAudio(String path) async {
+    try {
+      await audioPlayer.setAsset(path);
+      setState(() => isAudioLoaded = true);
+    } catch (e) {
+      try {
+        await audioPlayer.setAudioSource(AudioSource.asset(path));
+        setState(() => isAudioLoaded = true);
+      } catch (e2) {
+        setState(() => isAudioLoaded = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('오디오 파일 형식이 지원되지 않습니다'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  String _getAudioPath(String textPath) {
+    final fileName = textPath.split('/').last.replaceAll('.txt', '');
+    return 'assets/voice/$fileName';
+  }
+
+  Future<String?> _findAudio(String basePath) async {
+    final extensions = ['.mp3', '.m4a', '.wav', '.ogg'];
+    for (final ext in extensions) {
+      final path = '$basePath$ext';
+      if (await _fileExists(path)) return path;
+    }
+    return null;
+  }
+
+  Future<bool> _fileExists(String path) async {
+    try {
+      final manifest = await rootBundle.loadString('AssetManifest.json');
+      return json.decode(manifest).containsKey(path);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _togglePlay() async {
+    if (!isAudioLoaded) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('오디오 파일이 준비되지 않았습니다')));
+      return;
+    }
+
+    try {
+      if (isPlaying) {
+        await audioPlayer.pause();
+      } else {
+        await audioPlayer.play();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('재생 실패: 파일 형식을 확인해주세요'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        isPlaying = false;
+        isAudioLoaded = false;
+      });
+    }
+  }
+
+  Future<void> _seekTo(double progress) async {
+    if (!isAudioLoaded || totalDuration.inMilliseconds == 0) return;
+
+    final position = Duration(
+      milliseconds: (totalDuration.inMilliseconds * progress).toInt(),
+    );
+    try {
+      await audioPlayer.seek(position);
+    } catch (e) {
+      print('Seek 오류: $e');
+    }
+  }
+
+  String _formatTime(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    return '${minutes}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  double get progress {
+    if (totalDuration.inMilliseconds == 0) return 0.0;
+    return (currentPosition.inMilliseconds / totalDuration.inMilliseconds)
+        .clamp(0.0, 1.0);
+  }
+
+  Future<String> _getContent() async {
+    if (widget.filePath?.isEmpty ?? true) return '파일 경로가 제공되지 않았습니다.';
+    return await rootBundle.loadString(widget.filePath!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Status Bar
-          const StatusBarWidget(),
-
-          // Header Section
-          _buildHeader(),
-
-          // Content Section
+          _StatusBar(),
+          _Header(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildProfileSection(),
-                  const SizedBox(height: 16),
-                  _buildAnalysisReport(),
-                  const SizedBox(height: 24),
-                  _buildBackToListButton(context),
+                  _ProfileSection(),
+                  SizedBox(height: 16),
+                  _ReportSection(),
+                  SizedBox(height: 24),
+                  _BackButton(),
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
+      bottomNavigationBar: CustomBottomNavBar(currentIndex: 3),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _Header() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: const BoxDecoration(
-        color: Color.fromARGB(255, 254, 255, 255),
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.headerBg,
         boxShadow: [
           BoxShadow(
             color: Color(0x33555555),
@@ -50,178 +250,165 @@ class ReportDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: Text(
+        widget.fileName ?? '보고서',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          fontFamily: 'Pretendard',
+        ),
+      ),
+    );
+  }
+
+  Widget _ProfileSection() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Row(
         children: [
-          const Text(
-            '서봉봉님 대화 분석 보고서',
-            style: TextStyle(
-              fontSize: 24,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w800,
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              image: DecorationImage(
+                image: AssetImage('../assets/photos/3.png'),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            '2025-05-26 13:56',
-            style: TextStyle(
-              color: Color(0xFF777777),
-              fontSize: 15,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          SizedBox(width: 16),
+          Expanded(child: _AudioProgress()),
+          SizedBox(width: 16),
+          _PlayButton(),
         ],
       ),
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _AudioProgress() {
     return Column(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Image
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                image: const DecorationImage(
-                  image: AssetImage('../assets/photos/3.png'),
-                  fit: BoxFit.cover,
+        GestureDetector(
+          onTapDown: isAudioLoaded
+              ? (details) async {
+                  final box = context.findRenderObject() as RenderBox;
+                  final pos = box.globalToLocal(details.globalPosition);
+                  final newProgress = (pos.dx / box.size.width).clamp(0.0, 1.0);
+                  await _seekTo(newProgress);
+                }
+              : null,
+          child: Container(
+            width: double.infinity,
+            height: 6,
+            decoration: BoxDecoration(
+              color: AppColors.progressBg,
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: FractionallySizedBox(
+              widthFactor: progress,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isAudioLoaded
+                      ? AppColors.primary
+                      : AppColors.progressBg.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          isAudioLoaded
+              ? '${_formatTime(currentPosition)} / ${_formatTime(totalDuration)}'
+              : '오디오 파일을 찾을 수 없습니다',
+          style: TextStyle(
+            color: isAudioLoaded
+                ? AppColors.timeText
+                : AppColors.timeText.withOpacity(0.5),
+            fontSize: 12,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
 
-            // Middle section - empty space
-            const Expanded(child: SizedBox()),
-
-            // Right section - Play Button
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                color: Color(0xFF00C8B8),
-                shape: BoxShape.circle,
-                boxShadow: [
+  Widget _PlayButton() {
+    return GestureDetector(
+      onTap: isAudioLoaded ? _togglePlay : null,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: isAudioLoaded
+              ? AppColors.primary
+              : AppColors.primary.withOpacity(0.3),
+          shape: BoxShape.circle,
+          boxShadow: isAudioLoaded
+              ? [
                   BoxShadow(
                     color: Color(0x33555555),
                     blurRadius: 5,
                     offset: Offset(0, 2),
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.play_arrow,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ],
+                ]
+              : [],
         ),
-
-        const SizedBox(height: 20),
-
-        // Duration Text - full width
-        Container(
-          width: double.infinity,
-          child: const Text(
-            '전체 대화 길이: 1시간 25분 29초',
-            style: TextStyle(
-              color: Color(0xFF555555),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Simple Progress Bar
-        _buildSimpleProgressBar(),
-      ],
-    );
-  }
-
-  Widget _buildSimpleProgressBar() {
-    return Container(
-      width: double.infinity,
-      height: 6,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: FractionallySizedBox(
-        widthFactor: 0.35, // 35% progress
-        alignment: Alignment.centerLeft,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF00C8B8),
-            borderRadius: BorderRadius.circular(3),
-          ),
+        child: Icon(
+          isAudioLoaded
+              ? (isPlaying ? Icons.pause : Icons.play_arrow)
+              : Icons.music_off,
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );
   }
 
-  Widget _buildAnalysisReport() {
+  Widget _ReportSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF00C8B8), width: 2),
-        boxShadow: const [BoxShadow(color: Color(0x19777777), blurRadius: 5)],
+        border: Border.all(color: AppColors.primary, width: 2),
+        boxShadow: [BoxShadow(color: Color(0x19777777), blurRadius: 5)],
       ),
-      child: const Text(
-        '''📌 전체 답변: 7회
-🔍 다소 어긋난 답변: 1회
-💭 전반적 감정: 긍정적 (주요 감정: 무력감)
-
-감정 상태:
-  • 무력감: 3회
-  • 그리움: 2회
-  • 애정: 2회
-
-어긋난 답변 정도:
-  • 꽤 어긋남: 1회
-
-어긋난 답변 상세:
-1번째 - 2025-05-30 02:42:45
-   질문: 아, 그러셨군요. 힘드셨던 기억이 있으셨다면, 그 마음을 헤아리고 싶어요. 그래도 가족과 함께했던 따뜻한 순간이 힘이 되셨던 적도 있으셨겠죠? 사진 속 가족처럼 함께 앉아 대화를 나누던 모습이 떠오르시나요?
-   답변: ㅏ
-   상태: [무력감]''',
-        style: TextStyle(
-          color: Color(0xFF333333),
-          fontSize: 16,
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w500,
-          height: 1.4,
-        ),
-      ),
+      child: isLoading
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : Text(
+              fileContent,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
     );
   }
 
-  Widget _buildBackToListButton(BuildContext context) {
+  Widget _BackButton() {
     return Container(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/report');
-        },
+        onPressed: () => Navigator.pop(context),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF00C8B8),
+          backgroundColor: AppColors.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           elevation: 0,
         ),
-        child: const Text(
+        child: Text(
           '목록 보기',
           style: TextStyle(
             color: Colors.white,
@@ -235,10 +422,17 @@ class ReportDetailScreen extends StatelessWidget {
   }
 }
 
-// 상태바 위젯
-class StatusBarWidget extends StatelessWidget {
-  const StatusBarWidget({Key? key}) : super(key: key);
+class AppColors {
+  static const Color primary = Color(0xFF00C8B8);
+  static const Color background = Color(0xFFF7F7F7);
+  static const Color headerBg = Color.fromARGB(255, 254, 255, 255);
+  static const Color textPrimary = Color(0xFF333333);
+  static const Color textSecondary = Color(0xFF555555);
+  static const Color timeText = Color(0xFF666666);
+  static const Color progressBg = Color(0xFFE0E0E0);
+}
 
+class _StatusBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -247,8 +441,7 @@ class StatusBarWidget extends StatelessWidget {
       color: Colors.white,
       child: Stack(
         children: [
-          // 시간 표시
-          const Positioned(
+          Positioned(
             left: 51.92,
             top: 18.34,
             child: Text(
@@ -258,44 +451,24 @@ class StatusBarWidget extends StatelessWidget {
                 fontSize: 17,
                 fontFamily: 'SF Pro',
                 fontWeight: FontWeight.w600,
-                height: 1.29,
-              ),
-            ),
-          ),
-          // 배터리 아이콘
-          Positioned(right: 20, top: 23, child: _buildBatteryIcon()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBatteryIcon() {
-    return SizedBox(
-      width: 25,
-      height: 13,
-      child: Stack(
-        children: [
-          Opacity(
-            opacity: 0.35,
-            child: Container(
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  side: const BorderSide(width: 1, color: Colors.black),
-                  borderRadius: BorderRadius.circular(4.30),
-                ),
               ),
             ),
           ),
           Positioned(
-            left: 2,
-            top: 2,
+            right: 20,
+            top: 23,
             child: Container(
-              width: 21,
-              height: 9,
-              decoration: ShapeDecoration(
-                color: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(2.50),
+              width: 25,
+              height: 13,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black.withOpacity(0.35)),
+                borderRadius: BorderRadius.circular(4.3),
+              ),
+              child: Container(
+                margin: EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
             ),
@@ -306,7 +479,6 @@ class StatusBarWidget extends StatelessWidget {
   }
 }
 
-// 커스텀 하단 네비게이션 바 위젯
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
 
@@ -315,17 +487,17 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<BottomNavItem> navItems = [
-      BottomNavItem(label: '홈', icon: Icons.home),
-      BottomNavItem(label: '사진첩', icon: Icons.photo_library),
-      BottomNavItem(label: '사진 추가', icon: Icons.add_a_photo),
-      BottomNavItem(label: '보고서', icon: Icons.description),
-      BottomNavItem(label: '나의 정보', icon: Icons.person),
+    final items = [
+      {'label': '홈', 'icon': Icons.home, 'route': '/home'},
+      {'label': '사진첩', 'icon': Icons.photo_library, 'route': '/gallery'},
+      {'label': '사진 추가', 'icon': Icons.add_a_photo, 'route': '/addphoto'},
+      {'label': '보고서', 'icon': Icons.description, 'route': '/report'},
+      {'label': '나의 정보', 'icon': Icons.person, 'route': null},
     ];
 
     return Container(
       height: 80,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0x7F999999), width: 0.7)),
         boxShadow: [
@@ -337,77 +509,71 @@ class CustomBottomNavBar extends StatelessWidget {
         ],
       ),
       child: Row(
-        children: navItems.asMap().entries.map((entry) {
-          int index = entry.key;
-          BottomNavItem item = entry.value;
-          bool isSelected = index == currentIndex;
+        children: items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isSelected = index == currentIndex;
 
-          return _buildNavItem(context, item, isSelected, index);
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (item['route'] != null) {
+                  Navigator.pushNamed(context, item['route'] as String);
+                }
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    item['icon'] as IconData,
+                    size: 30,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    item['label'] as String,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                      fontSize: 12,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         }).toList(),
       ),
     );
   }
-
-  Widget _buildNavItem(
-    BuildContext context,
-    BottomNavItem item,
-    bool isSelected,
-    int index,
-  ) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          switch (index) {
-            case 0:
-              Navigator.pushNamed(context, '/home');
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/gallery');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/addphoto');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/report');
-              break;
-            case 4:
-              // 나의 정보 페이지 (라우트 추가 필요)
-              break;
-          }
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              item.icon,
-              size: 30,
-              color: isSelected
-                  ? const Color(0xFF00C8B8)
-                  : const Color(0xFF555555),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: TextStyle(
-                color: isSelected
-                    ? const Color(0xFF00C8B8)
-                    : const Color(0xFF555555),
-                fontSize: 12,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-// 하단 네비게이션 아이템 모델
-class BottomNavItem {
-  final String label;
-  final IconData icon;
+/*
+=== just_audio 패키지 설치 가이드 ===
 
-  BottomNavItem({required this.label, required this.icon});
-}
+1. pubspec.yaml에 패키지 추가:
+   dependencies:
+     just_audio: ^0.9.35
+     just_audio_web: ^0.4.8
+
+2. 권장 오디오 설정:
+   - MP3: 128kbps CBR, 44.1kHz
+   - 파일 크기: 10MB 이하
+
+3. 변환 명령어:
+   ffmpeg -i input.wav -acodec mp3 -ab 128k -ar 44100 output.mp3
+
+4. 파일 구조:
+   assets/voice/
+   └── filename.mp3
+
+5. pubspec.yaml:
+   flutter:
+     assets:
+       - assets/voice/
+*/
