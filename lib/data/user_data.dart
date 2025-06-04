@@ -30,3 +30,6 @@ class PhotoConversation {
 
 // 사용자 구분
 enum FamilyRole { guardian, elderly }
+
+// 전역 상태로 사용할 변수 (초기엔 null)
+FamilyRole? selectedRole;

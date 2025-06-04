@@ -4,9 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/user_data.dart'; // userType enum 정의 위치
 
 class KakaoSigninScreen extends StatelessWidget {
-  final FamilyRole familyRole;
-
-  const KakaoSigninScreen({super.key, required this.familyRole});
+  const KakaoSigninScreen({super.key});
 
   Future<void> _launchKakaoLogin(BuildContext context) async {
     final clientId = dotenv.env['KAKAO_CLIENT_ID'];
@@ -22,11 +20,11 @@ class KakaoSigninScreen extends StatelessWidget {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
 
-      // ✅ 로그인 후 리디렉션이 성공했다고 가정하고 내부 라우팅 처리
-      if (familyRole == FamilyRole.guardian) {
-        Navigator.pushNamed(context, '/intro');
+      // ✅ 로그인 후 redirect 된 것으로 간주하고, selectedRole 기준 분기
+      if (selectedRole == FamilyRole.guardian) {
+        Navigator.pushNamed(context, '/intro'); // 보호자 → 인트로 화면
       } else {
-        Navigator.pushNamed(context, '/addphoto-request');
+        Navigator.pushNamed(context, '/addphoto-request'); // 피보호자 → 사진요청
       }
     } else {
       throw 'URL을 열 수 없습니다: $url';

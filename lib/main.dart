@@ -14,7 +14,6 @@ import 'screens/2-3-3.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env"); //.env 로드
   runApp(const MyCustomApp());
 }
 
@@ -27,7 +26,8 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: Routes.home, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
+      initialRoute:
+          Routes.startSelect, // '/startSelect' // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
       routes: {
         Routes.home: (context) => const HomeUpdateScreen(),
         Routes.startSelect: (context) => const StartSelectScreen(),

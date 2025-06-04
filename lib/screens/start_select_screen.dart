@@ -1,30 +1,28 @@
-// 작성자: OH
-// 작성일: 2025.05
-// 수정자: 고권아
-// 수정일: 0604
-
 import 'package:flutter/material.dart';
 import 'kakao_signin_screen.dart'; // 중간 로그인 스크린 경로
-import '../data/user_data.dart'; //enum UserType 정의된 파일
+import '../data/user_data.dart'; // enum FamilyRole 및 selectedRole 정의된 파일
 
 class StartSelectScreen extends StatelessWidget {
   const StartSelectScreen({super.key});
 
   void _navigateToLogin(BuildContext context, String familyRole) {
+    // ✅ 전역 상태 설정
+    selectedRole = familyRole == 'guardian'
+        ? FamilyRole.guardian
+        : FamilyRole.elderly;
+
+    // ✅ 로그인 화면으로 이동 (familyRole 넘길 필요 없음)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KakaoSigninScreen(
-          familyRole: FamilyRole == 'guardian'
-              ? FamilyRole.guardian
-              : FamilyRole.elderly,
-        ),
+        builder: (context) => const KakaoSigninScreen(), // 변경: 인자 제거
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    print("🟢 StartSelectScreen build 실행됨");
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -38,8 +36,6 @@ class StartSelectScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
                   'assets/images/temp_logo.png',
-                  width: 188,
-                  height: 188,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -55,8 +51,6 @@ class StartSelectScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
-                        fontFamily: 'Pretendard',
-                        letterSpacing: -1,
                       ),
                     ),
                     TextSpan(
@@ -64,8 +58,6 @@ class StartSelectScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Pretendard',
-                        letterSpacing: -1,
                       ),
                     ),
                     TextSpan(
@@ -73,8 +65,6 @@ class StartSelectScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
-                        fontFamily: 'Pretendard',
-                        letterSpacing: -1,
                       ),
                     ),
                   ],
@@ -83,8 +73,6 @@ class StartSelectScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 90),
-
-            // 보호자 버튼
             ElevatedButton(
               onPressed: () => _navigateToLogin(context, 'guardian'),
               style: ElevatedButton.styleFrom(
@@ -99,16 +87,11 @@ class StartSelectScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  fontFamily: 'Pretendard',
-                  letterSpacing: 1,
                   color: Colors.white,
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // 피보호자 버튼
             OutlinedButton(
               onPressed: () => _navigateToLogin(context, 'elder'),
               style: OutlinedButton.styleFrom(
@@ -123,7 +106,6 @@ class StartSelectScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  fontFamily: 'Pretendard',
                   color: Color(0xFF00C8B8),
                 ),
               ),
