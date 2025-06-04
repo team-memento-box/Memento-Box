@@ -1,10 +1,27 @@
 // 작성자: OH
 // 작성일: 2025.05
+// 수정자: 고권아
+// 수정일: 0604
 
 import 'package:flutter/material.dart';
+import 'kakao_signin_screen.dart'; // 중간 로그인 스크린 경로
+import '../data/user_data.dart'; //enum UserType 정의된 파일
 
 class StartSelectScreen extends StatelessWidget {
   const StartSelectScreen({super.key});
+
+  void _navigateToLogin(BuildContext context, String familyRole) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KakaoSigninScreen(
+          familyRole: FamilyRole == 'guardian'
+              ? FamilyRole.guardian
+              : FamilyRole.elderly,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +31,6 @@ class StartSelectScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // const SizedBox(height: 40),
             SizedBox(
               width: 188,
               height: 188,
@@ -29,12 +45,12 @@ class StartSelectScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
               child: Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(
+                    TextSpan(
                       text: '우리 가족의 소중한 ',
                       style: TextStyle(
                         fontSize: 20,
@@ -43,7 +59,7 @@ class StartSelectScreen extends StatelessWidget {
                         letterSpacing: -1,
                       ),
                     ),
-                    const TextSpan(
+                    TextSpan(
                       text: '추억 보관함\n메멘토 박스',
                       style: TextStyle(
                         fontSize: 20,
@@ -52,7 +68,7 @@ class StartSelectScreen extends StatelessWidget {
                         letterSpacing: -1,
                       ),
                     ),
-                    const TextSpan(
+                    TextSpan(
                       text: '에 이야기를 담아 볼까요?',
                       style: TextStyle(
                         fontSize: 20,
@@ -67,8 +83,10 @@ class StartSelectScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 90),
+
+            // 보호자 버튼
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _navigateToLogin(context, 'guardian'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C8B8),
                 minimumSize: const Size(315, 60),
@@ -87,9 +105,12 @@ class StartSelectScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
+
+            // 피보호자 버튼
             OutlinedButton(
-              onPressed: () {},
+              onPressed: () => _navigateToLogin(context, 'elder'),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(width: 2, color: Color(0xFF00C8B8)),
                 minimumSize: const Size(315, 60),

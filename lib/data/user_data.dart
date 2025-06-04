@@ -27,3 +27,6 @@ class PhotoConversation {
     required this.photoPath,
   });
 }
+
+// 사용자 구분
+enum FamilyRole { guardian, elderly }
