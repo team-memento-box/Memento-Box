@@ -102,7 +102,7 @@ def get_photos_by_uploaded_at(uploaded_at: date = Path(..., description="예: 20
     return filtered_photos
 
 #----------------
-
+# 최근 일주일 사진
 @app.get("/api/recent_photos")
 def get_recent_photos():
     today = datetime.today()
