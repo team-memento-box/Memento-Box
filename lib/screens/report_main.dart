@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
-import 'report_detail.dart'; // ReportDetailScreen import 추가
+import 'report_detail_screen.dart'; // ReportDetailScreen import 추가
 
 class FamilyChatAnalysisScreen extends StatefulWidget {
   const FamilyChatAnalysisScreen({Key? key}) : super(key: key);

@@ -1,6 +1,3 @@
-// 작성자: OH
-// 작성일: 2025.05.30
-
 import 'package:flutter/material.dart';
 import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
