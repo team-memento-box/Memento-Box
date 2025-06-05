@@ -49,19 +49,19 @@ services:
     networks:
       - memento_net
 
-  dialogue:
-    build:
-      context: ./dialogue
-    container_name: dialogue
-    expose:
-      - "6060"
-    env_file:
-      - ./dialogue/.env
-    networks:
-      - memento_net
-    depends_on:
-      db:
-        condition: service_healthy
+  # dialogue:
+  #   build:
+  #     context: ./dialogue
+  #   container_name: dialogue
+  #   expose:
+  #     - "6060"
+  #   env_file:
+  #     - ./dialogue/.env
+  #   networks:
+  #     - memento_net
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
   fish-speech:
     build:
