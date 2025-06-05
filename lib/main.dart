@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'utils/routes.dart';
 import 'screens/start_select_screen.dart';
 import 'screens/home_screen.dart';
@@ -12,8 +13,10 @@ import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 imp
 import 'screens/report_detail_screen.dart';
 import 'screens/report_main.dart';
 import 'screens/2-3-3.dart';
+import 'screens/0-3-1.dart';
+import 'screens/0-3-2.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyCustomApp());
 }
@@ -27,13 +30,19 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
+<<<<<<< HEAD
       initialRoute: Routes.intro, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
+=======
+      initialRoute: Routes.familycodeElderly, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
+>>>>>>> b88273e94fa02fdfc78e753fa88bccacb20ce6d0
       routes: {
         Routes.home: (context) => const HomeUpdateScreen(),
         Routes.intro: (context) => const IntroScreen(),
         Routes.startSelect: (context) => const StartSelectScreen(),
-        // Routes.signUp: (context) => const KakaoSigninScreen(),
-        // '/signUp': (context) => const KakaoSigninScreen(),
+        // Routes.signUp: (context) => const KakaoSigninScreen(userType: ???),
+        Routes.familycodeGuardian: (context) =>
+            const FamilyCodeRegisterScreen(),
+        Routes.familycodeElderly: (context) => const FamilyCodeInputScreen(),
         Routes.gallery: (context) => const GalleryScreen(),
         Routes.addPhoto: (context) => const AddPhotoScreen(),
         Routes.conversation: (context) =>
