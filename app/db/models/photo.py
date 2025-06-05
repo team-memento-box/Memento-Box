@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
@@ -18,9 +17,9 @@ class Photo(Base):
 
     # 사진 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    # 사진명
+    # 사진명 (원본 파일명)
     photo_name = Column(Text, nullable=True)
-    # 사진 저장소 주소
+    # 사진 저장소 주소 (Azure Blob Storage URL)
     photo_url = Column(Text)
     # 촬영 연도
     story_year = Column(DateTime, nullable=True)
