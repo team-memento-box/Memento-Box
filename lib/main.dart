@@ -13,6 +13,7 @@ import 'screens/report_main.dart';
 import 'screens/2-3-3.dart';
 import 'screens/0-3-1.dart';
 import 'screens/0-3-2.dart';
+import 'screens/report_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
