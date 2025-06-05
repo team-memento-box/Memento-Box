@@ -25,3 +25,6 @@ alembic/versions/
 # Others
 uploads/
 test/__pycache__/
+
+# pem키
+.pem
