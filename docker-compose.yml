@@ -45,7 +45,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - fastapi-app_pgdata:/var/lib/postgresql/data
     networks:
       - memento_net
 
@@ -85,7 +85,7 @@ services:
         condition: service_healthy
 
 volumes:
-  pgdata:
+  fastapi-app_pgdata:
 
-networks:
+networks: 
   memento_net:
