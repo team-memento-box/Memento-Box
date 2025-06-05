@@ -4,7 +4,7 @@ from datetime import datetime
 import shutil
 from typing import Optional
 from sqlalchemy.orm import Session
-from ..db.models.photo import Photo
+from db.models.photo import Photo
 from .blob_storage import BlobStorageService
 
 UPLOAD_DIR = "uploads"

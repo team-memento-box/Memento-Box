@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
-from ..services.photo import PhotoService
-from ..schemas.photo import PhotoCreate, Photo
-from ..db.database import get_db
+from services.photo import PhotoService
+from schemas.photo import PhotoCreate, Photo
+from db.database import get_db
 from typing import List
 
 router = APIRouter(
