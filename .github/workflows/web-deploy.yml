@@ -62,6 +62,12 @@ jobs:
         run: |
           ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
+
+            docker rm -f postgres_db || true
+            docker rm -f fastapi_app || true
+            docker rm -f nginx_proxy || true
+            docker system prune -f || true
+
             rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
@@ -74,6 +80,5 @@ jobs:
             cp ~/dialogue.env ~/fastapi_deploy_temp/dialogue/.env
 
             cd ~/fastapi_deploy_temp
-            docker-compose down
             docker-compose up -d --build
           EOF
