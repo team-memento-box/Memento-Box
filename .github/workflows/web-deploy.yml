@@ -76,7 +76,7 @@ jobs:
             # 값 점기 .env 파일 복사
             cp ~/.env ~/fastapi_deploy_temp/.env
             mkdir -p ~/fastapi_deploy_temp/dialogue
-            cp ~/dialogue.env ~/fastapi_deploy_temp/dialogue/.env
+            cp /mnt/fastapi-app/dialogue/.env ~/fastapi_deploy_temp/dialogue/.env
 
             cd ~/fastapi_deploy_temp
             docker-compose up -d --build
