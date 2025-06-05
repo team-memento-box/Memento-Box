@@ -11,6 +11,8 @@ import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 imp
 import 'screens/photo_detail_screen.dart';
 import 'screens/report_list_screen.dart';
 import 'screens/2-3-3.dart';
+import 'screens/0-3-1.dart';
+import 'screens/0-3-2.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,12 +28,14 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute:
-          Routes.startSelect, // '/startSelect' // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
+      initialRoute: Routes.familycodeElderly, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
       routes: {
         Routes.home: (context) => const HomeUpdateScreen(),
         Routes.startSelect: (context) => const StartSelectScreen(),
         // Routes.signUp: (context) => const KakaoSigninScreen(userType: ???),
+        Routes.familycodeGuardian: (context) =>
+            const FamilyCodeRegisterScreen(),
+        Routes.familycodeElderly: (context) => const FamilyCodeInputScreen(),
         Routes.gallery: (context) => const GalleryScreen(),
         Routes.addPhoto: (context) => const AddPhotoScreen(),
         Routes.conversation: (context) =>

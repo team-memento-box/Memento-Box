@@ -18,4 +18,7 @@ class Routes {
   static const reportDetail = '/reportDetail';
 
   static const profile = '/profile';
+
+  static const familycodeGuardian = '/familyCodeGuardian';
+  static const familycodeElderly = '/familyCodeElderly';
 }
