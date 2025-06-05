@@ -7,6 +7,7 @@ import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import '../utils/styles.dart';
 import '../data/user_data.dart';
+import '../utils/routes.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -16,6 +17,28 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
+  // TODO: 나중에 API에서 받아온 데이터로 대체
+  // 예시: galleryData = await fetchGalleryData();
+  final List<Map<String, dynamic>> galleryData = [
+    {
+      "title": "2025년 봄",
+      "images": ["1.jpg", "2.png", "3.png"],
+    },
+    {
+      "title": "1981년 여름",
+      "images": ["3.png", "3.png", "3.png"],
+    },
+  ];
+
+  // TODO: 실제 데이터를 가져오는 함수 예시 (나중에 사용 예정)
+  // Future<void> loadGalleryData() async {
+  //   final data = await fetchGalleryData(); // 서버에서 가져오는 함수
+  //   setState(() {
+  //     galleryData = data;
+  //   });
+  // }
+
+  /*
   void _showScriptBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -161,6 +184,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       ),
     );
   }
+*/
 
   @override
   Widget build(BuildContext context) {
@@ -169,53 +193,57 @@ class _GalleryScreenState extends State<GalleryScreen> {
       appBar: const GroupBar(title: user_title),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            const Row(
-              children: [
-                Text('2025년', style: maxContentStyle),
-                SizedBox(width: 20),
-                Text('봄', style: maxContentStyle),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: GridView.builder(
-                itemCount: 10,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.49,
-                ),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/photoDetail',
-                        arguments: 0,
-                      );
+        child: ListView.builder(
+          itemCount: galleryData.length,
+          itemBuilder: (context, groupIndex) {
+            final group = galleryData[groupIndex];
+            final title = group["title"];
+            final images = group["images"] as List<String>;
 
-                      // Navigator.pushNamed(context, '/listenRec', arguments: 0);
-                    }, // 사진 클릭했을 때 상세페이지로 이동
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'assets/photos/3.png',
-                        fit: BoxFit.cover,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                Text(title, style: maxContentStyle),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: images.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.49,
+                  ),
+                  itemBuilder: (context, index) {
+                    final imageName = images[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          // '/photoDetail',
+                          Routes.photoDetail,
+                          // arguments: index,
+                          arguments: imageName, // ex) "1.jpg"
+                        );
+                      },
+                      child: // Image.asset('assets/images/1.jpg')
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'assets/photos/$imageName',
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+                    );
+                  },
+                ),
+              ],
+            );
+          },
         ),
       ),
-
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
     );
   }

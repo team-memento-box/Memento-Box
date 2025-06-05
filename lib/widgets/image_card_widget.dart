@@ -9,6 +9,7 @@ class NewsCard extends StatelessWidget {
   final String content;
   final String assetImagePath;
   final String date;
+  final VoidCallback? onTap;
 
   const NewsCard({
     super.key,
@@ -17,6 +18,7 @@ class NewsCard extends StatelessWidget {
     required this.content,
     required this.assetImagePath,
     required this.date,
+    this.onTap,
   });
 
   @override
@@ -91,11 +93,14 @@ class NewsCard extends StatelessWidget {
                   bottomLeft: Radius.circular(15),
                   bottomRight: Radius.circular(15),
                 ),
-                child: Image.asset(
-                  assetImagePath,
-                  width: double.infinity,
-                  height: 150,
-                  fit: BoxFit.cover,
+                child: GestureDetector(
+                  onTap: onTap, // 👉 여기에서 이벤트 실행
+                  child: Image.asset(
+                    assetImagePath,
+                    width: double.infinity,
+                    height: 150,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ],

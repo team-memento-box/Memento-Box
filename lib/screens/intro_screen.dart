@@ -115,7 +115,6 @@ class IntroScreen extends StatelessWidget {
       ),
     );
   }
-<<<<<<< HEAD
 
   Widget _buildMainBox(BuildContext context) {
     return GestureDetector(
@@ -162,6 +161,4 @@ class IntroScreen extends StatelessWidget {
       ),
     );
   }
-=======
->>>>>>> b88273e94fa02fdfc78e753fa88bccacb20ce6d0
 }
