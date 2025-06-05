@@ -325,7 +325,7 @@ class ContentHeaderWidget extends StatelessWidget {
   }
 }
 
-// 보고서 리스트 위젯
+// 보고서 리스트 위젯 (수정됨)
 class ReportListWidget extends StatelessWidget {
   final List<Map<String, String>> analysisFiles;
   final bool isLoading;
@@ -392,6 +392,7 @@ class ReportListWidget extends StatelessWidget {
         ),
       );
     }
+
     return Container(
       color: Colors.white,
       child: RefreshIndicator(
@@ -407,6 +408,9 @@ class ReportListWidget extends StatelessWidget {
               displayTitle: fileInfo['displayTitle']!,
               fileName: fileInfo['fileName']!,
               filePath: fileInfo['filePath']!,
+              // 추가: 전체 리포트 목록과 현재 인덱스 전달
+              allReports: analysisFiles,
+              currentIndex: index,
             );
           },
         ),
@@ -415,12 +419,14 @@ class ReportListWidget extends StatelessWidget {
   }
 }
 
-// 개별 보고서 아이템 위젯 (클릭 기능 추가)
+// 개별 보고서 아이템 위젯 (수정됨 - 클릭 기능 추가)
 class ReportItemWidget extends StatelessWidget {
   final bool isSelected;
   final String displayTitle;
   final String fileName;
   final String filePath;
+  final List<Map<String, String>>? allReports; // 추가
+  final int? currentIndex; // 추가
 
   const ReportItemWidget({
     Key? key,
@@ -428,18 +434,24 @@ class ReportItemWidget extends StatelessWidget {
     required this.displayTitle,
     required this.fileName,
     required this.filePath,
+    this.allReports, // 추가
+    this.currentIndex, // 추가
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // 상세 보고서 화면으로 이동하면서 파일 정보 전달
+        // 상세 보고서 화면으로 이동하면서 전체 리포트 목록과 현재 인덱스도 전달
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                ReportDetailScreen(fileName: displayTitle, filePath: filePath),
+            builder: (context) => ReportDetailScreen(
+              fileName: displayTitle,
+              filePath: filePath,
+              allReports: allReports, // 추가
+              currentIndex: currentIndex, // 추가
+            ),
           ),
         );
       },

@@ -10,6 +10,7 @@ import 'screens/add_photo_screen.dart';
 import 'screens/photo_detail_screen.dart';
 import 'screens/conversation_screen.dart'; // ✅ 새로 만든 대화 스크린 import
 import 'screens/report_main.dart';
+import 'screens/report_detail_screen.dart';
 import 'screens/2-3-3.dart';
 import 'screens/0-3-1.dart';
 import 'screens/0-3-2.dart';

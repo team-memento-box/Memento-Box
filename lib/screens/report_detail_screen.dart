@@ -11,9 +11,16 @@ import 'package:just_audio/just_audio.dart';
 class ReportDetailScreen extends StatefulWidget {
   final String? fileName;
   final String? filePath;
+  final List<Map<String, String>>? allReports; // 전체 리포트 목록 추가
+  final int? currentIndex; // 현재 리포트 인덱스 추가
 
-  const ReportDetailScreen({Key? key, this.fileName, this.filePath})
-    : super(key: key);
+  const ReportDetailScreen({
+    Key? key,
+    this.fileName,
+    this.filePath,
+    this.allReports,
+    this.currentIndex,
+  }) : super(key: key);
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
@@ -209,6 +216,108 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return await rootBundle.loadString(widget.filePath!);
   }
 
+  // 슬라이드 애니메이션을 위한 커스텀 Page Route
+  Route _createSlideRoute(Widget page, {bool isNext = true}) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionDuration: Duration(milliseconds: 300),
+      reverseTransitionDuration: Duration(milliseconds: 300),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        // 다음 페이지로 갈 때는 왼쪽으로, 이전 페이지로 갈 때는 오른쪽으로
+        final begin = isNext ? Offset(1.0, 0.0) : Offset(-1.0, 0.0);
+        final end = Offset.zero;
+        final curve = Curves.easeInOutCubic;
+
+        final tween = Tween(begin: begin, end: end);
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: curve,
+        );
+
+        return SlideTransition(
+          position: tween.animate(curvedAnimation),
+          child: child,
+        );
+      },
+    );
+  }
+
+  // 이전 리포트로 이동하는 함수 (슬라이드 애니메이션 추가)
+  void _goToPreviousReport() {
+    if (widget.allReports == null || widget.currentIndex == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('리포트 목록 정보가 없습니다'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final currentIdx = widget.currentIndex!;
+    if (currentIdx <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('첫 번째 리포트입니다'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      return;
+    }
+
+    final previousReport = widget.allReports![currentIdx - 1];
+    final newPage = ReportDetailScreen(
+      fileName: previousReport['displayTitle'],
+      filePath: previousReport['filePath'],
+      allReports: widget.allReports,
+      currentIndex: currentIdx - 1,
+    );
+
+    // 오른쪽에서 왼쪽으로 슬라이드 (이전 페이지)
+    Navigator.pushReplacement(
+      context,
+      _createSlideRoute(newPage, isNext: false),
+    );
+  }
+
+  // 다음 리포트로 이동하는 함수 (슬라이드 애니메이션 추가)
+  void _goToNextReport() {
+    if (widget.allReports == null || widget.currentIndex == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('리포트 목록 정보가 없습니다'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final currentIdx = widget.currentIndex!;
+    if (currentIdx >= widget.allReports!.length - 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('마지막 리포트입니다'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      return;
+    }
+
+    final nextReport = widget.allReports![currentIdx + 1];
+    final newPage = ReportDetailScreen(
+      fileName: nextReport['displayTitle'],
+      filePath: nextReport['filePath'],
+      allReports: widget.allReports,
+      currentIndex: currentIdx + 1,
+    );
+
+    // 왼쪽에서 오른쪽으로 슬라이드 (다음 페이지)
+    Navigator.pushReplacement(
+      context,
+      _createSlideRoute(newPage, isNext: true),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,6 +346,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Widget _Header() {
+    // 이전/다음 버튼 활성화 상태 확인
+    final bool hasPrevious =
+        widget.allReports != null &&
+        widget.currentIndex != null &&
+        widget.currentIndex! > 0;
+
+    final bool hasNext =
+        widget.allReports != null &&
+        widget.currentIndex != null &&
+        widget.currentIndex! < widget.allReports!.length - 1;
+
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
@@ -249,18 +369,66 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ),
         ],
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          widget.fileName ?? '보고서',
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            fontFamily: 'Pretendard',
+      child: Row(
+        children: [
+          // 이전 리포트 버튼
+          GestureDetector(
+            onTap: hasPrevious ? () => _goToPreviousReport() : null,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: hasPrevious
+                    ? AppColors.primary.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.chevron_left,
+                color: hasPrevious ? AppColors.primary : Colors.grey,
+                size: 24,
+              ),
+            ),
           ),
-        ),
+          // 제목 영역
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  widget.fileName ?? '보고서',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // 다음 리포트 버튼
+          GestureDetector(
+            onTap: hasNext ? () => _goToNextReport() : null,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: hasNext
+                    ? AppColors.primary.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.chevron_right,
+                color: hasNext ? AppColors.primary : Colors.grey,
+                size: 24,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
