@@ -215,22 +215,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
+          // 고정 영역: 상태바
           _StatusBar(),
+          // 고정 영역: 헤더
           _Header(),
+          // 고정 영역: 프로필/음성 컨트롤 섹션
+          _ProfileSection(),
+          // 스크롤 영역: 텍스트 박스만 스크롤
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _ProfileSection(),
-                  SizedBox(height: 16),
-                  _ReportSection(),
-                  SizedBox(height: 24),
-                  _BackButton(),
-                ],
-              ),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _ReportSection(),
             ),
           ),
+          // 고정 영역: 뒤로가기 버튼
+          Container(padding: EdgeInsets.all(16), child: _BackButton()),
         ],
       ),
       bottomNavigationBar: CustomBottomNavBar(currentIndex: 3),
@@ -250,13 +249,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ),
         ],
       ),
-      child: Text(
-        widget.fileName ?? '보고서',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          fontFamily: 'Pretendard',
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          widget.fileName ?? '보고서',
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            fontFamily: 'Pretendard',
+          ),
         ),
       ),
     );
@@ -265,6 +268,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget _ProfileSection() {
     return Container(
       padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          bottom: BorderSide(color: AppColors.progressBg, width: 1),
+        ),
+      ),
       child: Row(
         children: [
           Container(
@@ -373,7 +382,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget _ReportSection() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -381,15 +390,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         boxShadow: [BoxShadow(color: Color(0x19777777), blurRadius: 5)],
       ),
       child: isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : Text(
-              fileContent,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
-                height: 1.4,
+          ? Container(
+              height: 200,
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                fileContent,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
               ),
             ),
     );
@@ -552,28 +569,3 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 }
-
-/*
-=== just_audio 패키지 설치 가이드 ===
-
-1. pubspec.yaml에 패키지 추가:
-   dependencies:
-     just_audio: ^0.9.35
-     just_audio_web: ^0.4.8
-
-2. 권장 오디오 설정:
-   - MP3: 128kbps CBR, 44.1kHz
-   - 파일 크기: 10MB 이하
-
-3. 변환 명령어:
-   ffmpeg -i input.wav -acodec mp3 -ab 128k -ar 44100 output.mp3
-
-4. 파일 구조:
-   assets/voice/
-   └── filename.mp3
-
-5. pubspec.yaml:
-   flutter:
-     assets:
-       - assets/voice/
-*/
