@@ -14,6 +14,27 @@ class PhotoDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // arguments로 전달된 photoId 받기
+    // final int photoId = ModalRoute.of(context)!.settings.arguments as int;
+    final String imageName =
+        ModalRoute.of(context)!.settings.arguments as String;
+
+    // 해당 photoId에 맞는 데이터 찾기
+    // final Map<String, dynamic>? photoData = user_photo_data.firstWhere(
+    //   (photo) => photo['id'] == photoId,
+    //   // orElse: () => null,
+    // );
+    final Map<String, dynamic>? photoData = user_photo_data
+        .cast<Map<String, dynamic>>()
+        .firstWhere(
+          (photo) => photo['image'].toString().endsWith(imageName),
+          // orElse: () => null as Map<String, dynamic>?, // 👈 타입 명시해줘야 오류 안남
+        );
+
+    if (photoData == null) {
+      return const Scaffold(body: Center(child: Text('해당 사진 정보를 찾을 수 없습니다.')));
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: const GroupBar(title: user_title),
@@ -47,9 +68,9 @@ class PhotoDetailScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            '김땡땡',
-                            style: TextStyle(
+                          Text(
+                            photoData['name'] ?? '',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               height: 1.2,
@@ -65,9 +86,9 @@ class PhotoDetailScreen extends StatelessWidget {
                               color: Colors.grey,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text(
-                              '딸',
-                              style: TextStyle(
+                            child: Text(
+                              photoData['role'] ?? '',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                                 height: 1.0,
@@ -77,9 +98,9 @@ class PhotoDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        '2025년 5월 25일',
-                        style: TextStyle(
+                      Text(
+                        photoData['date'] ?? '',
+                        style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 13,
                           height: 1.2,
@@ -96,9 +117,9 @@ class PhotoDetailScreen extends StatelessWidget {
           Expanded(
             child: Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/photos/3.png'),
+                  image: AssetImage(photoData['image'] ?? ''),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -114,17 +135,17 @@ class PhotoDetailScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      '2025년',
-                      style: TextStyle(
+                    Text(
+                      photoData['year'] ?? '',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(width: 20),
-                    const Text(
-                      '봄',
-                      style: TextStyle(
+                    Text(
+                      photoData['season'] ?? '',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -132,23 +153,18 @@ class PhotoDetailScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '5월의 어느 날 콧수염 아저씨',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                Text(
+                  photoData['description'] ?? '',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
 
                 // 버튼들
                 Row(
                   children: [
-                    // 대화 듣기 버튼
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // Navigator.pushNamed(
-                          //   context,
-                          //   '/pictureGuardianListen',
-                          // );
                           showSummaryModal(context);
                         },
                         style: ElevatedButton.styleFrom(
@@ -168,18 +184,11 @@ class PhotoDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
-                    // 보고서 보기 버튼
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          // Navigator.pushNamed(context, '/report');
-                          Navigator.pushNamed(
-                            context,
-                            '/pictureGuardianListen',
-                          );
+                          Navigator.pushNamed(context, '/report');
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
