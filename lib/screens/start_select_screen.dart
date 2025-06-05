@@ -1,28 +1,20 @@
 import 'package:flutter/material.dart';
 import 'kakao_signin_screen.dart'; // 중간 로그인 스크린 경로
-import '../data/user_data.dart'; // enum FamilyRole 및 selectedRole 정의된 파일
+import '../data/user_data.dart'; // enum UserType 및 selectedRole 정의된 파일
 
 class StartSelectScreen extends StatelessWidget {
   const StartSelectScreen({super.key});
 
-  void _navigateToLogin(BuildContext context, String familyRole) {
-    // ✅ 전역 상태 설정
-    selectedRole = familyRole == 'guardian'
-        ? FamilyRole.guardian
-        : FamilyRole.elderly;
-
-    // ✅ 로그인 화면으로 이동 (familyRole 넘길 필요 없음)
+  void _navigateToLogin(BuildContext context, UserType role) {
+    selectedRole = role; // ✅ 전역 상태 저장
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const KakaoSigninScreen(), // 변경: 인자 제거
-      ),
+      MaterialPageRoute(builder: (context) => const KakaoSigninScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    print("🟢 StartSelectScreen build 실행됨");
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -74,7 +66,7 @@ class StartSelectScreen extends StatelessWidget {
             ),
             const SizedBox(height: 90),
             ElevatedButton(
-              onPressed: () => _navigateToLogin(context, 'guardian'),
+              onPressed: () => _navigateToLogin(context, UserType.guardian),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C8B8),
                 minimumSize: const Size(315, 60),
@@ -93,7 +85,7 @@ class StartSelectScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             OutlinedButton(
-              onPressed: () => _navigateToLogin(context, 'elder'),
+              onPressed: () => _navigateToLogin(context, UserType.elderly),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(width: 2, color: Color(0xFF00C8B8)),
                 minimumSize: const Size(315, 60),

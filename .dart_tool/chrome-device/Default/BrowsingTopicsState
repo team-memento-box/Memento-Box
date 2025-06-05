@@ -1,6 +1,10 @@
 {
    "epochs": [ {
+<<<<<<< HEAD
       "calculation_time": "13393578143462123",
+=======
+      "calculation_time": "13393587576453724",
+>>>>>>> 790375f (초기 보호자/피보호자 화면 분기)
       "config_version": 0,
       "model_version": "0",
       "padded_top_topics_start_index": 0,
@@ -8,5 +12,9 @@
       "top_topics_and_observing_domains": [  ]
    } ],
    "hex_encoded_hmac_key": "0000000000000000000000000000000000000000000000000000000000000000",
+<<<<<<< HEAD
    "next_scheduled_calculation_time": "13394182943462259"
+=======
+   "next_scheduled_calculation_time": "13394192376453765"
+>>>>>>> 790375f (초기 보호자/피보호자 화면 분기)
 }

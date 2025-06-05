@@ -3,6 +3,7 @@
 // 목적: 보호자 가족코드/그룹명/관계 등록 화면 리팩토링
 
 import 'package:flutter/material.dart';
+import '../data/user_data.dart';
 
 class FamilyCodeRegisterScreen extends StatefulWidget {
   const FamilyCodeRegisterScreen({super.key});
@@ -16,23 +17,13 @@ class _FamilyCodeRegisterScreenState extends State<FamilyCodeRegisterScreen> {
   final TextEditingController groupNameController = TextEditingController();
   final TextEditingController codeOutputController = TextEditingController();
   final TextEditingController codeInputController = TextEditingController();
-  String? selectedRelation;
-
-  final List<String> relationOptions = [
-    '딸',
-    '아들',
-    '손자',
-    '손녀',
-    '증손자',
-    '증손녀',
-    '지인',
-  ];
+  FamilyRole? selectedFamilyRelation;
 
   bool get isFormFilled =>
       groupNameController.text.isNotEmpty &&
       codeOutputController.text.isNotEmpty &&
       codeInputController.text.isNotEmpty &&
-      selectedRelation != null;
+      selectedFamilyRelation != null;
 
   void _generateCode() {
     final code =
@@ -40,6 +31,12 @@ class _FamilyCodeRegisterScreenState extends State<FamilyCodeRegisterScreen> {
     setState(() {
       codeOutputController.text = code;
     });
+  }
+
+  void _handleSubmit() {
+    if (isFormFilled) {
+      Navigator.pushNamed(context, '/home'); // 보호자 전용이므로 바로 홈으로
+    }
   }
 
   @override
@@ -174,33 +171,29 @@ class _FamilyCodeRegisterScreenState extends State<FamilyCodeRegisterScreen> {
       top: 564,
       left: 24,
       right: 24,
-      child: DropdownButtonFormField<String>(
-        value: selectedRelation,
-        items: relationOptions.map((relation) {
-          return DropdownMenuItem(
-            value: relation,
-            child: Center(child: Text(relation)),
-          );
+      child: DropdownButtonFormField<FamilyRole>(
+        value: selectedFamilyRelation,
+        items: FamilyRole.values.map((role) {
+          return DropdownMenuItem(value: role, child: Text(role.label));
         }).toList(),
         onChanged: (value) {
           setState(() {
-            selectedRelation = value;
+            selectedFamilyRelation = value;
           });
         },
         decoration: InputDecoration(
+          hintText: '피보호자와의 관계를 선택해주세요',
+          filled: true,
+          fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 20,
           ),
-          hintText: '피보호자와의 관계',
-          hintStyle: const TextStyle(
-            fontSize: 18,
-            fontFamily: 'Pretendard',
-            color: Color(0xFF888888),
-          ),
-          filled: true,
-          fillColor: Colors.white,
           border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Color(0xFFAEAEAE)),
+          ),
+          enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(color: Color(0xFFAEAEAE)),
           ),
@@ -216,22 +209,25 @@ class _FamilyCodeRegisterScreenState extends State<FamilyCodeRegisterScreen> {
       top: 640,
       left: 24,
       right: 24,
-      child: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: isFormFilled
-              ? const Color(0xFF00C8B8)
-              : const Color(0xFFDFF3F2),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        alignment: Alignment.center,
-        child: const Text(
-          '가족 코드 입력',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            fontFamily: 'Pretendard',
+      child: GestureDetector(
+        onTap: isFormFilled ? _handleSubmit : null,
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: isFormFilled
+                ? const Color(0xFF00C8B8)
+                : const Color(0xFFDFF3F2),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            '가족 코드 입력',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontFamily: 'Pretendard',
+            ),
           ),
         ),
       ),

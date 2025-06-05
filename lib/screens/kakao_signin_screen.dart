@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/user_data.dart'; // userType enum 정의 위치
+import '0-3-1.dart'; // FamilyCodeRegisterScreen
+import '0-3-2.dart'; // FamilyCodeInputScreen
 
 class KakaoSigninScreen extends StatelessWidget {
   const KakaoSigninScreen({super.key});
@@ -20,11 +22,19 @@ class KakaoSigninScreen extends StatelessWidget {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
 
-      // ✅ 로그인 후 redirect 된 것으로 간주하고, selectedRole 기준 분기
-      if (selectedRole == FamilyRole.guardian) {
-        Navigator.pushNamed(context, '/intro'); // 보호자 → 인트로 화면
+      // ✅ 로그인 후 redirect 된 것으로 간주하고, selectedRole (보호자/피보호자) 기준 분기
+      if (selectedRole == UserType.guardian) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FamilyCodeRegisterScreen()),
+        );
+      } else if (selectedRole == UserType.elderly) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FamilyCodeInputScreen()),
+        );
       } else {
-        Navigator.pushNamed(context, '/addphoto-request'); // 피보호자 → 사진요청
+        throw '사용자 유형이 지정되지 않았습니다.';
       }
     } else {
       throw 'URL을 열 수 없습니다: $url';
@@ -38,56 +48,10 @@ class KakaoSigninScreen extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            _buildStatusBar(),
             _buildProfileImage(),
             _buildWelcomeText(),
             _buildButtons(context),
             _buildHomeIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBar() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '9:41',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'SF Pro',
-              ),
-            ),
-            Row(
-              children: [
-                Container(
-                  width: 25,
-                  height: 13,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 1),
-                    borderRadius: BorderRadius.circular(4.3),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  width: 21,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

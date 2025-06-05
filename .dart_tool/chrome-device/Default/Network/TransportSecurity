@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"sts":[{"expiry":1780644745.191474,"host":"8/RrMmQlCD2Gsp14wUCE1P8r7B2C5+yE0+g79IPyRsc=","mode":"force-https","sts_include_subdomains":true,"sts_observed":1749108745.191478}],"version":2}
+=======
+{"sts":[{"expiry":1780650017.10248,"host":"8/RrMmQlCD2Gsp14wUCE1P8r7B2C5+yE0+g79IPyRsc=","mode":"force-https","sts_include_subdomains":true,"sts_observed":1749114017.102485}],"version":2}
+>>>>>>> 790375f (초기 보호자/피보호자 화면 분기)

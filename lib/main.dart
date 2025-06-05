@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'utils/routes.dart';
 import 'screens/start_select_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/home_screen2.dart';
 import 'screens/add_photo_screen.dart';
 import 'screens/kakao_signin_screen.dart';
 import 'screens/gallery_screen.dart';
@@ -33,6 +34,7 @@ class MyCustomApp extends StatelessWidget {
       initialRoute: Routes.home, // ✅ 앱 실행 시 IntroScreen이 처음 뜨도록
       routes: {
         Routes.home: (context) => const HomeUpdateScreen(),
+        Routes.home2: (context) => const HomeUpdateScreen2(),
         Routes.startSelect: (context) => const StartSelectScreen(),
         // Routes.signUp: (context) => const KakaoSigninScreen(userType: ???),
         Routes.familycodeGuardian: (context) =>

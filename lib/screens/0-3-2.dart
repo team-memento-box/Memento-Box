@@ -14,6 +14,14 @@ class FamilyCodeInputScreen extends StatefulWidget {
 class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
   final TextEditingController codeController = TextEditingController();
 
+  bool get isCodeEntered => codeController.text.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    codeController.addListener(() => setState(() {}));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,18 +128,22 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
       left: 30,
       right: 30,
       child: GestureDetector(
-        onTap: () {
-          print("입력된 코드: ${codeController.text}");
-          // TODO: 유효성 검사 및 API 연결
-        },
+        onTap: isCodeEntered
+            ? () {
+                print("입력된 코드: \${codeController.text}");
+                Navigator.pushNamed(context, '/home2');
+              }
+            : null,
         child: Container(
           height: 60,
           decoration: BoxDecoration(
-            color: const Color(0xFF00C8B8),
+            color: isCodeEntered
+                ? const Color(0xFF00C8B8)
+                : const Color(0xFFDFF3F2),
             borderRadius: BorderRadius.circular(20),
           ),
           alignment: Alignment.center,
-          child: const Text(
+          child: Text(
             '가족 코드 입력',
             style: TextStyle(
               color: Colors.white,

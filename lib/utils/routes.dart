@@ -7,6 +7,7 @@ class Routes {
   static const intro = '/intro';
 
   static const home = '/home';
+  static const home2 = '/home2';
   static const gallery = '/gallery';
   static const photoDetail = '/photoDetail';
   static const listenRec = '/listenRec';

@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 2025/06/05-16:03:17.630 4bb0 Reusing MANIFEST C:\Users\blank\AppData\Local\Temp\flutter_tools.6daaea72\flutter_tools_chrome_device.c640ce8d\Default\GCM Store\Encryption/MANIFEST-000001
 2025/06/05-16:03:17.632 4bb0 Recovering log #3
 2025/06/05-16:03:17.633 4bb0 Reusing old log C:\Users\blank\AppData\Local\Temp\flutter_tools.6daaea72\flutter_tools_chrome_device.c640ce8d\Default\GCM Store\Encryption/000003.log 
+=======
+2025/06/05-17:59:36.473 782f1 Reusing MANIFEST /private/var/folders/tp/m3fdb2vs0xq5dq3l08s1964r0000gn/T/flutter_tools.vGQD75/flutter_tools_chrome_device.9LMvvU/Default/GCM Store/Encryption/MANIFEST-000001
+2025/06/05-17:59:36.473 782f1 Recovering log #3
+2025/06/05-17:59:36.473 782f1 Reusing old log /private/var/folders/tp/m3fdb2vs0xq5dq3l08s1964r0000gn/T/flutter_tools.vGQD75/flutter_tools_chrome_device.9LMvvU/Default/GCM Store/Encryption/000003.log 
+>>>>>>> 790375f (초기 보호자/피보호자 화면 분기)

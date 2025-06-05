@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 2025/06/05-16:02:58.956 49e8 Reusing MANIFEST C:\Users\blank\AppData\Local\Temp\flutter_tools.6daaea72\flutter_tools_chrome_device.c640ce8d\Default\Extension State/MANIFEST-000001
 2025/06/05-16:02:58.957 49e8 Recovering log #3
 2025/06/05-16:02:58.958 49e8 Reusing old log C:\Users\blank\AppData\Local\Temp\flutter_tools.6daaea72\flutter_tools_chrome_device.c640ce8d\Default\Extension State/000003.log 
+=======
+2025/06/05-17:59:33.290 782f2 Reusing MANIFEST /private/var/folders/tp/m3fdb2vs0xq5dq3l08s1964r0000gn/T/flutter_tools.vGQD75/flutter_tools_chrome_device.9LMvvU/Default/Extension State/MANIFEST-000001
+2025/06/05-17:59:33.291 782f2 Recovering log #3
+2025/06/05-17:59:33.291 782f2 Reusing old log /private/var/folders/tp/m3fdb2vs0xq5dq3l08s1964r0000gn/T/flutter_tools.vGQD75/flutter_tools_chrome_device.9LMvvU/Default/Extension State/000003.log 
+>>>>>>> 790375f (초기 보호자/피보호자 화면 분기)

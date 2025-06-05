@@ -56,8 +56,41 @@ class PhotoConversation {
   });
 }
 
+// 사용자 가족 관계 구분
+enum FamilyRole {
+  daughter,
+  son,
+  grandson,
+  granddaughter,
+  greatGrandson,
+  greatGranddaughter,
+  relative,
+}
+
+// 한글 표시를 위한 확장
+extension FamilyRoleExtension on FamilyRole {
+  String get label {
+    switch (this) {
+      case FamilyRole.daughter:
+        return '딸';
+      case FamilyRole.son:
+        return '아들';
+      case FamilyRole.grandson:
+        return '손자';
+      case FamilyRole.granddaughter:
+        return '손녀';
+      case FamilyRole.greatGrandson:
+        return '증손자';
+      case FamilyRole.greatGranddaughter:
+        return '증손녀';
+      case FamilyRole.relative:
+        return '친인척';
+    }
+  }
+}
+
 // 사용자 구분
-enum FamilyRole { guardian, elderly }
+enum UserType { guardian, elderly }
 
 // 전역 상태로 사용할 변수 (초기엔 null)
-FamilyRole? selectedRole;
+UserType? selectedRole;
