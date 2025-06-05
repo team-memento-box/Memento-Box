@@ -6,7 +6,7 @@ on:
       - gpu-main-test  # 감지할 브랜치
     paths:
       - '**'           # 전체 경로 감지
-  workflow_dispatch:
+  workflow_dispatch: 
 
 jobs:
   build:
