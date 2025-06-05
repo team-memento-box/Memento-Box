@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from core.config import settings
 from sqlalchemy.orm import declarative_base
+from typing import AsyncGenerator
 
 # 모든 모델 클래스의 부모가 되는 기본 클래스 Base
 Base = declarative_base()
@@ -18,3 +19,15 @@ async_session = sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False  # 커밋 후 객체가 expire되지 않도록 설정
 )
+
+# 3. DB 세션 의존성
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
