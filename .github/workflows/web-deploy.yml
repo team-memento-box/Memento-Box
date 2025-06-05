@@ -4,9 +4,9 @@ name: Build and Deploy FastAPI to Azure VM
 on:
   push:
     branches:
-      - gpu-main-test  # 원하는 브랜치명으로 변경 가능
+      - gpu-main-test
     paths:
-      - '**'  # 루트 전체 변경 감지
+      - '**'
   workflow_dispatch:
 
 jobs:
@@ -64,21 +64,20 @@ jobs:
             rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
-      
+
             # ✅ .env 파일 생성
             cat <<EOT > ~/fastapi_deploy_temp/.env
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            
-            ASYNC_DATABASE_URL=${{ secrets.ASYNC_DATABASE_URL }}
-            SYNC_DATABASE_URL=${{ secrets.SYNC_DATABASE_URL }}
-            
-            AZURE_BLOBSTORAGE_KEY=${{ secrets.AZURE_BLOBSTORAGE_KEY }}
-            EOT
+POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+POSTGRES_DB=${{ secrets.POSTGRES_DB }}
 
-      cd ~/fastapi_deploy_temp
-      docker-compose down
-      docker-compose up -d --build
-    EOF
+ASYNC_DATABASE_URL=${{ secrets.ASYNC_DATABASE_URL }}
+SYNC_DATABASE_URL=${{ secrets.SYNC_DATABASE_URL }}
 
+AZURE_BLOBSTORAGE_KEY=${{ secrets.AZURE_BLOBSTORAGE_KEY }}
+EOT
+
+            cd ~/fastapi_deploy_temp
+            docker-compose down
+            docker-compose up -d --build
+          EOF
