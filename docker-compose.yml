@@ -11,6 +11,7 @@ services:
       - ./app:/app
       - ./.env:/app/.env
       - ./uploads:/app/uploads
+      - ./app/alembic/versions:/app/alembic/versions  
     expose:
       - "8000"
     depends_on:
