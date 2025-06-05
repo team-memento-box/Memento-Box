@@ -15,7 +15,7 @@ envs/
 *.log
 
 # Alembic
-alembic/versions/
+# alembic/versions/
 
 # IDE
 .vscode/
