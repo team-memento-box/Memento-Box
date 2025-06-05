@@ -3,9 +3,9 @@ name: Build and Deploy FastAPI to Azure VM
 on:
   push:
     branches:
-      - gpu-main-test
+      - gpu-main-test  # 감지할 브랜치
     paths:
-      - '**'
+      - '**'           # 전체 경로 감지
   workflow_dispatch:
 
 jobs:
@@ -30,11 +30,13 @@ jobs:
       - name: Build Docker image
         run: docker build -t fastapi_app:latest ./app
 
-      - name: Create deployment archive (.tar.gz)
+      - name: Create deployment archive (.tar.gz) # ✅ dialogue 폴더 제외
         run: |
-          tar --exclude='.env' \
-              --exclude='app/.env' \
-              -czf release.tar.gz app dialogue fish-speech nginx docker-compose.yml
+          tar \
+            --exclude='.env' \
+            --exclude='app/.env' \
+            --exclude='dialogue' \
+            -czf release.tar.gz app fish-speech nginx docker-compose.yml
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -62,22 +64,15 @@ jobs:
         run: |
           ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
-
-            # 포탈 개체가 이미 생성되어 있을 경우 강제 제거
-            docker rm -f postgres_db fastapi_app nginx_proxy fish-speech dialogue || true
+            docker rm -f postgres_db fastapi_app nginx_proxy fish-speech || true
             docker network prune -f || true
             docker system prune -f || true
 
-            # 이전 배포 파일 지우고 다시 파일 불러오기
             sudo rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-            # 값 점기 .env 파일 복사
             cp ~/.env ~/fastapi_deploy_temp/.env
-            mkdir -p ~/fastapi_deploy_temp/dialogue
-            cp /mnt/fastapi-app/dialogue/.env ~/fastapi_deploy_temp/dialogue/.env
-
             cd ~/fastapi_deploy_temp
             docker-compose up -d --build
           EOF
