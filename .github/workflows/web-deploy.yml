@@ -34,13 +34,14 @@ jobs:
             - name: Build Docker image
               run: docker build -t fastapi_app:latest ./app
 
-            - name: Create deployment archive (.tar.gz) # ✅ dialogue 제외
+            - name: Create deployment archive (.tar.gz)
               run: |
                   tar \
                     --exclude='.env' \
                     --exclude='app/.env' \
                     --exclude='dialogue' \
-                    -czf release.tar.gz app fish-speech nginx docker-compose.yml
+                    --exclude='fish-speech' \
+                    -czf release.tar.gz app nginx docker-compose.yml
 
             - name: Upload artifact
               uses: actions/upload-artifact@v4
@@ -70,8 +71,7 @@ jobs:
                     set -e
                     
                     # 컨테이너만 강제 종료 및 삭제 (볼륨 유지)
-                    docker rm -f postgres_db fastapi_app nginx_proxy fish-speech || true
-                    
+                    docker rm -f postgres_db fastapi_app nginx_proxy || true
                     
                     # 임시 배포 디렉토리 초기화
                     sudo rm -rf ~/fastapi_deploy_temp
