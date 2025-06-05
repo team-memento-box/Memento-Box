@@ -32,7 +32,9 @@ jobs:
 
       - name: Create deployment archive (.tar.gz)
         run: |
-          tar --exclude='.env' -czf release.tar.gz app docker-compose.yml
+          tar --exclude='.env' \
+              --exclude='app/.env' \
+              -czf release.tar.gz app dialogue fish-speech nginx docker-compose.yml
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
