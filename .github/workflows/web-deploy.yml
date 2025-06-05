@@ -62,20 +62,23 @@ jobs:
         run: |
           ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
+            
 
+            # 🔁 기존 컨테이너 강제 종료 및 제거 (모든 서비스 포함)
             docker rm -f postgres_db || true
             docker rm -f fastapi_app || true
             docker rm -f nginx_proxy || true
+            docker rm -f fish-speech || true
+            docker rm -f dialogue || true
             docker system prune -f || true
 
+            # 🔁 새 디렉토리 준비
             rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-            # 🔁 VM에 고정된 .env를 복사
+            # .env를 복사
             cp ~/.env ~/fastapi_deploy_temp/.env
-
-            # 🔁 dialogue용 .env도 복사
             mkdir -p ~/fastapi_deploy_temp/dialogue
             cp ~/dialogue.env ~/fastapi_deploy_temp/dialogue/.env
 
