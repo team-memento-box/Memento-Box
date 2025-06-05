@@ -13,7 +13,6 @@ envs/
 
 # Docker
 *.log
-docker-compose.override.yml
 
 # Alembic
 alembic/versions/
