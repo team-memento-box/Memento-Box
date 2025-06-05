@@ -60,18 +60,18 @@ jobs:
 
       - name: SSH and deploy on Azure VM
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
             rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > ~/fastapi_deploy_temp/.env
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ~/fastapi_deploy_temp/.env
-            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> ~/fastapi_deploy_temp/.env
-            echo "ASYNC_DATABASE_URL=${{ secrets.ASYNC_DATABASE_URL }}" >> ~/fastapi_deploy_temp/.env
-            echo "SYNC_DATABASE_URL=${{ secrets.SYNC_DATABASE_URL }}" >> ~/fastapi_deploy_temp/.env
-            echo "AZURE_BLOBSTORAGE_KEY=${{ secrets.AZURE_BLOBSTORAGE_KEY }}" >> ~/fastapi_deploy_temp/.env
+            # 🔁 VM에 고정된 .env를 복사
+            cp ~/.env ~/fastapi_deploy_temp/.env
+
+            # 🔁 dialogue용 .env도 복사
+            mkdir -p ~/fastapi_deploy_temp/dialogue
+            cp ~/dialogue.env ~/fastapi_deploy_temp/dialogue/.env
 
             cd ~/fastapi_deploy_temp
             docker-compose down
