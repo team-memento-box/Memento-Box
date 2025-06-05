@@ -1,4 +1,3 @@
-# 로컬 환경에서 서버 VM으로 배포
 name: Build and Deploy FastAPI to Azure VM
 
 on:
@@ -28,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build Docker image (Optional)
+      - name: Build Docker image
         run: docker build -t fastapi_app:latest ./app
 
       - name: Create deployment archive (.tar.gz)
@@ -59,23 +58,18 @@ jobs:
 
       - name: SSH and deploy on Azure VM
         run: |
-          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             set -e
             rm -rf ~/fastapi_deploy_temp
             mkdir -p ~/fastapi_deploy_temp
             tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-            # ✅ .env 파일 생성
-            cat <<EOT > ~/fastapi_deploy_temp/.env
-POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-
-ASYNC_DATABASE_URL=${{ secrets.ASYNC_DATABASE_URL }}
-SYNC_DATABASE_URL=${{ secrets.SYNC_DATABASE_URL }}
-
-AZURE_BLOBSTORAGE_KEY=${{ secrets.AZURE_BLOBSTORAGE_KEY }}
-EOT
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > ~/fastapi_deploy_temp/.env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ~/fastapi_deploy_temp/.env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> ~/fastapi_deploy_temp/.env
+            echo "ASYNC_DATABASE_URL=${{ secrets.ASYNC_DATABASE_URL }}" >> ~/fastapi_deploy_temp/.env
+            echo "SYNC_DATABASE_URL=${{ secrets.SYNC_DATABASE_URL }}" >> ~/fastapi_deploy_temp/.env
+            echo "AZURE_BLOBSTORAGE_KEY=${{ secrets.AZURE_BLOBSTORAGE_KEY }}" >> ~/fastapi_deploy_temp/.env
 
             cd ~/fastapi_deploy_temp
             docker-compose down
