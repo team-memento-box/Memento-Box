@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - "8001:8000"
+    command: gunicorn -k uvicorn.workers.UvicornWorker app.main:app --reload --bind 0.0.0.0:8000
+    depends_on:
+      - postgres
+      - mongo
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - custom_network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - custom_network
+
+  mongo:
+    image: mongo:6
+    container_name: mongo_db
+    volumes:
+      - mongodata:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - custom_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/fastapi.conf:/etc/nginx/conf.d/default.conf
+      - ../Memento-Box/build/web:/usr/share/nginx/html  # ✅ Flutter 웹 앱 mount
+    depends_on:
+      - fastapi
+    networks:
+      - custom_network
+
+volumes:
+  pgdata:
+  mongodata:
+
+networks:
+  custom_network:
+    external: true
+
