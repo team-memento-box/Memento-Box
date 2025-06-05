@@ -1,3 +1,4 @@
+from urllib.parse import quote
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from pydantic import BaseModel
@@ -56,6 +57,7 @@ async def oauth_callback(request: Request):
     username = user_info["kakao_account"].get("name", "")
     email = user_info["kakao_account"].get("email", "")
     profile_img = user_info["kakao_account"]["profile"].get("profile_image_url", "")
+    gender = user_info["kakao_account"].get("gender", "")
 
     # 3. DB 저장
     async with AsyncSessionLocal() as session:
@@ -67,29 +69,39 @@ async def oauth_callback(request: Request):
                 kakao_id=kakao_id,
                 username=username,
                 email=email,
-                profile_img=profile_img
+                profile_img=profile_img,
+                gender=gender
             )
             session.add(new_user)
             await session.commit()
 
     # 4. Flutter의 /#/intro 화면으로 자동 이동
-    return HTMLResponse("""
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <script>
-        
-        
-          setTimeout(() => {
-            window.location.href = "http://20.75.82.5/#/intro";
-          }, 100);  // 약간의 딜레이를 줘야 브라우저가 이전 해시를 덮어씀
-          
-          
-          
-        </script>
-      </head>
-      <body>
-        <p>잠시만 기다려주세요...</p>
-      </body>
-    </html>
-    """)
+    query = (
+    "?kakao_id=" + quote(kakao_id) +
+    "&username=" + quote(username) +
+    "&email=" + quote(email) +
+    "&profile_img=" + quote(profile_img) +
+    "&gender=" + quote(gender)
+) 
+    return RedirectResponse(url=f"http://20.75.82.5/#/intro{query}")
+    # return HTMLResponse(f"""
+    #   <html>
+    #     <head>
+    #       <meta charset="utf-8" />
+    #       <script>
+    #         setTimeout(() => {{
+    #           const query = "?kakao_id={requests.utils.quote(kakao_id)}"
+    #                       + "&username={requests.utils.quote(username)}"
+    #                       + "&email={requests.utils.quote(email)}"
+    #                       + "&profile_img={requests.utils.quote(profile_img)}
+    #                       + "&gender={requests.utils.quote(gender)}";
+    #           window.location.href = "http://20.75.82.5/#/intro" + query;
+    #         }}, 100);
+    #       </script>
+    #     </head>
+    #     <body>
+    #       <p>잠시만 기다려주세요...</p>
+    #     </body>
+    #   </html>
+    #   """)
+
