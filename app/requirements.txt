@@ -1,11 +1,23 @@
-fastapi
-uvicorn[standard]
-asyncpg
-psycopg2
-python-dotenv
-alembic
-pydantic==1.10.13
-azure-storage-blob
-aiohttp
-aiofiles
-python-multipart
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.0.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Azure services
+azure-storage-blob==12.19.0
+azure-cognitiveservices-speech==1.34.0
+openai==1.12.0
+
+# Utilities
+aiohttp==3.9.3
+aiofiles==24.1.0
+python-multipart==0.0.7
+numpy==1.26.4
+Pillow==10.2.0
