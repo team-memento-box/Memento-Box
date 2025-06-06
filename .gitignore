@@ -27,3 +27,6 @@ test/__pycache__/
 
 # pem키
 .pem
+
+docker-compose.yml
+docker-compose.yml
