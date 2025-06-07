@@ -69,20 +69,24 @@ jobs:
               run: |
                   ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
                     set -e
-                    
-                    # 컨테이너만 강제 종료 및 삭제 (볼륨 유지)
-                    docker rm -f postgres_db fastapi_app nginx_proxy || true
-                    
-                    # 임시 배포 디렉토리 초기화
-                    sudo rm -rf ~/fastapi_deploy_temp
-                    mkdir -p ~/fastapi_deploy_temp
-                    
-                    # 압축 해제
-                    tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-                    # 서버에 고정된 .env 복사
-                    cp ~/.env ~/fastapi_deploy_temp/.env
+                    # flock을 사용해 동시에 다른 배포가 진행 중이면 종료
+                    flock -n /tmp/deploy.lock -c '
+                      echo "[INFO] Lock acquired. Starting deployment."
+                    
+                      # 컨테이너만 강제 종료 및 삭제 (볼륨 유지)
+                      docker rm -f postgres_db fastapi_app nginx_proxy || true
+                    
+                      # 임시 배포 디렉토리 초기화
+                      sudo rm -rf ~/fastapi_deploy_temp
+                      mkdir -p ~/fastapi_deploy_temp
+                    
+                      # 압축 해제
+                      tar -xzf ~/release.tar.gz -C ~/fastapi_deploy_temp
 
-                    cd ~/fastapi_deploy_temp
-                    docker-compose up -d --build
+                      # 서버에 고정된 .env 복사
+                      cp ~/.env ~/fastapi_deploy_temp/.env
+
+                      cd ~/fastapi_deploy_temp
+                      docker-compose up -d --build
                   EOF
