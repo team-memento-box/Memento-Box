@@ -14,4 +14,5 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 # COPY requirements.txt .
 # RUN pip install --no-cache-dir -r requirements.txt
 # COPY ./app /app
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] # 아랫쪽 코드를 사용해주세요
+# CMD ["gunicorn", "-w", "10", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8000"]
