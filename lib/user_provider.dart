@@ -6,6 +6,8 @@ class UserProvider with ChangeNotifier {
   String? profileImg;
   String? gender;
   String? birthday;
+  String? email;
+  String? phone_number;
   String? familyId;    // families.id (UUID)
   String? familyCode;  // families.family_code (8자리 코드)
   String? familyName;  // families.family_name (가족 그룹명)
@@ -26,12 +28,16 @@ class UserProvider with ChangeNotifier {
     required String profileImg,
     required String gender,
     String? birthday,
+    String? email,
+    String? phone_number,
   }) {
     this.kakaoId = kakaoId;
     this.username = username;
     this.profileImg = profileImg;
     this.gender = gender;
     this.birthday = birthday;
+    this.email = email;
+    this.phone_number = phone_number;
     notifyListeners();
   }
 
@@ -76,6 +82,8 @@ class UserProvider with ChangeNotifier {
     profileImg = null;
     gender = null;
     birthday = null;
+    email = null;
+    phone_number = null;
     familyId = null;
     familyCode = null;
     familyName = null;

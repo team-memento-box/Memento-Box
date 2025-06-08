@@ -45,14 +45,16 @@ class GroupSelectScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '안녕하세요 보호자님,',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 21,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      height: 1.19,
+                  Consumer<UserProvider>(
+                    builder: (context, userProvider, child) => Text(
+                      '안녕하세요 ${userProvider.username}님,',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 21,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                        height: 1.19,
+                      ),
                     ),
                   ),
                   SizedBox(height: 8),

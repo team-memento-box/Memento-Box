@@ -28,47 +28,77 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
   }
 
   Future<void> _submitFamilyCode() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final familyId = codeController.text.trim();
-    String? gender = userProvider.gender;
-    String familyRole = '';
-    if (gender == 'male') {
-      familyRole = '아빠';
-    } else if (gender == 'female') {
-      familyRole = '엄마';
-    } else {
-      familyRole = '가족'; // 기본값
-    }
-
-    // familyId는 setFamilyJoin 등에서 따로 저장해야 함
-    // familyRole만 저장
-    userProvider.setFamilyInfo(familyRole: familyRole);
-
-    // 모든 데이터 Map으로 만들기
-    final userData = {
-      'kakao_id': userProvider.kakaoId,
-      'username': userProvider.username,
-      'profile_img': userProvider.profileImg,
-      'gender': userProvider.gender,
-      'birthday': userProvider.birthday,
-      'family_id': familyId, // 여기서 familyId를 직접 사용
-      'family_role': userProvider.familyRole,
-      'created_at': userProvider.createdAt,
-      'is_guardian': userProvider.isGuardian,
-    };
-
+    final code = codeController.text.trim();
+    final baseUrl = dotenv.env['BASE_URL']!;
+    
     try {
-      final baseUrl = dotenv.env['BASE_URL']!;
-      final response = await http.post(
-        Uri.parse('$baseUrl/register_user'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(userData),
+      // 1. 가족 코드 유효성 확인
+      final checkResponse = await http.post(
+        Uri.parse('$baseUrl/join_family'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({'family_code': code}),
       );
-      if (response.statusCode == 200) {
-        Navigator.pushNamed(context, '/intro');
+
+      if (checkResponse.statusCode == 200) {
+        final familyData = jsonDecode(utf8.decode(checkResponse.bodyBytes));
+        
+        // 2. 가족 정보를 Provider에 저장
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.setFamilyJoin(
+          familyId: familyData['family_id'],
+          familyCode: familyData['family_code'],
+          familyName: familyData['family_name'],
+        );
+
+        // 3. 성별에 따른 역할 설정
+        String? gender = userProvider.gender;
+        String familyRole = '';
+        if (gender == 'male') {
+          familyRole = '아빠';
+        } else if (gender == 'female') {
+          familyRole = '엄마';
+        } else {
+          familyRole = '가족';
+        }
+        userProvider.setFamilyInfo(familyRole: familyRole);
+
+        // 4. 사용자 정보 저장
+        final userData = {
+          'kakao_id': userProvider.kakaoId,
+          'username': userProvider.username,
+          'profile_img': userProvider.profileImg,
+          'gender': userProvider.gender,
+          'birthday': userProvider.birthday,
+          'email': userProvider.email,
+          'phone_number': userProvider.phone_number,
+          'family_id': familyData['family_id'],
+          'family_code': familyData['family_code'],
+          'family_name': familyData['family_name'],
+          'family_role': familyRole,
+          'created_at': userProvider.createdAt,
+          'is_guardian': userProvider.isGuardian,
+        };
+
+        final registerResponse = await http.post(
+          Uri.parse('$baseUrl/register_user'),
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(userData),
+        );
+
+        if (registerResponse.statusCode == 200) {
+          Navigator.pushNamed(context, '/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('회원정보 저장 실패: \n${utf8.decode(registerResponse.bodyBytes)}')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('서버 오류: \n${response.body}')),
+          const SnackBar(content: Text('유효하지 않은 가족 코드입니다.')),
         );
       }
     } catch (e) {
@@ -77,6 +107,7 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

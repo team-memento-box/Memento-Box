@@ -37,7 +37,7 @@ class KakaoSigninScreen extends StatelessWidget {
     print('Response body: ${response.body}');
 
     if (response.statusCode == 200) {
-      final userInfo = jsonDecode(response.body);
+      final userInfo = jsonDecode(utf8.decode(response.bodyBytes));
       print('백엔드 응답 데이터: $userInfo');
       
       // Provider에 저장
@@ -48,28 +48,37 @@ class KakaoSigninScreen extends StatelessWidget {
         profileImg: userInfo['profile_img'].toString(),
         gender: userInfo['gender'].toString(),
         birthday: userInfo['birthday'].toString(),
+        email: userInfo['email'].toString(),
+        phone_number: userInfo['phone_number'].toString(),
       );
-      
-      // Provider에 저장된 값 확인
-      print('Provider 저장 확인:');
-      print('kakaoId: ${userProvider.kakaoId}');
-      print('username: ${userProvider.username}');
-      print('profileImg: ${userProvider.profileImg}');
-      print('gender: ${userProvider.gender}');
-      print('birthday: ${userProvider.birthday}');
-      print('isGuardian: ${userProvider.isGuardian}');
-      
-      // isGuardian 값에 따라 분기 이동
-      if (userProvider.isGuardian == true) {
-        Navigator.pushNamed(context, '/0-3-1');
-      } else if (userProvider.isGuardian == false) {
-        Navigator.pushNamed(context, '/0-3-2');
-      } else {
-        // 예외: 값이 없는 경우
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('역할 정보가 없습니다. 처음 화면으로 돌아갑니다.')),
+
+      // 이미 가입된 사용자인 경우
+      if (userInfo['is_registered'] == true) {
+        // 가족 정보도 Provider에 저장
+        userProvider.setFamilyJoin(
+          familyId: userInfo['family_id'],
+          familyCode: userInfo['family_code'],
+          familyName: userInfo['family_name'],
         );
-        Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+        userProvider.setFamilyInfo(
+          familyRole: userInfo['family_role'],
+        );
+        
+        // 바로 홈 화면으로 이동
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else {
+        // 새로운 사용자인 경우 isGuardian 값에 따라 분기 이동
+        if (userProvider.isGuardian == true) {
+          Navigator.pushNamed(context, '/0-3-1');
+        } else if (userProvider.isGuardian == false) {
+          Navigator.pushNamed(context, '/0-3-2');
+        } else {
+          // 예외: 값이 없는 경우
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('역할 정보가 없습니다. 처음 화면으로 돌아갑니다.')),
+          );
+          Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

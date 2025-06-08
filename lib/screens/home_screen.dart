@@ -20,14 +20,16 @@ class HomeUpdateScreen extends StatelessWidget {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(80.0),
         child: AppBar(
-          title: const Text(
-            '화목한 우리 가족^~^',
-            style: TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'Pretendard',
-              letterSpacing: 0,
-              color: Colors.white,
+          title: Consumer<UserProvider>(
+            builder: (context, userProvider, child) => Text(
+              userProvider.familyName ?? '화목한 우리 가족^~^',
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Pretendard',
+                letterSpacing: 0,
+                color: Colors.white,
+              ),
             ),
           ),
           centerTitle: true,
@@ -103,7 +105,7 @@ class ProfileHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            userProvider.gender == 'male' ? '아들' : '딸',
+            userProvider.familyRole ?? '역할 없음',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
           ),
         ),
