@@ -6,10 +6,10 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import UUID
-from azure.storage.blob.aio import BlobServiceClient
 from schemas.photo import PhotoCreate
 from db.models.photo import Photo
-from .blob_storage import BlobStorageService
+from db.models.user import User
+from .blob_storage import BlobStorageService, get_blob_service_client
 import uuid
 
 UPLOAD_DIR = "uploads"
@@ -19,7 +19,7 @@ class PhotoService:
         self.db = db
         self.blob_storage = BlobStorageService()
 
-    async def create_photo(self, file: UploadFile, family_id: UUID) -> Photo:
+    async def create_photo(self, file: UploadFile, current_user: User) -> Photo:
         """
         사진을 업로드하고 메타데이터를 저장합니다.
         """
@@ -40,7 +40,7 @@ class PhotoService:
             # DB에 메타데이터 저장
             photo_data = PhotoCreate(
                 photo_name=file.filename,
-                family_id=family_id,
+                family_id=current_user.family_id,
                 photo_url=photo_url,
                 story_year=datetime.now(),
                 story_season="summer",

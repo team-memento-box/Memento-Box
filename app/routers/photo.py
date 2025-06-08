@@ -10,6 +10,8 @@ from sqlalchemy.future import select
 from schemas.photo import PhotoCreate, PhotoResponse
 from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db, get_photos_by_family
 from services.blob_storage import get_blob_service_client
+from core.auth import get_current_user
+from db.models.user import User
 
 router = APIRouter(
     prefix="/photos",
@@ -17,10 +19,9 @@ router = APIRouter(
 )
 
 @router.post("/upload", response_model=PhotoResponse)
-
 async def upload_photo(
     file: UploadFile = File(...),
-    family_id: uuid.UUID = None,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -46,7 +47,7 @@ async def upload_photo(
         # DB에 메타데이터 저장
         photo_data = PhotoCreate(
             photo_name=file.filename,
-            family_id=family_id,
+            family_id=current_user.family_id,  # 현재 사용자의 family_id 사용
             photo_url=photo_url,
             story_year=datetime.now(),
             story_season="summer",

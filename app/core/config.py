@@ -1,11 +1,25 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+import secrets
 
 class Settings(BaseSettings):
-    ASYNC_DATABASE_URL: str  # .env 파일의 환경변수 이름과 일치
+    # PostgreSQL 설정
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
     
-    # Azure Storage 설정
+    # 데이터베이스 URL
+    ASYNC_DATABASE_URL: str
+    SYNC_DATABASE_URL: str
+    
+    # JWT 설정
+    SECRET_KEY: str
+    
+    # Azure Blob Storage 설정
     AZURE_BLOBSTORAGE_ACCOUNT: str
     AZURE_BLOBSTORAGE_KEY: str
+
+    # JWT 인증 설정
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     class Config:
         env_file = ".env"  # 루트 디렉토리에 있는 .env 파일을 읽도록 지정

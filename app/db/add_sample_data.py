@@ -2,11 +2,17 @@ import uuid
 from datetime import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+import os
+import sys
+from dotenv import load_dotenv
+from core.auth import get_password_hash
+
+# app 디렉토리를 Python 경로에 추가
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from db.models.family import Family
 from db.models.user import User
 from db.database import Base
-import os
-from dotenv import load_dotenv
 
 # .env 파일 로드
 load_dotenv()
@@ -34,6 +40,7 @@ async def seed():
         user = User(
             id=uuid.uuid4(),
             kakao_id="kakao_test_001",
+            password=get_password_hash("test1234"),  # 테스트용 비밀번호 추가
             username="테스트유저",
             gender="female",
             birthday=datetime(1990, 1, 1),

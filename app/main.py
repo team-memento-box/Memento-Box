@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import photo
+from routers import photo, auth
 
 app = FastAPI()
 
@@ -15,6 +15,7 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(photo.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def read_root():

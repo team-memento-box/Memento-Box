@@ -19,6 +19,8 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True) 
     # kakao 로그인 정보
     kakao_id = Column(String, index=True)
+    # 비밀번호 (해시된 값)
+    password = Column(String)
     # 사용자명
     username = Column(String)
     # 성별
