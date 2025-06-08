@@ -29,3 +29,6 @@ test/__pycache__/
 .pem
 
 audio_files/
+
+stories.py
+story_maker.py
