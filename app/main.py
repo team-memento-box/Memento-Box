@@ -4,6 +4,8 @@ from datetime import timezone, timedelta
 import pytz
 from routers import auth, photo
 
+from routers import photo, user_create, conv_tts, conv_stt
+
 app = FastAPI(
     title="Memento Box API",
     description="가족 추억을 저장하고 공유하는 서비스",
@@ -26,6 +28,9 @@ app.state.timezone = KST
 # 라우터 등록
 app.include_router(auth.router)
 app.include_router(photo.router)
+app.include_router(user_create.router)
+app.include_router(conv_tts.router)
+app.include_router(conv_stt.router)
 
 @app.get("/")
 def read_root():

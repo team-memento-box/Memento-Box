@@ -14,3 +14,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 pytz
 python-dateutil
+azure-cognitiveservices-speech
+pygame
+openai
+tiktoken
+numpy
+soundfile

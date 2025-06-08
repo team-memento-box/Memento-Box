@@ -30,3 +30,5 @@ test/__pycache__/
 
 # pem키
 .pem
+
+audio_files/
