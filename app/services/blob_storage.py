@@ -1,13 +1,25 @@
 import os
 from azure.storage.blob import BlobServiceClient
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
+from core.config import settings
+
+ContainerType = Literal["photo", "voice"]
 
 class BlobStorageService:
-    def __init__(self):
-        self.connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-        self.container_name = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
-        self.blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+    def __init__(self, container_type: ContainerType = "photo"):
+        # 환경 변수에서 설정 가져오기
+        self.account_name = os.getenv("AZURE_BLOBSTORAGE_ACCOUNT")
+        self.account_key = os.getenv("AZURE_BLOBSTORAGE_KEY")
+        
+        # 컨테이너 타입에 따라 다른 컨테이너 이름 사용
+        self.container_name = container_type
+        
+        # 연결 문자열 생성
+        connection_string = f"DefaultEndpointsProtocol=https;AccountName={self.account_name};AccountKey={self.account_key};EndpointSuffix=core.windows.net"
+        
+        # Blob Service Client 생성
+        self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         self.container_client = self.blob_service_client.get_container_client(self.container_name)
 
     async def upload_file(self, file_data: bytes, filename: str) -> tuple[str, str]:
@@ -39,4 +51,10 @@ class BlobStorageService:
             return True
         except Exception as e:
             print(f"Error deleting blob: {str(e)}")
-            return False 
+            return False
+
+def get_blob_service_client(container_type: ContainerType = "photo") -> BlobStorageService:
+    """
+    BlobStorageService의 인스턴스를 생성하여 반환합니다.
+    """
+    return BlobStorageService(container_type) 

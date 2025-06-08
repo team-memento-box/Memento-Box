@@ -2,6 +2,10 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     ASYNC_DATABASE_URL: str  # .env 파일의 환경변수 이름과 일치
+    
+    # Azure Storage 설정
+    AZURE_BLOBSTORAGE_ACCOUNT: str
+    AZURE_BLOBSTORAGE_KEY: str
 
     class Config:
         env_file = ".env"  # 루트 디렉토리에 있는 .env 파일을 읽도록 지정

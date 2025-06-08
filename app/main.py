@@ -1,4 +1,3 @@
-# 250605_1508 코드 추가해도 DB 잘 유지되는지????!!!
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import photo

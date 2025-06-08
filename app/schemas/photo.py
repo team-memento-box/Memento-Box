@@ -1,18 +1,35 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, Literal
+from uuid import UUID
 
 class PhotoBase(BaseModel):
-    title: str
-    description: Optional[str] = None
+    id: UUID
+    photo_name: Optional[str] = None
+    photo_url: str
+    story_year: Optional[datetime] = None
+    story_season: Optional[Literal["spring", "summer", "autumn", "winter"]] = None
+    story_nudge: Optional[Dict[str, Any]] = None
+    summary_text: Optional[str] = None
+    summary_voice: Optional[str] = None
+    family_id: UUID
 
-class PhotoCreate(PhotoBase):
-    pass
+# PhotoCreate가 PhotoBase를 상속받지 않는 이유:
+# 1. id는 DB에서 자동 생성되는 필드이므로 생성 시에는 필요하지 않음
+# 2. PhotoBase는 id를 포함하고 있어서, 상속받으면 불필요한 id 필드가 생성 요청에 포함됨
+# 3. 생성 요청과 응답의 스키마를 명확하게 분리하여 관리
+class PhotoCreate(BaseModel):
+    photo_name: Optional[str] = None
+    photo_url: str
+    story_year: Optional[datetime] = None
+    story_season: Optional[Literal["spring", "summer", "autumn", "winter"]] = None
+    story_nudge: Optional[Dict[str, Any]] = None
+    summary_text: Optional[str] = None
+    summary_voice: Optional[str] = None
+    family_id: UUID
 
-class Photo(PhotoBase):
-    id: int
-    filename: str
-    created_at: datetime
-    
+class PhotoResponse(PhotoBase):
+    uploaded_at: datetime
+
     class Config:
-        from_attributes = True 
+        orm_mode = True 
