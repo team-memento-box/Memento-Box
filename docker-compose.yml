@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   web:
@@ -11,7 +11,7 @@ services:
       - ./app:/app
       - ./.env:/app/.env
       - ./uploads:/app/uploads
-      - ./app/alembic/versions:/app/alembic/versions  
+      - ./app/alembic/versions:/app/alembic/versions
     expose:
       - "8000"
     depends_on:
@@ -36,6 +36,8 @@ services:
     image: postgres:15
     container_name: postgres_db
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -64,29 +66,29 @@ services:
   #     db:
   #       condition: service_healthy
 
-  fish-speech:
-    build:
-      context: ./fish-speech
-      dockerfile: Dockerfile
-    container_name: fish-speech
-    expose:
-      - "5000"
-    volumes:
-      - ./fish-speech/checkpoints:/app/checkpoints
-      - ./shared/input_wav:/app/input_wav
-      - ./shared/output_wav:/app/output_wav
-      - ./shared/model_output:/app/model_output
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    networks:
-      - memento_net
-    depends_on:
-      db:
-        condition: service_healthy
+  # fish-speech:
+  #   build:
+  #     context: ./fish-speech
+  #     dockerfile: Dockerfile
+  #   container_name: fish-speech
+  #   expose:
+  #     - "5000"
+  #   volumes:
+  #     - ./fish-speech/checkpoints:/app/checkpoints
+  #     - ./shared/input_wav:/app/input_wav
+  #     - ./shared/output_wav:/app/output_wav
+  #     - ./shared/model_output:/app/model_output
+  #   runtime: nvidia
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all
+  #   networks:
+  #     - memento_net
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
 volumes:
   fastapi-app_pgdata:
 
-networks: 
+networks:
   memento_net:

@@ -29,3 +29,49 @@ class Conversation(Base):
     mention = relationship("Mention", back_populates="conv_mention")
     # Conversation ↔ AnomaliesReport
     report = relationship("AnomaliesReport", back_populates="conv_report")
+
+
+from uuid import uuid4
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from schemas.conversation import ConversationCreate, ConversationUpdate
+from typing import List, Optional
+
+async def create_conversation(db: AsyncSession, conv_in: ConversationCreate) -> Conversation:
+    new_conv = Conversation(
+        id=uuid4(),
+        photo_id=conv_in.photo_id,
+        created_at=conv_in.created_at
+    )
+    db.add(new_conv)
+    await db.commit()
+    await db.refresh(new_conv)
+    return new_conv
+
+async def get_conversation_by_id(db: AsyncSession, conv_id) -> Optional[Conversation]:
+    result = await db.execute(select(Conversation).where(Conversation.id == conv_id))
+    return result.scalars().first()
+
+async def get_conversations_by_photo_id(db: AsyncSession, photo_id) -> List[Conversation]:
+    result = await db.execute(select(Conversation).where(Conversation.photo_id == photo_id))
+    return result.scalars().all()
+
+async def update_conversation(db: AsyncSession, conv_id, conv_in: ConversationUpdate) -> Optional[Conversation]:
+    result = await db.execute(select(Conversation).where(Conversation.id == conv_id))
+    conv = result.scalars().first()
+    if conv is None:
+        return None
+    if conv_in.created_at:
+        conv.created_at = conv_in.created_at
+    await db.commit()
+    await db.refresh(conv)
+    return conv
+
+async def delete_conversation(db: AsyncSession, conv_id) -> bool:
+    result = await db.execute(select(Conversation).where(Conversation.id == conv_id))
+    conv = result.scalars().first()
+    if conv is None:
+        return False
+    await db.delete(conv)
+    await db.commit()
+    return True

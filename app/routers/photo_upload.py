@@ -97,6 +97,8 @@ async def upload_all_photos():
                 print(f"❌ Error processing {file}: {e}")
                 raise  # 반드시 추가: 실제 문제 로그를 터미널에 보여줌
 
+
+
 if __name__ == "__main__":
     asyncio.run(upload_all_photos())
 
