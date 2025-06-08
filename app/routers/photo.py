@@ -15,7 +15,7 @@ from db.models.user import User
 import json
 
 router = APIRouter(
-    prefix="/photos",
+    prefix="/api/photos",
     tags=["photos"]
 )
 
