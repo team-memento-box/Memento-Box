@@ -26,16 +26,21 @@ API_KEY    = os.getenv("AZURE_OPENAI_KEY")
 ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT")
 DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
-CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
+STORAGE_ACCOUNT = os.getenv("AZURE_BLOBSTORAGE_ACCOUNT")
+STORAGE_KEY = os.getenv("AZURE_BLOBSTORAGE_KEY")
 #──────────────────────────────────────────────────────────
 
+# Azure Blob 설정
+
+# 연결 문자열 생성
+connection_string = f"DefaultEndpointsProtocol=https;AccountName={STORAGE_ACCOUNT};AccountKey={STORAGE_KEY};EndpointSuffix=core.windows.net"
+container_name = "kev-backup"
 
 class PhotoManagementService:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.blob_connection_string = CONNECTION_STRING
-        self.container_name = CONTAINER_NAME
+        self.blob_connection_string = connection_string
+        self.container_name = container_name
         self.local_storage = not bool(self.blob_connection_string)
 
     async def _get_default_family(self) -> Optional[UUID]:
