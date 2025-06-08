@@ -42,11 +42,12 @@ class KakaoSigninScreen extends StatelessWidget {
       
       // Provider에 저장
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.setUser(
+      userProvider.setUserInfo(
         kakaoId: userInfo['kakao_id'].toString(),
         username: userInfo['username'].toString(),
         profileImg: userInfo['profile_img'].toString(),
         gender: userInfo['gender'].toString(),
+        birthday: userInfo['birthday'].toString(),
       );
       
       // Provider에 저장된 값 확인
@@ -55,9 +56,21 @@ class KakaoSigninScreen extends StatelessWidget {
       print('username: ${userProvider.username}');
       print('profileImg: ${userProvider.profileImg}');
       print('gender: ${userProvider.gender}');
+      print('birthday: ${userProvider.birthday}');
+      print('isGuardian: ${userProvider.isGuardian}');
       
-      // 예시: 로그인 성공 후 intro 화면으로 이동
-      Navigator.pushNamed(context, '/intro', arguments: userInfo);
+      // isGuardian 값에 따라 분기 이동
+      if (userProvider.isGuardian == true) {
+        Navigator.pushNamed(context, '/0-3-1');
+      } else if (userProvider.isGuardian == false) {
+        Navigator.pushNamed(context, '/0-3-2');
+      } else {
+        // 예외: 값이 없는 경우
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('역할 정보가 없습니다. 처음 화면으로 돌아갑니다.')),
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('서버 오류: ${response.body}')),

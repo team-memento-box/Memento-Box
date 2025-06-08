@@ -11,6 +11,11 @@ import 'screens/conversation_screen.dart'; // ✅ 새ka로 만든 대화 스크�
 import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 import
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // --홍원 추가--
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'; // ✅ 카카오 SDK import
+
+import 'screens/0-3-1.dart';
+import 'screens/0-3-1-1.dart';
+import 'screens/0-3-1-2.dart';
+import 'screens/0-3-2.dart';
 //우회용//
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -69,6 +74,18 @@ class MyCustomApp extends StatelessWidget {
         }
         if (settings.name == '/kakao_signin') {
           return MaterialPageRoute(builder: (context) => const KakaoSigninScreen());
+        }
+        if (settings.name == '/0-3-1') {
+          return MaterialPageRoute(builder: (context) => const GroupSelectScreen());
+        }
+        if (settings.name == '/group_create') {
+          return MaterialPageRoute(builder: (context) => const GroupCreateScreen());
+        }
+        // if (settings.name == '/group_join') {
+        //   return MaterialPageRoute(builder: (context) => const GroupJoinScreen());
+        // }
+        if (settings.name == '/0-3-2') {
+          return MaterialPageRoute(builder: (context) => const FamilyCodeInputScreen());
         }
         // ✅ 잘못된 경로 대비 fallback
         return MaterialPageRoute(

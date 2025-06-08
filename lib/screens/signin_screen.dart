@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'kakao_signin_screen.dart'; //홍원추가
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart'; // ✅ Provider import
+import '../user_provider.dart'; // ✅ 사용자 Provider import
 
 final String apiBaseUrl = dotenv.env['BASE_URL']!;
 
@@ -70,8 +72,10 @@ class SigninScreen extends StatelessWidget {
             const SizedBox(height: 90),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/kakao_signin'); // 홍원 추가
-              },
+              // Provider에 보호자 역할 저장
+              Provider.of<UserProvider>(context, listen: false).setIsGuardian(true);
+              Navigator.pushNamed(context, '/kakao_signin');
+            },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C8B8),
                 minimumSize: const Size(315, 60),
@@ -92,7 +96,11 @@ class SigninScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Provider에 피보호자 역할 저장
+                Provider.of<UserProvider>(context, listen: false).setIsGuardian(false);
+                Navigator.pushNamed(context, '/kakao_signin');
+              },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(width: 2, color: Color(0xFF00C8B8)),
                 minimumSize: const Size(315, 60),
