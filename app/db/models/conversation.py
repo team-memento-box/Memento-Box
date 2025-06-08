@@ -1,7 +1,9 @@
-from sqlalchemy import Column, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-from db.database import Base
 from sqlalchemy.orm import relationship
+from db.database import Base
+from datetime import datetime
+import uuid
 
 class Conversation(Base):
     
@@ -18,14 +20,20 @@ class Conversation(Base):
         "mysql_collate": "utf8mb4_general_ci" 
     }
     # 대화 회기 id
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # 관계 사진 id
-    photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
+    photo_id = Column(Integer, ForeignKey('photos.id'), nullable=False)
+    # 메시지
+    message = Column(Text, nullable=False)
+    # 응답
+    response = Column(Text, nullable=True)
     # 실행 일자
-    created_at = Column(DateTime)
-    # Photo ↔ Conversation 
-    photo_conversation = relationship("Photo", back_populates="conversation")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # 관계 설정
+    # Conversation ↔ Photo
+    photo = relationship("Photo", back_populates="conversations")
     # Conversation ↔ Mention
-    mention = relationship("Mention", back_populates="conv_mention")
+    mentions = relationship("Mention", back_populates="conversation")
     # Conversation ↔ AnomaliesReport
-    report = relationship("AnomaliesReport", back_populates="conv_report")
+    reports = relationship("AnomaliesReport", back_populates="conversation")

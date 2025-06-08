@@ -31,15 +31,9 @@ until pg_isready -h db -p 5432 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" > /dev/
 done
 echo "PostgreSQL is available"
 
-# Wait for dialogue service
-wait_for_service "dialogue service" "http://dialogue:5001/status" 60 || {
-    echo "Dialogue service connection failed, but continuing..."
-}
-
-# Wait for fish-speech service
-wait_for_service "fish-speech service" "http://fish-speech:5000/status" 60 || {
-    echo "Fish-speech service connection failed, but continuing..."
-}
+# Run database migrations
+echo "Running database migrations..."
+alembic upgrade head
 
 # Start FastAPI application
 echo "Starting FastAPI application..."

@@ -2,6 +2,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
 from sqlalchemy.orm import relationship
+from uuid import uuid4
 
 class Mention(Base):
     """
@@ -27,14 +28,16 @@ class Mention(Base):
         "mysql_collate": "utf8mb4_general_ci" 
     }
     # mention id (질답 1쌍으로 관리)
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 관계 회기 id
     conv_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id'))
     # 질답쌍 {q_text:txt, a_text:txt, q_voice: url, a_voice: url}
     question_answer = Column(JSON, nullable=True)
     # 기록일자
     recorded_at = Column(DateTime, nullable=True)
-    # Conversation ↔ Mention 
-    conv_mention = relationship("Conversation", back_populates="mention")
+    
+    # 관계 설정
+    # Mention ↔ Conversation
+    conversation = relationship("Conversation", back_populates="mentions")
 
 

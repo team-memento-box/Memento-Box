@@ -1,13 +1,20 @@
-# 250605_1508 코드 추가해도 DB 잘 유지되는지????!!!
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
 from core.config import settings
-from db.database import engine, Base
+from db.database import init_models
+from routers import (
+    photo_router,
+    user_router,
+    family_router,
+    conversation_router,
+    health_router
+)
 
-# 데이터베이스 테이블 생성 (동기 엔진 사용)
-Base.metadata.create_all(bind=engine)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -23,29 +30,62 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 정적 파일 마운트
+# Static files
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 app.mount("/audio", StaticFiles(directory=settings.AUDIO_DIR), name="audio")
 
-# 라우터 임포트
-from routers.health import router as health_router
-from routers.dementia import router as dementia_router
-from routers.photo import router as photo_router
-from routers.fish_speech import router as fish_speech_router
-from routers.dialogue import router as dialogue_router
-
 # 라우터 등록
-app.include_router(health_router, prefix=settings.API_V1_STR)
-app.include_router(photo_router, prefix=settings.API_V1_STR)
-app.include_router(dementia_router, prefix=f"{settings.API_V1_STR}/dementia")
-app.include_router(fish_speech_router, prefix=f"{settings.API_V1_STR}/fish-speech")
-app.include_router(dialogue_router, prefix=f"{settings.API_V1_STR}/dialogue")
+app.include_router(
+    photo_router,
+    prefix=settings.API_V1_STR,
+    tags=["photos"]
+)
 
-@app.get("/")
-async def root():
+app.include_router(
+    user_router,
+    prefix=settings.API_V1_STR,
+    tags=["users"]
+)
+
+app.include_router(
+    family_router,
+    prefix=settings.API_V1_STR,
+    tags=["families"]
+)
+
+app.include_router(
+    conversation_router,
+    prefix=settings.API_V1_STR,
+    tags=["conversations"]
+)
+
+app.include_router(
+    health_router,
+    prefix=settings.API_V1_STR,
+    tags=["health"]
+)
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    앱 시작 시 초기화 작업
+    """
+    try:
+        logger.info("Initializing database models...")
+        await init_models()
+        logger.info("Database initialization completed")
+    except Exception as e:
+        logger.error(f"Failed to initialize application: {str(e)}")
+        raise
+
+@app.get("/", tags=["health"])
+async def read_root():
+    """
+    Health check endpoint
+    """
     return {
-        "message": "Welcome to Memento Box API System",
-        "docs_url": "/docs",
-        "redoc_url": "/redoc"
+        "status": "healthy",
+        "version": "1.0.0",
+        "service": settings.PROJECT_NAME
     }

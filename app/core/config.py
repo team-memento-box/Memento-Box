@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from functools import lru_cache
 
 class Settings(BaseSettings):
     # API 설정
@@ -10,18 +11,14 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    DATABASE_URL: str = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}"
-    ASYNC_DATABASE_URL: str = "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}"
-    SYNC_DATABASE_URL: str = "postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}"
-    
-    # 외부 서비스 URL
-    FISH_SPEECH_URL: str = "http://fish-speech:5000"
-    DIALOGUE_URL: str = "http://dialogue:5001"
+    DATABASE_URL: str = ""  # Empty string as default
+    ASYNC_DATABASE_URL: str = ""  # Empty string as default
+    SYNC_DATABASE_URL: str = ""  # Empty string as default
     
     # Azure OpenAI 설정
     AZURE_OPENAI_API_KEY: str
     AZURE_OPENAI_ENDPOINT: str
-    AZURE_OPENAI_API_VERSION: str = "2025-01-01-preview"
+    AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
     AZURE_OPENAI_DEPLOYMENT_NAME: str = "gpt-4o"
     
     # Azure Speech 설정
@@ -29,7 +26,8 @@ class Settings(BaseSettings):
     AZURE_SPEECH_REGION: str
     
     # Azure Blob Storage 설정
-    AZURE_BLOBSTORAGE_KEY: Optional[str] = None
+    AZURE_STORAGE_CONNECTION_STRING: Optional[str] = None
+    AZURE_STORAGE_CONTAINER_NAME: Optional[str] = None
     
     # 파일 업로드 설정
     UPLOAD_DIR: str = "uploads"
@@ -43,5 +41,16 @@ class Settings(BaseSettings):
         extra="allow"
     )
 
+    def model_post_init(self, __context) -> None:
+        """Initialize computed fields after model initialization"""
+        self.DATABASE_URL = f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@db/{self.POSTGRES_DB}"
+        self.ASYNC_DATABASE_URL = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@db/{self.POSTGRES_DB}"
+        self.SYNC_DATABASE_URL = f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@db/{self.POSTGRES_DB}"
+
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance"""
+    return Settings()
+
 # 인스턴스를 만들어서 다른 곳에서 불러다 씀
-settings = Settings()
+settings = get_settings()
