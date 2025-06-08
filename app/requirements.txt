@@ -9,3 +9,9 @@ azure-storage-blob
 aiohttp
 aiofiles
 python-multipart
+azure-cognitiveservices-speech
+pygame
+openai
+tiktoken
+numpy
+soundfile
