@@ -8,6 +8,7 @@ import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import '../widgets/ai_record_play_sheet.dart';
 import '../data/user_data.dart';
+import '../utils/routes.dart';
 
 class PhotoDetailScreen extends StatelessWidget {
   const PhotoDetailScreen({Key? key}) : super(key: key);
@@ -188,7 +189,7 @@ class PhotoDetailScreen extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/report');
+                          Navigator.pushNamed(context, Routes.report);
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(

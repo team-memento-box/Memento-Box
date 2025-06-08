@@ -132,54 +132,43 @@ class _OriginalModalState extends State<OriginalModal>
                   ),
 
                 if (showAllTranscript)
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
+                  Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFF00C8B8),
+                        width: 2,
                       ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF00C8B8),
-                          width: 2,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      children: [
+                        _chatBubble("이 사진 언제 찍었는지 기억 나세요?", isBot: true),
+                        _chatBubble("응 당연하지~ 국민 학교 다닐 적이었을 거야"),
+                        _chatBubble(
+                          "와 아주 옛날 일까지 기억하고 계시네요 대단해요! 그때 무슨 일이 있었는지 말씀해주실 수 있나요?",
+                          isBot: true,
                         ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              children: [
-                                _chatBubble(
-                                  "이 사진 언제 찍었는지 기억 나세요?",
-                                  isBot: true,
-                                ),
-                                _chatBubble("응 당연하지~ 국민 학교 다닐 적이었을 거야"),
-                                _chatBubble(
-                                  "와 아주 옛날 일까지 기억하고 계시네요 대단해요! 그때 무슨 일이 있었는지 말씀해주실 수 있나요?",
-                                  isBot: true,
-                                ),
-                                _chatBubble("친구들, 저 짝 삼승리 넘어 동네 친구들이"),
-                                _chatBubble("삼삼오오 다같이 모여 가지고는 공기놀이를 했어"),
-                                _chatBubble("그때는 내가 영 실력이 파이야 벌칙에 제일 많이 걸렸어"),
-                                _chatBubble(
-                                  "친구들과 공기놀이라니! 너무 재미있었을 것 같아요. 공기놀이에 져서 어떤 벌칙을 주로 받으셨어요?",
-                                  isBot: true,
-                                ),
-                                _chatBubble(
-                                  "콧수염 붙이기였어~ 아유 지금 생각해도 너무 웃겨. 그때 아주 영히하고 민속히하고 배꼽을 잡고 웃었는데",
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        _chatBubble("친구들, 저 짝 삼승리 넘어 동네 친구들이"),
+                        _chatBubble("삼삼오오 다같이 모여 가지고는 공기놀이를 했어"),
+                        _chatBubble("그때는 내가 영 실력이 파이야 벌칙에 제일 많이 걸렸어"),
+                        _chatBubble(
+                          "친구들과 공기놀이라니! 너무 재미있었을 것 같아요. 공기놀이에 져서 어떤 벌칙을 주로 받으셨어요?",
+                          isBot: true,
+                        ),
+                        _chatBubble(
+                          "콧수염 붙이기였어~ 아유 지금 생각해도 너무 웃겨. 그때 아주 영히하고 민속히하고 배꼽을 잡고 웃었는데",
+                        ),
+                      ],
                     ),
                   ),
                 const SizedBox(height: 20),

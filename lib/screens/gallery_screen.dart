@@ -222,9 +222,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          // '/photoDetail',
                           Routes.photoDetail,
-                          // arguments: index,
                           arguments: imageName, // ex) "1.jpg"
                         );
                       },
