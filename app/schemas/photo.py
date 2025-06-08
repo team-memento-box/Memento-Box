@@ -7,8 +7,8 @@ class PhotoBase(BaseModel):
     id: UUID
     photo_name: Optional[str] = None
     photo_url: str
-    story_year: Optional[datetime] = None
-    story_season: Optional[Literal["spring", "summer", "autumn", "winter"]] = None
+    story_year: int
+    story_season: Literal["spring", "summer", "autumn", "winter"]
     story_nudge: Optional[Dict[str, Any]] = None
     summary_text: Optional[str] = None
     summary_voice: Optional[str] = None
@@ -21,8 +21,8 @@ class PhotoBase(BaseModel):
 class PhotoCreate(BaseModel):
     photo_name: Optional[str] = None
     photo_url: str
-    story_year: Optional[datetime] = None
-    story_season: Optional[Literal["spring", "summer", "autumn", "winter"]] = None
+    story_year: int
+    story_season: Literal["spring", "summer", "autumn", "winter"]
     story_nudge: Optional[Dict[str, Any]] = None
     summary_text: Optional[str] = None
     summary_voice: Optional[str] = None

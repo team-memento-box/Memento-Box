@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
 from sqlalchemy.orm import relationship
@@ -18,7 +18,7 @@ class Photo(Base):
     # 사진 저장소 주소 (Azure Blob Storage URL)
     photo_url = Column(Text)
     # 촬영 연도
-    story_year = Column(DateTime, nullable=True)
+    story_year = Column(Integer, nullable=True)
     # 촬영 계절
     story_season = Column(String, nullable=True)
     # 넛지

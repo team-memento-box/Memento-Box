@@ -1,5 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from typing import List
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
+from typing import List, Optional, Dict, Any
 import os
 import uuid
 from datetime import datetime
@@ -12,6 +12,7 @@ from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db,
 from services.blob_storage import get_blob_service_client
 from core.auth import get_current_user
 from db.models.user import User
+import json
 
 router = APIRouter(
     prefix="/photos",
@@ -21,6 +22,9 @@ router = APIRouter(
 @router.post("/upload", response_model=PhotoResponse)
 async def upload_photo(
     file: UploadFile = File(...),
+    story_year: int = Form(...),
+    story_season: str = Form(...),
+    story_nudge: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -29,6 +33,22 @@ async def upload_photo(
     """
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
+
+    # story_season 유효성 검사
+    valid_seasons = ["spring", "summer", "autumn", "winter"]
+    if story_season not in valid_seasons:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"유효하지 않은 계절입니다. 다음 중 하나여야 합니다: {', '.join(valid_seasons)}"
+        )
+
+    # story_nudge JSON 파싱
+    story_nudge_dict = None
+    if story_nudge:
+        try:
+            story_nudge_dict = json.loads(story_nudge)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="story_nudge는 유효한 JSON 형식이어야 합니다.")
 
     temp_file_path = None
     try:
@@ -49,9 +69,9 @@ async def upload_photo(
             photo_name=file.filename,
             family_id=current_user.family_id,  # 현재 사용자의 family_id 사용
             photo_url=photo_url,
-            story_year=datetime.now(),
-            story_season="summer",
-            story_nudge={"note": "auto-uploaded"}
+            story_year=story_year,
+            story_season=story_season,
+            story_nudge=story_nudge_dict
         )
         
         photo = await save_photo_to_db(photo_data, db)
