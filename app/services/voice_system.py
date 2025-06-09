@@ -7,15 +7,7 @@ from dotenv import load_dotenv
 import pygame
 from fastapi import UploadFile
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
-
-# ─────────────────────────────환경변수─────────────────────────────
-API_KEY    = os.getenv("AZURE_OPENAI_KEY")
-ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT")
-DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY")
-SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION")
-#──────────────────────────────────────────────────────────
+from core.config import settings
 
 AUDIO_DIR = "audio_files"
 
@@ -23,8 +15,8 @@ class VoiceSystem:
     """음성 입출력 시스템"""
     
     def __init__(self):
-        self.speech_key = SPEECH_KEY
-        self.region = SPEECH_REGION
+        self.speech_key    = os.getenv("AZURE_SPEECH_KEY")
+        self.region = os.getenv("AZURE_SPEECH_REGION")
         
         # STT 설정
         self.speech_config = speechsdk.SpeechConfig(subscription=self.speech_key, region=self.region)

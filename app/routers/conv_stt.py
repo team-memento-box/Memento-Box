@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, HTTPException, File
 from fastapi.responses import JSONResponse
 import os
-from schemas.voice_system import VoiceSystem
-from schemas.chat_system import ChatSystem
+from services.voice_system import VoiceSystem
+from services.chat_system import ChatSystem
 
 voice_system = VoiceSystem()
 chat_system = ChatSystem()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Depends, Response
 from fastapi.responses import JSONResponse
-from schemas.voice_system import VoiceSystem
+from services.voice_system import VoiceSystem
 import os
 
 router = APIRouter()
