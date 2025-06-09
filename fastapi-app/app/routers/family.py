@@ -21,8 +21,8 @@ async def create_family(data: dict = Body(...)):
     family_code = generate_family_code()
     new_family = Family(
         id=uuid4(),
-        family_code=family_code,
-        family_name=family_name,
+        code=family_code,
+        name=family_name,
         created_at=datetime.utcnow()
     )
     
@@ -30,9 +30,9 @@ async def create_family(data: dict = Body(...)):
         session.add(new_family)
         await session.commit()
         return {
-            "family_id": str(new_family.id), 
-            "family_code": new_family.family_code,
-            "family_name": new_family.family_name
+            "family_id": str(new_family.id),
+            "family_code": new_family.code,
+            "family_name": new_family.name
         }
 
 @router.post("/join")
@@ -41,12 +41,12 @@ async def join_family(data: dict = Body(...)):
     if not family_code:
         return JSONResponse({"error": "No family_code provided"}, status_code=400)
     async with async_session() as session:
-        result = await session.execute(select(Family).where(Family.family_code == family_code))
+        result = await session.execute(select(Family).where(Family.code == family_code))
         family = result.scalar_one_or_none()
         if not family:
             return JSONResponse({"error": "Invalid family_code"}, status_code=404)
         return {
             "family_id": str(family.id), 
-            "family_code": family.family_code,
-            "family_name": family.family_name
+            "family_code": family.code,
+            "family_name": family.name
         } 

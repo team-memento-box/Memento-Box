@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: a86b41d354d6
+Revision ID: 65744a8bd27c
 Revises: 
-Create Date: 2025-06-09 05:53:40.364548
+Create Date: 2025-06-09 10:31:02.997864
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a86b41d354d6'
+revision: str = '65744a8bd27c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,19 +48,17 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('kakao_id', sa.String(), nullable=True),
-    sa.Column('username', sa.String(), nullable=True),
     sa.Column('password', sa.String(), nullable=True),
+    sa.Column('name', sa.String(), nullable=True),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('phone', sa.String(), nullable=True),
     sa.Column('gender', sa.String(), nullable=True),
     sa.Column('birthday', sa.String(), nullable=True),
     sa.Column('profile_img', sa.Text(), nullable=True),
-    sa.Column('email', sa.String(), nullable=True),
-    sa.Column('phone_number', sa.String(), nullable=True),
     sa.Column('family_id', sa.UUID(), nullable=True),
     sa.Column('family_role', sa.String(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('is_guardian', sa.Boolean(), nullable=True),
-    sa.Column('family_code', sa.String(), nullable=True),
-    sa.Column('family_name', sa.String(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['family_id'], ['families.id'], ),
     sa.PrimaryKeyConstraint('id'),
     mysql_charset='utf8mb4',
@@ -92,9 +90,7 @@ def upgrade() -> None:
     sa.Column('question_answer', sa.JSON(), nullable=True),
     sa.Column('recorded_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['conv_id'], ['conversations.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    mysql_charset='utf8mb4',
-    mysql_collate='utf8mb4_general_ci'
+    sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
 

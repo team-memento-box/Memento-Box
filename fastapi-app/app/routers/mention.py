@@ -4,7 +4,7 @@ import os
 import uuid
 from datetime import datetime
 from db.database import get_db
-from db.models.mention import Mention
+from db.models.turn import Turn
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from schemas.mention import MentionCreate, MentionResponse, QuestionAnswer
