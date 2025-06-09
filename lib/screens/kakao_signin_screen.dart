@@ -1,43 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../data/user_data.dart'; // userType enum 정의 위치
-import '0-3-1.dart'; // FamilyCodeRegisterScreen
-import '0-3-2.dart'; // FamilyCodeInputScreen
+import 'package:provider/provider.dart'; // ✅ Provider import
+import '../user_provider.dart'; // ✅ 사용자 Provider import
+import '../utils/routes.dart';
 
 class KakaoSigninScreen extends StatelessWidget {
   const KakaoSigninScreen({super.key});
 
-  Future<void> _launchKakaoLogin(BuildContext context) async {
-    final clientId = dotenv.env['KAKAO_CLIENT_ID'];
-    final redirectUri = dotenv.env['KAKAO_REDIRECT_URI'];
-
-    final Uri url = Uri.parse(
-      "https://kauth.kakao.com/oauth/authorize"
-      "?client_id=$clientId"
-      "&redirect_uri=$redirectUri"
-      "&response_type=code",
-    );
-
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-
-      // ✅ 로그인 후 redirect 된 것으로 간주하고, selectedRole (보호자/피보호자) 기준 분기
-      if (selectedRole == UserType.guardian) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FamilyCodeRegisterScreen()),
-        );
-      } else if (selectedRole == UserType.elderly) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FamilyCodeInputScreen()),
-        );
+  Future<void> _kakaoLoginAndSendToBackend(BuildContext context) async {
+    try {
+      bool isInstalled = await isKakaoTalkInstalled();
+      OAuthToken token;
+      if (isInstalled) {
+        token = await UserApi.instance.loginWithKakaoTalk();
+        print('카카오톡으로 로그인 성공: ${token.accessToken}');
       } else {
-        throw '사용자 유형이 지정되지 않았습니다.';
+        token = await UserApi.instance.loginWithKakaoAccount();
+        print('카카오계정으로 로그인 성공: ${token.accessToken}');
       }
-    } else {
-      throw 'URL을 열 수 없습니다: $url';
+
+      // 1. 백엔드로 access token 전송
+      final baseUrl = dotenv.env['BASE_URL']!;
+      print('BASE_URL from env: $baseUrl'); // 이 줄 추가해서 확인
+      print('Sending request to: $baseUrl/auth/kakao_login');
+      print('Access token: ${token.accessToken}');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/kakao_login'),
+
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'access_token': token.accessToken}),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final userInfo = jsonDecode(utf8.decode(response.bodyBytes));
+        print('백엔드 응답 데이터: $userInfo');
+
+        // Provider에 저장
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.setUserInfo(
+          kakaoId: userInfo['kakao_id'].toString(),
+          username: userInfo['username'].toString(),
+          profileImg: userInfo['profile_img'].toString(),
+          gender: userInfo['gender'].toString(),
+          birthday: userInfo['birthday'].toString(),
+          email: userInfo['email'].toString(),
+          phone_number: userInfo['phone_number'].toString(),
+        );
+
+        // 이미 가입된 사용자인 경우
+        if (userInfo['is_registered'] == true) {
+          // 가족 정보도 Provider에 저장
+          userProvider.setFamilyJoin(
+            familyId: userInfo['family_id'],
+            familyCode: userInfo['family_code'],
+            familyName: userInfo['family_name'],
+          );
+          userProvider.setFamilyInfo(familyRole: userInfo['family_role']);
+
+          // 바로 홈 화면으로 이동
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else {
+          // 새로운 사용자인 경우 isGuardian 값에 따라 분기 이동
+          if (userProvider.isGuardian == true) {
+            Navigator.pushNamed(context, '/0-3-1');
+          } else if (userProvider.isGuardian == false) {
+            Navigator.pushNamed(context, '/0-3-2');
+          } else {
+            // 예외: 값이 없는 경우
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('역할 정보가 없습니다. 처음 화면으로 돌아갑니다.')),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/signin',
+              (route) => false,
+            );
+          }
+        }
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('서버 오류: ${response.body}')));
+      }
+    } catch (e) {
+      print('카카오 로그인 실패: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('카카오 로그인 실패: $e')));
     }
   }
 
@@ -46,78 +102,27 @@ class KakaoSigninScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            _buildProfileImage(),
-            _buildWelcomeText(),
-            _buildButtons(context),
-            _buildHomeIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileImage() {
-    return Positioned(
-      top: 153,
-      left: 30,
-      child: SizedBox(
-        width: 88,
-        height: 88,
-        child: Image.asset("assets/images/temp_logo.png", fit: BoxFit.cover),
+        child: Stack(children: [_buildWelcomeText(), _buildButtons(context)]),
       ),
     );
   }
 
   Widget _buildWelcomeText() {
-    return Positioned(
-      top: 269,
+    return const Positioned(
+      top: 100,
       left: 30,
       right: 30,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            '보호자/피보호자님,',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Pretendard',
-            ),
-          ),
-          SizedBox(height: 16),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: '소중한 '),
-                TextSpan(
-                  text: '우리 가족의 추억 기록',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: '을 위해 간편 가입으로 '),
-                TextSpan(
-                  text: '메멘토 박스',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: '를 시작하세요.'),
-              ],
-            ),
-            style: TextStyle(
-              fontSize: 19,
-              fontFamily: 'Pretendard',
-              height: 1.5,
-              letterSpacing: -1,
-            ),
-          ),
-        ],
+      child: Text(
+        '소중한 우리 가족의 추억 기록을 위해\n카카오로 간편하게 로그인하세요.',
+        style: TextStyle(fontSize: 18, fontFamily: 'Pretendard'),
+        textAlign: TextAlign.center,
       ),
     );
   }
 
   Widget _buildButtons(BuildContext context) {
     return Positioned(
-      top: 459,
+      top: 200,
       left: 30,
       right: 30,
       child: Column(
@@ -126,16 +131,7 @@ class KakaoSigninScreen extends StatelessWidget {
             '카카오로 계속하기',
             const Color(0xFFF9E007),
             Colors.black,
-            onTap: () => _launchKakaoLogin(context),
-          ),
-          const SizedBox(height: 15),
-          _buildLoginButton('네이버로 계속하기', const Color(0xFF57B04B), Colors.white),
-          const SizedBox(height: 15),
-          _buildLoginButton(
-            '구글로 계속하기',
-            Colors.white,
-            const Color(0xFF111111),
-            border: const BorderSide(color: Color(0xFFAEAEAE), width: 1),
+            onTap: () => _kakaoLoginAndSendToBackend(context),
           ),
         ],
       ),
@@ -146,7 +142,6 @@ class KakaoSigninScreen extends StatelessWidget {
     String text,
     Color bgColor,
     Color textColor, {
-    BorderSide? border,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -157,7 +152,6 @@ class KakaoSigninScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: border != null ? Border.fromBorderSide(border) : null,
         ),
         alignment: Alignment.center,
         child: Text(
@@ -167,24 +161,6 @@ class KakaoSigninScreen extends StatelessWidget {
             fontWeight: FontWeight.w600,
             fontFamily: 'Pretendard',
             color: textColor,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHomeIndicator() {
-    return Positioned(
-      bottom: 10,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: Container(
-          width: 139,
-          height: 5,
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(100),
           ),
         ),
       ),

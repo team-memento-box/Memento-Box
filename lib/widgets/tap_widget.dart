@@ -31,7 +31,7 @@ class CustomBottomNavBar extends StatelessWidget {
             Navigator.pushReplacementNamed(context, Routes.report);
             break;
           case 4:
-            Navigator.pushReplacementNamed(context, Routes.profile);
+            Navigator.pushReplacementNamed(context, Routes.myPage);
             break;
         }
       },

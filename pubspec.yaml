@@ -30,7 +30,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  kakao_flutter_sdk_user: ^1.9.5
+  #url_launcher: ^6.3.1           # 🌐 외부 URL (예: 카카오 로그인 페이지) 브라우저에서 열기
+  #app_links: ^3.4.1              # 🔗 앱이 딥링크/리디렉션 URL을 감지하고 추출할 수 있게 해주는 패키지 (예: myapp://oauth 또는 http://도 가능)
+  flutter_dotenv: ^5.2.1 # 📄 .env 파일에서 환경 변수 (client_id, redirect_uri 등)를 불러오기
+  #flutter_web_auth_2: ^2.0.3     # 🔐 외부 인증 서비스(OAuth 등)를 웹 브라우저를 통해 실행 후 결과를 앱으로 다시 전달받는 기능 지원
+  http: ^0.13.6 # 📡 백엔드와의 HTTP 통신 (GET/POST 등) 처리
+  provider: ^6.1.1 # 🏷️ 상태 관리 패턴을 위한 Provider 패키지
   url_launcher: ^6.3.1
+
   just_audio: ^0.9.35 # 메인 패키지
   just_audio_web: ^0.4.8
   # The following adds the Cupertino Icons font to your application.
@@ -41,8 +49,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  url_launcher: ^6.1.7
-  flutter_dotenv: ^5.1.0
+  # url_launcher: ^6.1.7
+  # flutter_dotenv: ^5.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -69,6 +77,8 @@ flutter:
     - assets/photos/
     - assets/analysis/
     - assets/voice/
+    - .env # 홍원 추가
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -82,16 +92,17 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
-  #   - family: Schyler
+  #   - family: Pretendard
   #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
+  #       - asset: assets/fonts/Pretendard-Regular.otf
+  #       - asset: assets/fonts/Pretendard-Medium.otf
+  #         weight: 500
+  #       - asset: assets/fonts/Pretendard-SemiBold.otf
+  #         weight: 600
+  #       - asset: assets/fonts/Pretendard-Bold.otf
   #         weight: 700
-  #
+  #       - asset: assets/fonts/Pretendard-ExtraBold.otf
+  #         weight: 800
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
