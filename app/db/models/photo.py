@@ -1,9 +1,9 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Text, Integer, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID, JSON
 from db.database import Base
 from sqlalchemy.orm import relationship
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 class Photo(Base):
     """
@@ -18,25 +18,25 @@ class Photo(Base):
     # 사진 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 사진명 (원본 파일명)
-    photo_name = Column(Text, nullable=True)
+    name = Column(String, nullable=True)
     # 사진 저장소 주소 (Azure Blob Storage URL)
-    photo_url = Column(Text)
-    # 촬영 연도
-    story_year = Column(DateTime, nullable=True)
-    # 촬영 계정
-    story_season = Column(String, nullable=True)
-    # 넛지
-    story_nudge = Column(JSON, nullable=True)
+    url = Column(Text)
+    # 연도
+    year = Column(Integer)
+    # 계절
+    season = Column(String)
+    # 설명
+    description = Column(Text, nullable = True)
     # 요약 텍스트
-    summary_text = Column(Text, nullable=True)
-    # 요약 음성 주소
-    summary_voice = Column(Text, nullable=True)
-    # 외래 키 (foreign key)
-    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'), nullable=False)  # nullable=False로 설정
+    summary_text = Column(JSON, nullable=True)
+    # 요약 음성
+    summary_voice = Column(JSON, nullable=True)
+    # 관계 가족 id
+    family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # 업로드 일자
-    uploaded_at = Column(DateTime, default=datetime.utcnow)  # 자동생성 부여
+    uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Family ↔ Photo 
-    family_photo = relationship("Family", back_populates="photo")
+    family = relationship("Family", back_populates="photos")
     # Photo ↔ Conversation 
-    conversation = relationship("Conversation", back_populates="photo_conversation")
+    conversations = relationship("Conversation", back_populates="photo", cascade="all, delete-orphan")
     
