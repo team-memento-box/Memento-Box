@@ -9,6 +9,9 @@ from sqlalchemy.orm import selectinload
 from db.models.photo import Photo
 from db.models.conversation import Conversation
 from .blob_storage import BlobStorageService
+from typing import Optional, List
+from uuid import UUID
+
 
 UPLOAD_DIR = "uploads"
 
@@ -87,17 +90,37 @@ async def save_upload_file(upload_file: UploadFile) -> Optional[str]:
     finally:
         upload_file.file.close() 
 
+
+"""
+특정 photo_id에 연결된 conversation들과, 각 conversation에 연결된 mention들을 JOIN으로 함께 조회
+"""
+
 def _serialize_conversation_with_mentions(conv: Conversation) -> dict:
     return {
-        "conversation": conv,
-        "mentions": conv.mention
+        "conversation": {
+            "id": conv.id,
+            "photo_id": conv.photo_id,
+            "created_at": conv.created_at
+        },
+        "mentions": [
+            {
+                "q_text": mention.question_answer.get("q_text", ""),
+                "a_text": mention.question_answer.get("a_text", "")
+            }
+            for mention in conv.mention
+        ]
     }
 
-async def get_photo_conversations_with_mentions(db: AsyncSession, photo_id: str) -> List[dict]:
-    """
-    특정 photo_id에 연결된 conversation들과, 각 conversation에 연결된 mention들을 JOIN으로 함께 조회
-    """
+from fastapi import HTTPException  # 이 줄 추가
+
+async def get_photo_conversations_with_mentions(db: AsyncSession, photo_id: UUID) -> List[dict]:
     try:
+        # 먼저 photo가 존재하는지 확인
+        photo_result = await db.execute(select(Photo).where(Photo.id == photo_id))
+        photo = photo_result.scalars().first()
+        if not photo:
+            raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+
         result = await db.execute(
             select(Conversation)
             .options(selectinload(Conversation.mention))
@@ -105,6 +128,9 @@ async def get_photo_conversations_with_mentions(db: AsyncSession, photo_id: str)
         )
         conversations = result.scalars().all()
         return [_serialize_conversation_with_mentions(conv) for conv in conversations]
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error fetching conversations: {str(e)}")
-        return []
+        raise HTTPException(status_code=500, detail=f"대화 내역을 가져오는 중 오류가 발생했습니다: {str(e)}")
+    

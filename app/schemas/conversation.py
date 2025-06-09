@@ -22,7 +22,7 @@ class ConversationOut(BaseModel):
 
 class ConversationWithMentions(BaseModel):
     conversation: ConversationOut
-    mentions: List[MentionOut]
+    mentions: List[dict]  # q_text와 a_text만 포함하는 딕셔너리 리스트
 
     class Config:
         orm_mode = True

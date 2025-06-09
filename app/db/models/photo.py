@@ -18,7 +18,7 @@ class Photo(Base):
     # 사진 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 사진명 (원본 파일명)
-    name = Column(Text, nullable=True, nullable=True)
+    name = Column(Text, nullable=True)
     # 사진 저장소 주소 (Azure Blob Storage URL)
     url = Column(Text)
     # 연도

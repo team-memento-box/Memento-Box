@@ -15,7 +15,7 @@ class Conversation(Base):
     __table_args__ = {
         #"schema": "", # 파일명
         #"mysql_engine": "InnoDB",
-        "mysql_charset": "utf8mb4", 
+        "mysql_charset": "utf8mb4",  
         "mysql_collate": "utf8mb4_general_ci" 
     }
     # 대화 회기 id
@@ -29,7 +29,7 @@ class Conversation(Base):
     # Conversation ↔ Mention
     mention = relationship("Mention", back_populates="conv_mention", cascade="all, delete-orphan")
     # Conversation ↔ AnomaliesReport
-    anomalies_report = relationship("AnomaliesReport", back_populates="conv_report", cascade="all, delete-orphan", uselist=False)
+    report = relationship("AnomaliesReport", back_populates="conv_report", cascade="all, delete-orphan", uselist=False)
 
 
 

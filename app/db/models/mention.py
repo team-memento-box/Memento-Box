@@ -32,7 +32,7 @@ class Mention(Base):
     # 관계 회기 id
     conv_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id'))
     # 질답쌍 {q_text:txt, a_text:txt, q_voice: url, a_voice: url}
-    question_answer = Column(JSON, nullable=True, nullable=True)
+    question_answer = Column(JSON, nullable=True)
     # 기록일자
     recorded_at = Column(DateTime, nullable=True)
     # Conversation ↔ Mention 

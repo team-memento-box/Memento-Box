@@ -77,11 +77,10 @@ async def get_conversations_with_mentions_by_photo_id(
 ):
     try:
         result = await get_photo_conversations_with_mentions(db, photo_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="No conversations or mentions found for this photo.")
         return result
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
+    
     
