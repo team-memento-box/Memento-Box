@@ -65,13 +65,14 @@ async def upload_photo(
 
 @router.get("/", response_model=List[PhotoResponse])
 async def list_photos(
-    family_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    특정 가족의 모든 사진을 조회합니다.
+    현재 사용자가 속한 가족의 모든 사진을 조회합니다.
+    연도와 계절별로 정렬되어 반환됩니다.
     """
-    photos = await get_photos_by_family(family_id, db)
+    photos = await get_photos_by_family(current_user.family_id, db)
     return photos
 
 @router.get("/{photo_id}", response_model=PhotoResponse)

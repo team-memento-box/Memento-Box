@@ -138,10 +138,13 @@ async def save_photo_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
 async def get_photos_by_family(family_id: UUID, db: AsyncSession) -> List[Photo]:
     """
     특정 가족의 모든 사진을 조회합니다.
+    연도와 계절별로 정렬되어 반환됩니다.
     """
     try:
         result = await db.execute(
-            select(Photo).where(Photo.family_id == family_id)
+            select(Photo)
+            .where(Photo.family_id == family_id)
+            .order_by(Photo.year.desc(), Photo.season)
         )
         return result.scalars().all()
     except Exception as e:
