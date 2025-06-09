@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import '../utils/styles.dart';
 import 'origin_record_play_sheet.dart';
+import 'audio_player_widget.dart';
+import '../utils/audio_service.dart';
 
-void showSummaryModal(BuildContext context) {
+// 'assets/voice/2025-05-26_서봉봉님_대화분석보고서.mp3';
+
+void showSummaryModal(
+  BuildContext context, {
+  required String audioPath,
+  required AudioService audioService,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -10,12 +18,20 @@ void showSummaryModal(BuildContext context) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
     ),
-    builder: (_) => const SummaryModal(),
+    builder: (_) =>
+        SummaryModal(audioPath: audioPath, audioService: audioService),
   );
 }
 
 class SummaryModal extends StatefulWidget {
-  const SummaryModal({super.key});
+  final String audioPath;
+  final AudioService audioService;
+
+  const SummaryModal({
+    super.key,
+    required this.audioPath,
+    required this.audioService,
+  });
 
   @override
   State<SummaryModal> createState() => _SummaryModalState();
@@ -65,33 +81,37 @@ class _SummaryModalState extends State<SummaryModal>
           const SizedBox(height: 12),
           Column(
             children: [
-              Slider(
-                value: 92,
-                max: 209,
-                activeColor: const Color(0xFF00C8B8),
-                onChanged: (_) {},
+              AudioPlayerWidget(
+                audioPath: widget.audioPath,
+                audioService: widget.audioService,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('01:32', style: TextStyle(fontSize: 12)),
-                  Text('03:29', style: TextStyle(fontSize: 12)),
-                ],
-              ),
+              //     Slider(
+              //       value: 92,
+              //       max: 209,
+              //       activeColor: const Color(0xFF00C8B8),
+              //       onChanged: (_) {},
+              //     ),
+              //     Row(
+              //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //       children: const [
+              //         Text('01:32', style: TextStyle(fontSize: 12)),
+              //         Text('03:29', style: TextStyle(fontSize: 12)),
+              //       ],
+              //     ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.skip_previous, size: 32, color: Colors.black),
-              SizedBox(width: 30),
-              Icon(Icons.play_arrow, size: 48, color: Color(0xFF00C8B8)),
-              SizedBox(width: 30),
-              Icon(Icons.skip_next, size: 32, color: Colors.black),
-            ],
-          ),
-          const SizedBox(height: 20),
+          // const SizedBox(height: 16),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: const [
+          //     Icon(Icons.skip_previous, size: 32, color: Colors.black),
+          //     SizedBox(width: 30),
+          //     Icon(Icons.play_arrow, size: 48, color: Color(0xFF00C8B8)),
+          //     SizedBox(width: 30),
+          //     Icon(Icons.skip_next, size: 32, color: Colors.black),
+          //   ],
+          // ),
+          const SizedBox(height: 10),
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -132,7 +152,11 @@ class _SummaryModalState extends State<SummaryModal>
                               const Duration(milliseconds: 100),
                               () {
                                 if (context.mounted) {
-                                  showOriginalModal(context); // 새 모달 열기
+                                  showOriginalModal(
+                                    context,
+                                    audioPath: widget.audioPath,
+                                    audioService: widget.audioService,
+                                  ); // 새 모달 열기
                                 }
                               },
                             );
