@@ -1,3 +1,6 @@
+# (개발용) 배포 중지용
+web-deploy.yml
+
 # Python
 __pycache__/
 *.pyc

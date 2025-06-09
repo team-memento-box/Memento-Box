@@ -10,10 +10,6 @@ class Photo(Base):
     photos 테이블 모델
     """
     __tablename__ = 'photos'
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_general_ci" 
-    }
 
     # 사진 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)

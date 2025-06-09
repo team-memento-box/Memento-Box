@@ -18,6 +18,18 @@ class Settings(BaseSettings):
     AZURE_BLOBSTORAGE_ACCOUNT: str
     AZURE_BLOBSTORAGE_KEY: str
 
+    # Azure OpenAI 설정
+    AZURE_OPENAI_ENDPOINT: str
+    AZURE_OPENAI_API_VERSION: str
+    AZURE_OPENAI_MAX_TOKENS: str
+    AZURE_OPENAI_DEPLOYMENT: str
+    AZURE_OPENAI_KEY: str
+
+    # Azure Speech 설정
+    AZURE_SPEECH_ENDPOINT: str
+    AZURE_SPEECH_KEY: str
+    AZURE_SPEECH_REGION: str
+
     # JWT 인증 설정
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
