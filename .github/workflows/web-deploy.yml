@@ -50,6 +50,8 @@ jobs:
                   path: release.tar.gz
 
     deploy:
+        # 커밋 메시지에 '[skip deploy]'가 있다면 배포하지 않음
+        if: "!contains(github.event.head_commit.message, '[skip deploy]')"
         runs-on: ubuntu-latest
         needs: build
 

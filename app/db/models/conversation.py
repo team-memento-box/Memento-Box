@@ -1,5 +1,6 @@
 from sqlalchemy import Column, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime, timezone, timedelta
 from db.database import Base
 from sqlalchemy.orm import relationship
 
@@ -21,11 +22,11 @@ class Conversation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True)
     # 관계 사진 id
     photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
-    # 실행 일자
-    created_at = Column(DateTime)
+    # 대화 생성 일자
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Photo ↔ Conversation 
-    photo_conversation = relationship("Photo", back_populates="conversation")
-    # Conversation ↔ Mention
-    mention = relationship("Mention", back_populates="conv_mention")
-    # Conversation ↔ AnomaliesReport
-    report = relationship("AnomaliesReport", back_populates="conv_report")
+    photo = relationship("Photo", back_populates="conversations")
+    # Conversation ↔ Turn
+    turns = relationship("Turn", back_populates="conversation", cascade="all, delete-orphan")
+    # Conversation ↔ AnomalyReport
+    anomaly_report = relationship("AnomalyReport", back_populates="conversation", cascade="all, delete-orphan", uselist=False)
