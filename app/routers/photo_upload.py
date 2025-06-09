@@ -22,8 +22,19 @@ from db.models.family import Family
 # .env 로드
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
+# ─────────────────────────────환경변수─────────────────────────────
+API_KEY    = os.getenv("AZURE_OPENAI_KEY")
+ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT")
+DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
+STORAGE_ACCOUNT = os.getenv("AZURE_BLOBSTORAGE_ACCOUNT")
+STORAGE_KEY = os.getenv("AZURE_BLOBSTORAGE_KEY")
+#──────────────────────────────────────────────────────────
+
 # Azure Blob 설정
-connection_string = os.getenv("AZURE_BLOBSTORAGE_KEY")
+
+# 연결 문자열 생성
+connection_string = f"DefaultEndpointsProtocol=https;AccountName={STORAGE_ACCOUNT};AccountKey={STORAGE_KEY};EndpointSuffix=core.windows.net"
 container_name = "photo"
 
 # 업로드할 로컬 경로 (호스트 uploads/ 폴더)
