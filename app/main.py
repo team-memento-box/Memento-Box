@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# from routers import photo, user_create, conv_tts, conv_stt, photo_router
 from datetime import timezone, timedelta
 import pytz
 from routers import auth, photo
@@ -32,12 +34,6 @@ KST = timezone(timedelta(hours=9))
 app.state.timezone = KST
 
 # 라우터 등록
-app.include_router(auth.router)
-app.include_router(photo.router)
-app.include_router(user_create.router)
-app.include_router(conv_tts.router)
-app.include_router(conv_stt.router)
-app.include_router(photo_router.router)
 # app.include_router(photo.router)
 # app.include_router(user_create.router)
 # app.include_router(conv_tts.router)
