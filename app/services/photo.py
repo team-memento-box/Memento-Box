@@ -6,11 +6,15 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import UUID
-from schemas.photo import PhotoCreate
+from schemas.photo import PhotoBase, PhotoResponse, PhotoCreate
 from db.models.photo import Photo
 from db.models.user import User
 from .blob_storage import BlobStorageService, get_blob_service_client
 import uuid
+from fastapi import HTTPException 
+from sqlalchemy.orm import selectinload
+from schemas.turn import TurnTextResponse
+from schemas.conversation import ConversationWithTurns
 
 UPLOAD_DIR = "uploads"
 
@@ -38,13 +42,13 @@ class PhotoService:
             photo_url = await upload_photo_to_blob(temp_file_path, file.filename, blob_service_client)
 
             # DB에 메타데이터 저장
-            photo_data = PhotoCreate(
-                photo_name=file.filename,
+            photo_data = PhotoBase(
+                name=file.filename,
                 family_id=current_user.family_id,
-                photo_url=photo_url,
-                story_year=datetime.now(),
-                story_season="summer",
-                story_nudge={"note": "auto-uploaded"}
+                url=photo_url,
+                year=datetime.now().year,
+                season=datetime.now().strftime('%B'),
+                description={"note": "auto-uploaded"}
             )
             
             return await save_photo_to_db(photo_data, self.db)
@@ -69,7 +73,7 @@ class PhotoService:
                 return False
             
             # Azure Blob Storage에서 파일 삭제
-            if await self.blob_storage.delete_file(photo.photo_name):
+            if await self.blob_storage.delete_file(photo.name):
                 await self.db.delete(photo)
                 await self.db.commit()
                 return True
@@ -103,11 +107,11 @@ async def save_photo_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
     """
     try:
         photo = Photo(
-            photo_name=photo_data.photo_name,
-            photo_url=photo_data.photo_url,
-            story_year=photo_data.story_year,
-            story_season=photo_data.story_season,
-            story_nudge=photo_data.story_nudge,
+            name=photo_data.name,
+            url=photo_data.url,
+            year=photo_data.year,
+            season=photo_data.season,
+            description=photo_data.description,
             summary_text=photo_data.summary_text,
             summary_voice=photo_data.summary_voice,
             family_id=photo_data.family_id,
@@ -133,3 +137,45 @@ async def get_photos_by_family(family_id: UUID, db: AsyncSession) -> List[Photo]
         return result.scalars().all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사진 조회 실패: {str(e)}") 
+    
+
+# 특정 photo_id에 연결된 conversation들과, 각 conversation에 연결된 mention들을 JOIN으로 함께 조회
+from db.models.conversation import Conversation
+
+def _serialize_conversation_with_mentions(conv: Conversation) -> dict:
+    return {
+        "conversation": {
+            "id": conv.id,
+            "photo_id": conv.photo_id,
+            "created_at": conv.created_at
+        },
+        "turns": [
+            TurnTextResponse(
+                q_voice=turn.turn.get("q_voice"),
+                a_voice=turn.turn.get("a_voice")
+            )
+            for turn in conv.turns
+        ]
+    }
+
+async def get_photo_conversations_with_mentions(db: AsyncSession, photo_id: UUID) -> List[dict]:
+    try:
+        # 먼저 photo가 존재하는지 확인
+        photo_result = await db.execute(select(Photo).where(Photo.id == photo_id))
+        photo = photo_result.scalars().first()
+        if not photo:
+            raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+
+        result = await db.execute(
+            select(Conversation)
+            .options(selectinload(Conversation.turns))
+            .where(Conversation.photo_id == photo_id)
+        )
+        conversations = result.scalars().all()
+        return [_serialize_conversation_with_mentions(conv) for conv in conversations]
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching conversations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"대화 내역을 가져오는 중 오류가 발생했습니다: {str(e)}")
+    

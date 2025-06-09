@@ -2,29 +2,34 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
 from typing import List, Optional, Dict, Any
 import os
 import uuid
+from uuid import UUID
 from datetime import datetime
 from db.database import get_db
 from db.models.photo import Photo
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from schemas.photo import PhotoCreate, PhotoResponse
+from schemas.photo import PhotoCreate, PhotoBase, PhotoResponse
 from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db, get_photos_by_family
 from services.blob_storage import get_blob_service_client
 from core.auth import get_current_user
 from db.models.user import User
 import json
+from services.photo import get_photo_conversations_with_mentions
+from schemas.conversation import ConversationWithTurns
+
 
 router = APIRouter(
     prefix="/api/photos",
     tags=["photos"]
 )
 
+
 @router.post("/upload", response_model=PhotoResponse)
 async def upload_photo(
     file: UploadFile = File(...),
-    story_year: int = Form(...),
-    story_season: str = Form(...),
-    story_nudge: Optional[str] = Form(None),
+    year: int = Form(...),
+    season: str = Form(...),
+    description: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -36,7 +41,7 @@ async def upload_photo(
 
     # story_season 유효성 검사
     valid_seasons = ["spring", "summer", "autumn", "winter"]
-    if story_season not in valid_seasons:
+    if season not in valid_seasons:
         raise HTTPException(
             status_code=400, 
             detail=f"유효하지 않은 계절입니다. 다음 중 하나여야 합니다: {', '.join(valid_seasons)}"
@@ -44,11 +49,11 @@ async def upload_photo(
 
     # story_nudge JSON 파싱
     story_nudge_dict = None
-    if story_nudge:
+    if description:
         try:
-            story_nudge_dict = json.loads(story_nudge)
+            story_nudge_dict = json.loads(description)
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="story_nudge는 유효한 JSON 형식이어야 합니다.")
+            raise HTTPException(status_code=400, detail="description는 유효한 JSON 형식이어야 합니다.")
 
     temp_file_path = None
     try:
@@ -66,12 +71,12 @@ async def upload_photo(
 
         # DB에 메타데이터 저장
         photo_data = PhotoCreate(
-            photo_name=file.filename,
-            family_id=current_user.family_id,  # 현재 사용자의 family_id 사용
-            photo_url=photo_url,
-            story_year=story_year,
-            story_season=story_season,
-            story_nudge=story_nudge_dict
+            name=file.filename,
+            family_id=current_user.family_id,
+            url=photo_url,
+            year=year,
+            season=season,
+            description=description
         )
         
         photo = await save_photo_to_db(photo_data, db)
@@ -82,6 +87,9 @@ async def upload_photo(
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+
+
+
 
 @router.get("/", response_model=List[PhotoResponse])
 async def list_photos(
@@ -110,6 +118,24 @@ async def get_photo(
         raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
     return photo
 
+@router.get("/{photo_id}/conversations", response_model=List[ConversationWithTurns])
+async def get_conversations_with_turns_by_photo_id(
+    photo_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    특정 사진의 전체 txt 대화내용을 가져옵니다.
+    """
+    try:
+        result = await get_photo_conversations_with_mentions(db, photo_id)
+        return result
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.delete("/{photo_id}")
 async def delete_photo(
     photo_id: uuid.UUID,
@@ -122,3 +148,6 @@ async def delete_photo(
     if await photo_service.delete_photo(photo_id):
         return {"message": "사진이 삭제되었습니다."}
     raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.") 
+
+
+

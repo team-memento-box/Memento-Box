@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import timezone, timedelta
 import pytz
-from routers import auth, photo
+from routers import auth, user, family, photo, conversation, turn #, anomaly_report
 
 app = FastAPI(
     title="Memento Box API",
@@ -25,7 +25,12 @@ app.state.timezone = KST
 
 # 라우터 등록
 app.include_router(auth.router)
+app.include_router(user.router)
+app.include_router(family.router)
 app.include_router(photo.router)
+app.include_router(conversation.router)
+app.include_router(turn.router)
+# app.include_router(anomaly_report.router)
 
 @app.get("/")
 def read_root():
