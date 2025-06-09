@@ -18,10 +18,12 @@ class Family(Base):
     # 가족 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 외부 가족 코드
-    family_code = Column(String, index=True)
+    code = Column(String, index=True)
+    # 가족 이름
+    name = Column(String(40), nullable=True)
     # 가족 생성 일자
     created_at = Column(DateTime, default=datetime.utcnow)  # 자동생성 부여
     # Family ↔ Photo 
-    photo = relationship("Photo", back_populates="family_photo")
+    photo = relationship("Photo", back_populates="family_photo", cascade="all, delete-orphan")
     # Family ↔ User 
-    family_user = relationship("User", back_populates="family")
+    family_user = relationship("User", back_populates="family", cascade="all, delete-orphan")

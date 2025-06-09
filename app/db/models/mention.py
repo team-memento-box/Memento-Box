@@ -32,69 +32,69 @@ class Mention(Base):
     # 관계 회기 id
     conv_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id'))
     # 질답쌍 {q_text:txt, a_text:txt, q_voice: url, a_voice: url}
-    question_answer = Column(JSON, nullable=True)
+    question_answer = Column(JSON, nullable=True, nullable=True)
     # 기록일자
     recorded_at = Column(DateTime, nullable=True)
     # Conversation ↔ Mention 
     conv_mention = relationship("Conversation", back_populates="mention")
 
 
-from uuid import uuid4
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy import update, delete
-from schemas.mention import MentionCreate, MentionUpdate
-from typing import List, Optional
+# from uuid import uuid4
+# from sqlalchemy.ext.asyncio import AsyncSession
+# from sqlalchemy.future import select
+# from sqlalchemy import update, delete
+# from schemas.mention import MentionCreate, MentionUpdate
+# from typing import List, Optional
 
 
 
-# [create] 신규 mention 생성
-async def create_mention(db: AsyncSession, mention_in: MentionCreate) -> Mention:
-    new_mention = Mention(
-        id=uuid4(),
-        conv_id=mention_in.conv_id,
-        question_answer=mention_in.question_answer.dict(),
-        recorded_at=mention_in.recorded_at
-    )
-    db.add(new_mention)
-    await db.commit()
-    await db.refresh(new_mention)
-    return new_mention
+# # [create] 신규 mention 생성
+# async def create_mention(db: AsyncSession, mention_in: MentionCreate) -> Mention:
+#     new_mention = Mention(
+#         id=uuid4(),
+#         conv_id=mention_in.conv_id,
+#         question_answer=mention_in.question_answer.dict(),
+#         recorded_at=mention_in.recorded_at
+#     )
+#     db.add(new_mention)
+#     await db.commit()
+#     await db.refresh(new_mention)
+#     return new_mention
 
 
-# [get] 특정 mention 가져오기
-async def get_mention_by_id(db: AsyncSession, mention_id: UUID) -> Optional[Mention]:
-    result = await db.execute(select(Mention).where(Mention.id == mention_id))
-    return result.scalars().first()
+# # [get] 특정 mention 가져오기
+# async def get_mention_by_id(db: AsyncSession, mention_id: UUID) -> Optional[Mention]:
+#     result = await db.execute(select(Mention).where(Mention.id == mention_id))
+#     return result.scalars().first()
 
 
-# [get] 특정 대화내역의 mentions 가져오기
-async def get_mentions_by_conv_id(db: AsyncSession, conv_id: UUID) -> List[Mention]:
-    result = await db.execute(select(Mention).where(Mention.conv_id == conv_id))
-    return result.scalars().all()
+# # [get] 특정 대화내역의 mentions 가져오기
+# async def get_mentions_by_conv_id(db: AsyncSession, conv_id: UUID) -> List[Mention]:
+#     result = await db.execute(select(Mention).where(Mention.conv_id == conv_id))
+#     return result.scalars().all()
 
 
-# [update] mention 업데이트
-async def update_mention(db: AsyncSession, mention_id: UUID, mention_in: MentionUpdate) -> Optional[Mention]:
-    result = await db.execute(select(Mention).where(Mention.id == mention_id))
-    mention = result.scalars().first()
-    if mention is None:
-        return None
-    if mention_in.question_answer:
-        mention.question_answer = mention_in.question_answer.dict()
-    if mention_in.recorded_at:
-        mention.recorded_at = mention_in.recorded_at
-    await db.commit()
-    await db.refresh(mention)
-    return mention
-
-
-# # [delete] mention 삭제
-# async def delete_mention(db: AsyncSession, mention_id: UUID) -> bool:
+# # [update] mention 업데이트
+# async def update_mention(db: AsyncSession, mention_id: UUID, mention_in: MentionUpdate) -> Optional[Mention]:
 #     result = await db.execute(select(Mention).where(Mention.id == mention_id))
 #     mention = result.scalars().first()
 #     if mention is None:
-#         return False
-#     await db.delete(mention)
+#         return None
+#     if mention_in.question_answer:
+#         mention.question_answer = mention_in.question_answer.dict()
+#     if mention_in.recorded_at:
+#         mention.recorded_at = mention_in.recorded_at
 #     await db.commit()
-#     return True
+#     await db.refresh(mention)
+#     return mention
+
+
+# # # [delete] mention 삭제
+# # async def delete_mention(db: AsyncSession, mention_id: UUID) -> bool:
+# #     result = await db.execute(select(Mention).where(Mention.id == mention_id))
+# #     mention = result.scalars().first()
+# #     if mention is None:
+# #         return False
+# #     await db.delete(mention)
+# #     await db.commit()
+# #     return True
