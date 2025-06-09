@@ -9,18 +9,7 @@ from datetime import datetime
 import soundfile as sf
 # import sounddevice as sd
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
-
-# ─────────────────────────────환경변수─────────────────────────────
-API_KEY    = os.getenv("AZURE_OPENAI_KEY")
-ENDPOINT   = os.getenv("AZURE_OPENAI_ENDPOINT")
-DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY")
-SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION")
-
-API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
-MAX_TOKENS = os.getenv("AZURE_OPENAI_MAX_TOKENS")
-#──────────────────────────────────────────────────────────
+from core.config import settings
 
 @dataclass
 class StrangeResponse:
@@ -48,16 +37,22 @@ class ChatSystem:
     """자연스러운 질문 통합 채팅 시스템 - 토큰 효율 개선"""
     
     def __init__(self):
+        self.api_key = os.getenv("AZURE_OPENAI_KEY")
+        self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        self.api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+        self.max_tokens = os.getenv("AZURE_OPENAI_MAX_TOKENS")
+        self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+
         self.client = AzureOpenAI(
-            api_version=API_VERSION,
-            azure_endpoint=ENDPOINT,
-            api_key=API_KEY,
+            api_version=self.api_version,
+            azure_endpoint=self.endpoint,
+            api_key=self.api_key,
         )
         
         self.conversation_history = []
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
         self.token_count = 0
-        self.MAX_TOKENS = MAX_TOKENS
+        self.MAX_TOKENS = self.max_tokens
         self.conversation_turns = []
         self.last_question = ""
         
@@ -166,7 +161,7 @@ class ChatSystem:
     def generate_initial_question(self):
         """첫 질문 생성"""
         response = self.client.chat.completions.create(
-            model=DEPLOYMENT,
+            model=self.deployment,
             messages=self.conversation_history + [
                 {"role": "user", "content": "어르신께 따듯하고 친근하게 사진에 대하여 질문을 해주세요. 50자 이내로 간결하게 질문해주세요."}
             ],
@@ -181,6 +176,57 @@ class ChatSystem:
         
         return initial_question
 
+    def chat_about_image2(self, user_query, with_audio=False):
+        """대화 처리"""
+        user_tokens = len(self.tokenizer.encode(user_query))
+        
+        # 음성 녹음 시작 (if requested)
+        audio_file = None
+        if with_audio:
+            self.start_recording()
+        
+        # 대화 턴 저장
+        if self.last_question:
+            # 음성 녹음 중지 및 파일 저장 (if recording)
+            if with_audio:
+                audio_file = self.stop_recording()
+            
+            conversation_turn = ConversationTurn(
+                question=self.last_question,
+                answer=user_query,
+                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                answer_length=len(user_query.strip()),
+                audio_file=audio_file if audio_file else ""
+            )
+            self.conversation_turns.append(conversation_turn)
+        
+        self.conversation_history.append({"role": "user", "content": user_query})
+        self.token_count += user_tokens
+        
+        # 토큰 제한 확인
+        if self.token_count > self.max_tokens:
+            answer = "대화 시간이 다 되었어요. 수고하셨습니다."
+            self.conversation_history.append({"role": "assistant", "content": answer})
+            return answer, True
+        
+        # AI 응답 생성
+        response = self.client.chat.completions.create(
+            model=self.deployment,
+            messages=self.conversation_history,
+            max_tokens=1024,
+            temperature=0.7
+        )
+        answer = response.choices[0].message.content
+        
+        self.conversation_history.append({"role": "assistant", "content": answer})
+        self.token_count += len(self.tokenizer.encode(answer))
+        self.last_question = answer
+        
+        if self.token_count > self.max_tokens:
+            return answer, True
+        
+        return answer, False
+    
     def chat_about_image(self, user_query, with_audio=False):
         """대화 처리"""
         user_tokens = len(self.tokenizer.encode(user_query))
@@ -209,14 +255,14 @@ class ChatSystem:
         self.token_count += user_tokens
         
         # 토큰 제한 확인
-        if self.token_count > self.MAX_TOKENS:
+        if self.token_count > self.max_tokens:
             answer = "대화 시간이 다 되었어요. 수고하셨습니다."
             self.conversation_history.append({"role": "assistant", "content": answer})
             return answer, True
         
         # AI 응답 생성
         response = self.client.chat.completions.create(
-            model=DEPLOYMENT,
+            model=self.deployment,
             messages=self.conversation_history,
             max_tokens=1024,
             temperature=0.7
@@ -227,7 +273,7 @@ class ChatSystem:
         self.token_count += len(self.tokenizer.encode(answer))
         self.last_question = answer
         
-        if self.token_count > self.MAX_TOKENS:
+        if self.token_count > self.max_tokens:
             return answer, True
         
         return answer, False
