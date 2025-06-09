@@ -21,7 +21,7 @@ class _IntroScreenState extends State<IntroScreen> {
     final user = Provider.of<UserProvider>(context);
     print('IntroScreen - Provider 데이터:');
     print('kakaoId: ${user.kakaoId}');
-    print('username: ${user.username}');
+    print('username: ${user.name}');
     print('profileImg: ${user.profileImg}');
     print('gender: ${user.gender}');
 
@@ -30,7 +30,7 @@ class _IntroScreenState extends State<IntroScreen> {
       body: Column(
         children: [
           Text("✅ 카카오ID: ${user.kakaoId}"),
-          Text("✅ 이름: ${user.username}"),
+          Text("✅ 이름: ${user.name}"),
           Text("✅ 프로필: ${user.profileImg}"),
           Text("✅ 성별: ${user.gender}"),
           const SizedBox(height: 40),

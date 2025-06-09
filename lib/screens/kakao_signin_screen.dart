@@ -46,12 +46,12 @@ class KakaoSigninScreen extends StatelessWidget {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setUserInfo(
         kakaoId: userInfo['kakao_id'].toString(),
-        username: userInfo['username'].toString(),
+        name: userInfo['name'].toString(),
         profileImg: userInfo['profile_img'].toString(),
         gender: userInfo['gender'].toString(),
         birthday: userInfo['birthday'].toString(),
         email: userInfo['email'].toString(),
-        phone_number: userInfo['phone_number'].toString(),
+        phone: userInfo['phone'].toString(),
       );
 
       // 이미 가입된 사용자인 경우

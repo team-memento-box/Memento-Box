@@ -76,7 +76,7 @@ class ProfileHeader extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     print('ProfileHeader - Provider 데이터:');
     print('kakaoId: ${userProvider.kakaoId}');
-    print('username: ${userProvider.username}');
+    print('username: ${userProvider.name}');
     print('profileImg: ${userProvider.profileImg}');
     print('gender: ${userProvider.gender}');
 
@@ -94,7 +94,7 @@ class ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 7),
         Text(
-          userProvider.username ?? '이름 없음',
+          userProvider.name ?? '이름 없음',
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 1),

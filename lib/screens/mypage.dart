@@ -65,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
                     top: 130,
                     child: Center(
                       child: Text(
-                        userProvider.username ?? '이름 없음',
+                        userProvider.name ?? '이름 없음',
                         style: const TextStyle(
                           color: Color(0xFF111111),
                           fontSize: 22,
@@ -169,9 +169,9 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _InfoRow(label: '이름', value: userProvider.username ?? '이름 없음'),
+                  _InfoRow(label: '이름', value: userProvider.name ?? '이름 없음'),
                   _InfoRow(label: '이메일', value: userProvider.email ?? '이메일 없음'),
-                  _InfoRow(label: '연락처', value: userProvider.phone_number ?? '연락처 없음'),
+                  _InfoRow(label: '연락처', value: userProvider.phone ?? '연락처 없음'),
                   _InfoRow(label: '피보호자와의 관계', value: userProvider.familyRole ?? '역할 없음'),
                 ],
               ),

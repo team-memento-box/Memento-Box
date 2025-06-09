@@ -73,7 +73,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     final baseUrl = dotenv.env['BASE_URL']!;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/join/family'),
+        Uri.parse('$baseUrl/family/join'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -114,12 +114,12 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
       final userData = {
         'kakao_id': userProvider.kakaoId,
-        'username': userProvider.username,
+        'name': userProvider.name,
         'profile_img': userProvider.profileImg,
         'gender': userProvider.gender,
         'birthday': userProvider.birthday,
         'email': userProvider.email,
-        'phone_number': userProvider.phone_number,
+        'phone': userProvider.phone,
         'family_id': userProvider.familyId,
         'family_code': userProvider.familyCode,
         'family_role': userProvider.familyRole,

@@ -34,7 +34,7 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
     try {
       // 1. 가족 코드 유효성 확인
       final checkResponse = await http.post(
-        Uri.parse('$baseUrl/join/family'),
+        Uri.parse('$baseUrl/family/join'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -67,12 +67,12 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
         // 4. 사용자 정보 저장
         final userData = {
           'kakao_id': userProvider.kakaoId,
-          'username': userProvider.username,
+          'name': userProvider.name,
           'profile_img': userProvider.profileImg,
           'gender': userProvider.gender,
           'birthday': userProvider.birthday,
           'email': userProvider.email,
-          'phone_number': userProvider.phone_number,
+          'phoner': userProvider.phone,
           'family_id': familyData['family_id'],
           'family_code': familyData['family_code'],
           'family_name': familyData['family_name'],

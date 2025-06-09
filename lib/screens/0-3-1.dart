@@ -47,7 +47,7 @@ class GroupSelectScreen extends StatelessWidget {
                 children: [
                   Consumer<UserProvider>(
                     builder: (context, userProvider, child) => Text(
-                      '안녕하세요 ${userProvider.username}님,',
+                      '안녕하세요 ${userProvider.name}님,',
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 21,
