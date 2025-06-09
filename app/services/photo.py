@@ -94,7 +94,9 @@ async def save_upload_file(upload_file: UploadFile) -> Optional[str]:
 
 
 """
+
 특정 photo_id에 연결된 conversation들과, 각 conversation에 연결된 mention들을 JOIN으로 함께 조회
+
 """
 
 def _serialize_conversation_with_mentions(conv: Conversation) -> dict:
