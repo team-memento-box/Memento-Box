@@ -12,6 +12,8 @@ services:
       - ./.env:/app/.env
       - ./uploads:/app/uploads
       - ./app/alembic/versions:/app/alembic/versions  
+    ports:
+      - "8000:8000"
     expose:
       - "8000"
     depends_on:
@@ -25,8 +27,11 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - /etc/ssl/certs/selfsigned.crt:/etc/ssl/certs/selfsigned.crt
+      - /etc/ssl/private/selfsigned.key:/etc/ssl/private/selfsigned.key
     depends_on:
       - web
     networks:

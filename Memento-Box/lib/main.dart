@@ -36,18 +36,7 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: '/signin', // ✅ 앱 실행 시 로그인 화면 처음 뜨도록, // 홍원 수정
-      // ❌ [routes]는 /intro?kakao_id=... 같은 쿼리를 인식 못함 → 제거
-      // routes: {
-      //   '/home': (context) => const HomeUpdateScreen(),
-      //   '/signin': (context) => const SigninScreen(),
-      //   '/gallery': (context) => const GalleryScreen(),
-      //   '/addphoto': (context) => const AddPhotoScreen(),
-      //   '/conversation': (context) => const PhotoConversationScreen(),
-      //   '/intro': (context) => const IntroScreen(),
-      //   '/kakao_signin': (context) => const KakaoSigninScreen(),
-      // },
-
+      initialRoute: '/signin', 
       // ✅ [onGenerateRoute] 사용으로 변경
       onGenerateRoute: (settings) {
         if (settings.name != null && settings.name!.startsWith('/intro')) {

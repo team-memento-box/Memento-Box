@@ -19,6 +19,8 @@ class Family(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 외부 가족 코드
     family_code = Column(String, index=True)
+    # 가족 이름
+    family_name = Column(String, nullable=True)
     # 가족 생성 일자
     created_at = Column(DateTime, default=datetime.utcnow)  # 자동생성 부여
     # Family ↔ Photo 

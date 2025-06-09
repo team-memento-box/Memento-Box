@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'dart:developer';
-import 'dart:html' as html; // 현재 탭 이동용
 
 class KakaoSigninScreen extends StatelessWidget {
   const KakaoSigninScreen({super.key});
 
-  Future<void> _launchKakaoLogin() async {
-    final baseUrl = dotenv.env['BASE_URL']!;
-    final loginUrl = "$baseUrl/api/oauth/kakao_start";  // 예: http://20.75.82.5/api/oauth
+  Future<void> _kakaoLoginAndSendToBackend(BuildContext context) async {
+    try {
+      OAuthToken token = await UserApi.instance.loginWithKakaoAccount();
+      final baseUrl = dotenv.env['BASE_URL']!;
+      final response = await http.post(
+        Uri.parse('$baseUrl/kakao_login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'access_token': token.accessToken}),
+      );
 
-    log('✅ BASE_URL: $baseUrl');
-    log('✅ Login URL: $loginUrl');
-
-    // 현재 탭에서 이동 (새 탭 아님)
-    html.window.location.href = loginUrl;
+      if (response.statusCode == 200) {
+        final userInfo = jsonDecode(response.body);
+        Navigator.pushNamed(context, '/intro', arguments: userInfo);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('서버 오류: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('카카오 로그인 실패: $e')),
+      );
+    }
   }
 
   @override
@@ -26,13 +40,13 @@ class KakaoSigninScreen extends StatelessWidget {
         child: Stack(
           children: [
             _buildWelcomeText(),
-            _buildButtons(),
+            _buildButtons(context),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildWelcomeText() {
     return const Positioned(
       top: 100,
@@ -46,7 +60,7 @@ class KakaoSigninScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons() {
+  Widget _buildButtons(BuildContext context) {
     return Positioned(
       top: 200,
       left: 30,
@@ -57,7 +71,7 @@ class KakaoSigninScreen extends StatelessWidget {
             '카카오로 계속하기',
             const Color(0xFFF9E007),
             Colors.black,
-            onTap: _launchKakaoLogin,
+            onTap: () => _kakaoLoginAndSendToBackend(context),
           ),
         ],
       ),
