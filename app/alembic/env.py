@@ -3,13 +3,14 @@ import os
 import logging
 from datetime import timezone, timedelta
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine.url import make_url
 from alembic import context
 from dotenv import load_dotenv
 from db.database import Base
-from db.models import user, photo, family, conversation, anomaly_report, turn
+from db.models import user, family, photo, conversation, turn, anomaly_report
 
 # 로깅 설정
 logger = logging.getLogger('alembic.env')
