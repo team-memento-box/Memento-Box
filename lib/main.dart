@@ -63,12 +63,15 @@ class MyCustomApp extends StatelessWidget {
         if (settings.name == '/signin') {
           return MaterialPageRoute(builder: (context) => const SigninScreen());
         }
+        //아직안함
         if (settings.name == '/gallery') {
           return MaterialPageRoute(builder: (context) => const GalleryScreen());
         }
+        //아직안함
         if (settings.name == '/addphoto') {
           return MaterialPageRoute(builder: (context) => const AddPhotoScreen());
         }
+        //아직안함
         if (settings.name == '/conversation') {
           return MaterialPageRoute(builder: (context) => const PhotoConversationScreen());
         }

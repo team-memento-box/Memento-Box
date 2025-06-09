@@ -34,7 +34,7 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
     try {
       // 1. 가족 코드 유효성 확인
       final checkResponse = await http.post(
-        Uri.parse('$baseUrl/join_family'),
+        Uri.parse('$baseUrl/join/family'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -82,7 +82,7 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
         };
 
         final registerResponse = await http.post(
-          Uri.parse('$baseUrl/register_user'),
+          Uri.parse('$baseUrl/auth/register_user'),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
           },

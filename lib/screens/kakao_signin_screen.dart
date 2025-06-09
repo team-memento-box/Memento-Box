@@ -24,11 +24,13 @@ class KakaoSigninScreen extends StatelessWidget {
 
     // 1. 백엔드로 access token 전송
     final baseUrl = dotenv.env['BASE_URL']!;
-    print('Sending request to: $baseUrl/kakao_login');
+    print('BASE_URL from env: $baseUrl');  // 이 줄 추가해서 확인
+    print('Sending request to: $baseUrl/auth/kakao_login');
     print('Access token: ${token.accessToken}');
 
     final response = await http.post(
-      Uri.parse('$baseUrl/kakao_login'),
+      Uri.parse('$baseUrl/auth/kakao_login'),
+      
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'access_token': token.accessToken}),
     );

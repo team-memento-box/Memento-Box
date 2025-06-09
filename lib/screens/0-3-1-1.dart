@@ -35,7 +35,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     final baseUrl = dotenv.env['BASE_URL']!;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/create_family'),
+        Uri.parse('$baseUrl/family/create'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -73,7 +73,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     final baseUrl = dotenv.env['BASE_URL']!;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/join_family'),
+        Uri.parse('$baseUrl/join/family'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -131,7 +131,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       try {
         final baseUrl = dotenv.env['BASE_URL']!;
         final response = await http.post(
-          Uri.parse('$baseUrl/register_user'),
+          Uri.parse('$baseUrl/auth/register_user'),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
           },
