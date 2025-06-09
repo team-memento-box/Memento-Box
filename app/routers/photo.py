@@ -90,7 +90,6 @@ async def upload_photo(
 
 
 
-
 @router.get("/", response_model=List[PhotoResponse])
 async def list_photos(
     family_id: uuid.UUID,

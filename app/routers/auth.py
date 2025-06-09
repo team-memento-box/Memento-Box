@@ -20,7 +20,7 @@ router = APIRouter(
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
-):
+): 
     """
     사용자 로그인 및 JWT 토큰 발급
     """
