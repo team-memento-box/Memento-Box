@@ -15,7 +15,7 @@ class Conversation(Base):
     __table_args__ = {
         #"schema": "", # 파일명
         #"mysql_engine": "InnoDB",
-        "mysql_charset": "utf8mb4",  
+        "mysql_charset": "utf8mb4", 
         "mysql_collate": "utf8mb4_general_ci" 
     }
     # 대화 회기 id
@@ -23,13 +23,10 @@ class Conversation(Base):
     # 관계 사진 id
     photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
     # 실행 일자
-    created_at = Column(DateTime, default=datetime)
+    created_at = Column(DateTime, default=datetime.utcnow)
     # Photo ↔ Conversation 
-    photo_conversation = relationship("Photo", back_populates="conversation")
-    # Conversation ↔ Mention
-    mention = relationship("Mention", back_populates="conv_mention", cascade="all, delete-orphan")
-    # Conversation ↔ AnomaliesReport
-    report = relationship("AnomaliesReport", back_populates="conv_report", cascade="all, delete-orphan", uselist=False)
-
-
-
+    photo = relationship("Photo", back_populates="conversations")
+    # Conversation ↔ Turn
+    turns = relationship("Turn", back_populates="conversation", cascade="all, delete-orphan")
+    # Conversation ↔ AnomalyReport
+    anomaly_report = relationship("AnomalyReport", back_populates="conversation", cascade="all, delete-orphan", uselist=False)

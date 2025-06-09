@@ -30,9 +30,11 @@ class PhotoService:
             
             # DB에 정보 저장
             photo = Photo(
-                photo_name=title or file.filename,
-                photo_url=blob_url,
-                family_id=family_id
+                name=title or file.filename,
+                url=blob_url,
+                family_id=family_id,
+                description=description,
+                uploaded_at=datetime.utcnow()
             )
             
             self.db.add(photo)
@@ -57,7 +59,7 @@ class PhotoService:
                 return False
             
             # Azure Blob Storage에서 파일 삭제
-            if await self.blob_storage.delete_file(photo.photo_name):
+            if await self.blob_storage.delete_file(photo.name):
                 # DB에서 정보 삭제
                 await self.db.delete(photo)
                 await self.db.commit()
@@ -102,12 +104,12 @@ def _serialize_conversation_with_mentions(conv: Conversation) -> dict:
             "photo_id": conv.photo_id,
             "created_at": conv.created_at
         },
-        "mentions": [
+        "turns": [
             {
-                "q_text": mention.question_answer.get("q_text", ""),
-                "a_text": mention.question_answer.get("a_text", "")
+                "q_text": turn.turn.get("q_text", ""),
+                "a_text": turn.turn.get("a_text", "")
             }
-            for mention in conv.mention
+            for turn in conv.turns
         ]
     }
 
@@ -123,7 +125,7 @@ async def get_photo_conversations_with_mentions(db: AsyncSession, photo_id: UUID
 
         result = await db.execute(
             select(Conversation)
-            .options(selectinload(Conversation.mention))
+            .options(selectinload(Conversation.turns))
             .where(Conversation.photo_id == photo_id)
         )
         conversations = result.scalars().all()

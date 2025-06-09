@@ -13,8 +13,8 @@ from db.models.family import Family
 from db.models.user import User
 from db.models.photo import Photo
 from db.models.conversation import Conversation
-from db.models.mention import Mention
-from db.models.anomalies_report import AnomaliesReport
+from db.models.turn import Turn
+from db.models.anomaly_report import AnomalyReport
 
 import asyncio
 from datetime import datetime
@@ -27,7 +27,7 @@ async def add_dummy_family(session: AsyncSession) -> uuid.UUID:
     family_id = get_uuid()
     family = Family(
         id=family_id,
-        family_code="FAMILY001",
+        code="FAMILY001",
         created_at=datetime.utcnow()
     )
     session.add(family)
@@ -39,7 +39,7 @@ async def add_dummy_user(session: AsyncSession, family_id: uuid.UUID) -> uuid.UU
     user = User(
         id=user_id,
         kakao_id="kakao123",
-        username="홍길동",
+        name="홍길동",
         gender="male",
         birthday=datetime(1950, 1, 1),
         profile_img="http://example.com/profile.jpg",
@@ -56,13 +56,13 @@ async def add_dummy_photo(session: AsyncSession, family_id: uuid.UUID) -> uuid.U
     photo_id = get_uuid()
     photo = Photo(
         id=photo_id,
-        photo_name="가족사진",
-        photo_url="http://example.com/photo.jpg",
-        story_year=datetime(1985, 5, 1),
-        story_season="spring",
-        story_nudge={"keyword": "소풍"},
-        summary_text="봄에 가족들과 소풍을 간 날",
-        summary_voice="http://example.com/voice.mp3",
+        name="가족사진",
+        url="http://example.com/photo.jpg",
+        year=1985,
+        season="spring",
+        description="봄에 가족들과 소풍을 간 날",
+        summary_text={"text": "봄에 가족들과 소풍을 간 날"},
+        summary_voice={"url": "http://example.com/voice.mp3"},
         family_id=family_id,
         uploaded_at=datetime.utcnow()
     )
@@ -81,12 +81,12 @@ async def add_dummy_conversation(session: AsyncSession, photo_id: uuid.UUID) -> 
     await session.commit()
     return conv_id
 
-async def add_dummy_mention(session: AsyncSession, conv_id: uuid.UUID) -> uuid.UUID:
-    mention_id = get_uuid()
-    mention = Mention(
-        id=mention_id,
+async def add_dummy_turn(session: AsyncSession, conv_id: uuid.UUID) -> uuid.UUID:
+    turn_id = get_uuid()
+    turn = Turn(
+        id=turn_id,
         conv_id=conv_id,
-        question_answer={
+        turn={
             "q_text": "이 사진은 언제 찍으셨어요?",
             "a_text": "1985년 봄이었던 것 같아",
             "q_voice": "http://example.com/q.mp3",
@@ -94,16 +94,16 @@ async def add_dummy_mention(session: AsyncSession, conv_id: uuid.UUID) -> uuid.U
         },
         recorded_at=datetime.utcnow()
     )
-    session.add(mention)
+    session.add(turn)
     await session.commit()
-    return mention_id
+    return turn_id
 
 async def add_dummy_anomaly(session: AsyncSession, conv_id: uuid.UUID):
-    report = AnomaliesReport(
+    report = AnomalyReport(
         id=get_uuid(),
         conv_id=conv_id,
-        event_report="대화 흐름이 갑작스럽게 멈춤",
-        event_interval="00:02~00:04"
+        anomaly_report="대화 흐름이 갑작스럽게 멈춤",
+        anomaly_turn={"interval": "00:02~00:04"}
     )
     session.add(report)
     await session.commit()
@@ -116,7 +116,7 @@ async def main():
         await add_dummy_user(session, family_id)
         photo_id = await add_dummy_photo(session, family_id)
         conv_id = await add_dummy_conversation(session, photo_id)
-        await add_dummy_mention(session, conv_id)
+        await add_dummy_turn(session, conv_id)
         await add_dummy_anomaly(session, conv_id)
 
 

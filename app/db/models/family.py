@@ -24,6 +24,6 @@ class Family(Base):
     # 가족 생성 일자
     created_at = Column(DateTime, default=datetime.utcnow)  # 자동생성 부여
     # Family ↔ Photo 
-    photo = relationship("Photo", back_populates="family_photo", cascade="all, delete-orphan")
+    photos = relationship("Photo", back_populates="family", cascade="all, delete-orphan")
     # Family ↔ User 
-    family_user = relationship("User", back_populates="family", cascade="all, delete-orphan")
+    users = relationship("User", back_populates="family", cascade="all, delete-orphan")

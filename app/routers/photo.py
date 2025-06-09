@@ -68,10 +68,10 @@ async def delete_photo(photo_id: UUID, db: AsyncSession = Depends(get_db)):
 
 # 사진의 전체 대화내역 조회
 from services.photo import get_photo_conversations_with_mentions
-from schemas.conversation import ConversationWithMentions
+from schemas.conversation import ConversationWithTurns
 
-@router.get("/{photo_id}/conversations", response_model=List[ConversationWithMentions])
-async def get_conversations_with_mentions_by_photo_id(
+@router.get("/{photo_id}/conversations", response_model=List[ConversationWithTurns])
+async def get_conversations_with_turns_by_photo_id(
     photo_id: UUID,
     db: AsyncSession = Depends(get_db)
 ):

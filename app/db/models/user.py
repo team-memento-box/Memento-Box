@@ -22,7 +22,7 @@ class User(Base):
     # 비밀번호
     password = Column(String)
     # 사용자명
-    username = Column(String)
+    name = Column(String)
     # 이메일
     email = Column(String)
     # 전화번호
@@ -40,7 +40,7 @@ class User(Base):
     # 보호자 여부
     is_guardian = Column(Boolean, default=False)
     # 계정 생성일자
-    created_at = Column(DateTime, default=datetime) # 자동생성 부여
+    created_at = Column(DateTime, default=datetime.utcnow) # 자동생성 부여
     # Family ↔ User
-    family = relationship("Family", back_populates="family_user")
+    family = relationship("Family", back_populates="users")
     

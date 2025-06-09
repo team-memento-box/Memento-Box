@@ -18,7 +18,7 @@ class Photo(Base):
     # 사진 id
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 사진명 (원본 파일명)
-    name = Column(Text, nullable=True)
+    name = Column(String, nullable=True)
     # 사진 저장소 주소 (Azure Blob Storage URL)
     url = Column(Text)
     # 연도
@@ -36,7 +36,7 @@ class Photo(Base):
     # 업로드 일자
     uploaded_at = Column(DateTime, default=datetime.utcnow)  # 자동생성 부여
     # Family ↔ Photo 
-    family_photo = relationship("Family", back_populates="photo")
+    family = relationship("Family", back_populates="photos")
     # Photo ↔ Conversation 
-    conversation = relationship("Conversation", back_populates="photo_conversation", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="photo", cascade="all, delete-orphan")
     
