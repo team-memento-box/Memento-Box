@@ -1,5 +1,7 @@
 import sys
 import os
+
+from app.db.models import turn
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from logging.config import fileConfig
@@ -8,7 +10,7 @@ from sqlalchemy.engine.url import make_url
 from alembic import context
 from dotenv import load_dotenv
 from db.database import Base
-from db.models import user, photo, mention, family, conversation, anomalies_report
+from db.models import user, photo, family, conversation, anomaly_report
 
 # .env 파일 로드
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
