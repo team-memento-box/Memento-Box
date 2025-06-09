@@ -1,29 +1,20 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse
 import os
-import logging
 from pathlib import Path
-import uvicorn
-from datetime import datetime
 
-# 기본 로깅 설정
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# 환경 변수에서 설정 읽기
-def get_env_bool(key: str, default: bool = False) -> bool:
-    """환경 변수를 bool로 변환"""
-    value = os.getenv(key, str(default)).lower()
-    return value in ('true', '1', 'yes', 'on')
+# 데이터베이스와 API 라우터 임포트
+from database import create_tables
+from api.routes import router as api_router
+from config import Config
 
 # FastAPI 앱 생성
 app = FastAPI(
     title="치매 진단 대화 시스템 API",
     description="이미지 기반 치매 진단을 위한 대화형 AI 시스템",
-    version="2.0.0",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -31,252 +22,282 @@ app = FastAPI(
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:8080", 
-        "http://127.0.0.1:8080",
-        "capacitor://localhost",
-        "ionic://localhost",
-        "http://localhost",
-        "*"  # 개발 환경에서는 모든 origin 허용
-    ],
+    allow_origins=["*"],  # 실제 운영에서는 특정 도메인으로 제한
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
-
-# 기본 응답 유틸리티
-def success_response(data=None, message="Success"):
-    """성공 응답 생성"""
-    response = {
-        "status": "ok",
-        "message": message,
-        "timestamp": datetime.now().isoformat()
-    }
-    if data is not None:
-        response["data"] = data
-    return response
-
-def error_response(error, code=500):
-    """에러 응답 생성"""
-    return {
-        "status": "error",
-        "error": error,
-        "code": code,
-        "timestamp": datetime.now().isoformat()
-    }
-
-# 예외 핸들러
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """요청 검증 오류 처리"""
-    logger.warning(f"요청 검증 실패: {exc.errors()}")
-    return JSONResponse(
-        status_code=422,
-        content=error_response("요청 데이터가 올바르지 않습니다", 422)
-    )
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """HTTP 예외 처리"""
-    logger.warning(f"HTTP 예외: {exc.status_code} - {exc.detail}")
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=error_response(exc.detail, exc.status_code)
-    )
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """일반 예외 처리"""
-    logger.error(f"예상치 못한 오류: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content=error_response("서버 내부 오류가 발생했습니다", 500)
-    )
 
 # 필요한 디렉토리 생성
 def create_directories():
     """필요한 디렉토리들을 생성"""
-    directories = ["uploads", "audio_files", "logs", "static"]
+    directories = [
+        Config.UPLOAD_DIR,
+        Config.AUDIO_DIR
+    ]
+    
     for directory in directories:
         Path(directory).mkdir(exist_ok=True)
-        logger.info(f"디렉토리 생성 확인: {directory}")
 
-# 시스템 초기화
-def initialize_system():
-    """시스템 초기화"""
-    try:
-        create_directories()
-        logger.info("시스템 초기화 완료")
-        return True
-    except Exception as e:
-        logger.error(f"시스템 초기화 실패: {e}")
-        return False
-
-# 앱 시작 이벤트
+# 앱 시작 시 초기화
 @app.on_event("startup")
 async def startup_event():
-    """애플리케이션 시작 시 실행"""
-    logger.info("🚀 치매 진단 대화 시스템 API 서버 시작")
-    
-    if not initialize_system():
-        logger.error("❌ 시스템 초기화 실패")
-        exit(1)
-    
-    logger.info("✅ 시스템 초기화 완료")
-    logger.info("📋 API 문서: http://localhost:8000/docs")
+    create_directories()
+    create_tables()  # 데이터베이스 테이블 생성
+    print("🚀 치매 진단 대화 시스템 API 서버가 시작되었습니다.")
+    print("📋 API 문서: http://localhost:8000/docs")
 
-# 앱 종료 이벤트
-@app.on_event("shutdown")
-async def shutdown_event():
-    """애플리케이션 종료 시 실행"""
-    logger.info("🛑 서버 종료")
+# API 라우터 등록
+app.include_router(api_router)
 
-# 헬스체크 엔드포인트
-@app.get("/health")
-async def health_check():
-    """기본 헬스체크"""
-    return success_response({
-        "status": "healthy",
-        "uptime": "running"
-    }, "서버가 정상적으로 작동 중입니다")
+# 정적 파일 서빙
+app.mount("/uploads", StaticFiles(directory=Config.UPLOAD_DIR), name="uploads")
+app.mount("/audio", StaticFiles(directory=Config.AUDIO_DIR), name="audio")
 
-@app.get("/health/detailed")
-async def detailed_health_check():
-    """상세 헬스체크"""
-    try:
-        # 간단한 상태 확인
-        status = {
-            "server": True,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # 데이터베이스 확인 시도
-        try:
-            from database import SessionLocal
-            db = SessionLocal()
-            db.execute("SELECT 1").fetchone()
-            db.close()
-            status["database"] = True
-        except Exception as e:
-            logger.warning(f"데이터베이스 확인 실패: {e}")
-            status["database"] = False
-        
-        # 설정 파일 확인
-        try:
-            from config import Config
-            status["config"] = bool(Config.ENDPOINT)
-        except Exception as e:
-            logger.warning(f"설정 확인 실패: {e}")
-            status["config"] = False
-        
-        return success_response(status, "상세 헬스체크 완료")
-        
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content=error_response(f"헬스체크 실패: {str(e)}", 500)
-        )
-
-# 정적 파일 서빙 (디렉토리가 존재할 때만)
-if Path("uploads").exists():
-    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-if Path("audio_files").exists():
-    app.mount("/audio", StaticFiles(directory="audio_files"), name="audio") 
-if Path("static").exists():
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# API 라우터 포함 (파일이 존재할 때만)
-try:
-    from api.routes import router as api_router
-    app.include_router(api_router)
-    logger.info("✅ API 라우터 로드 완료")
-except ImportError as e:
-    logger.warning(f"⚠️ API 라우터 로드 실패: {e}")
-    logger.info("기본 엔드포인트만 사용합니다")
-
-# 루트 경로 - 간단한 API 정보
-@app.get("/")
+# 메인 페이지
+@app.get("/", response_class=HTMLResponse)
 async def read_root():
-    """메인 페이지 - API 정보"""
-    return success_response({
-        "service": "치매 진단 대화 시스템 API",
-        "version": "2.0.0",
-        "status": "운영 중",
-        "docs": "/docs",
-        "health": "/health",
-        "available_endpoints": {
-            "basic": [
-                "GET /",
-                "GET /health", 
-                "GET /health/detailed",
-                "GET /docs",
-                "GET /api/version"
-            ],
-            "api": "API 라우터 로드 상태에 따라 추가됨"
-        }
-    })
-
-# API 버전 정보
-@app.get("/api/version")
-async def get_version():
-    """API 버전 정보"""
-    return success_response({
-        "version": "2.0.0",
-        "build_time": datetime.now().isoformat(),
-        "environment": "development" if get_env_bool("DEBUG") else "production",
-        "features": [
-            "기본 API 서버",
-            "헬스체크",
-            "에러 처리",
-            "CORS 지원"
-        ]
-    })
-
-# 개발 환경 전용 엔드포인트
-if get_env_bool("DEBUG", False):
-    @app.get("/debug/info")
-    async def debug_info():
-        """개발용: 디버그 정보"""
-        return {
-            "환경변수": {
-                "DEBUG": get_env_bool("DEBUG"),
-                "HOST": os.getenv("HOST", "0.0.0.0"),
-                "PORT": os.getenv("PORT", "8000")
-            },
-            "디렉토리": {
-                "uploads": Path("uploads").exists(),
-                "audio_files": Path("audio_files").exists(),
-                "logs": Path("logs").exists()
-            },
-            "모듈상태": {
-                "database": "database.py를 확인하세요",
-                "config": "config.py를 확인하세요", 
-                "api_routes": "api/routes.py를 확인하세요"
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>치매 진단 대화 시스템</title>
+        <meta charset="utf-8">
+        <style>
+            body { 
+                font-family: 'Segoe UI', Arial, sans-serif; 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
             }
-        }
+            .container {
+                background: white;
+                padding: 40px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            h1 { 
+                color: #2c3e50; 
+                text-align: center; 
+                margin-bottom: 30px;
+                font-size: 2.5em;
+            }
+            h2 { 
+                color: #34495e; 
+                border-bottom: 3px solid #3498db; 
+                padding-bottom: 10px; 
+                margin-top: 40px;
+            }
+            .endpoint-group {
+                margin: 30px 0;
+            }
+            .endpoint { 
+                background: #f8f9fa; 
+                padding: 20px; 
+                margin: 15px 0; 
+                border-radius: 8px;
+                border-left: 5px solid #3498db;
+                transition: all 0.3s ease;
+            }
+            .endpoint:hover {
+                transform: translateX(5px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+            .method { 
+                font-weight: bold; 
+                color: white; 
+                padding: 6px 12px; 
+                border-radius: 5px; 
+                margin-right: 15px;
+                font-size: 0.9em;
+            }
+            .post { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+            .get { background: linear-gradient(135deg, #3498db, #5dade2); }
+            .description { 
+                margin-top: 12px; 
+                color: #5a6c7d; 
+                font-style: italic;
+                line-height: 1.5;
+            }
+            .links { 
+                text-align: center; 
+                margin: 40px 0; 
+                padding: 20px;
+                background: #ecf0f1;
+                border-radius: 10px;
+            }
+            .links a { 
+                display: inline-block; 
+                margin: 10px 15px; 
+                padding: 12px 25px; 
+                background: linear-gradient(135deg, #3498db, #2980b9); 
+                color: white; 
+                text-decoration: none; 
+                border-radius: 25px;
+                transition: all 0.3s ease;
+                font-weight: 500;
+            }
+            .links a:hover { 
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+            }
+            .feature-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+            }
+            .feature-card {
+                background: #f8f9fa;
+                padding: 25px;
+                border-radius: 10px;
+                border-top: 4px solid #e74c3c;
+            }
+            .feature-card h3 {
+                color: #2c3e50;
+                margin-bottom: 15px;
+            }
+            .api-flow {
+                background: #fff;
+                border: 2px solid #3498db;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🧠 치매 진단 대화 시스템 API</h1>
+            
+            <div class="api-flow">
+                <h3>🔄 API 사용 플로우</h3>
+                <ol>
+                    <li><strong>사진 업로드:</strong> POST /photos/upload</li>
+                    <li><strong>첫 질문 생성:</strong> POST /questions/initial</li>
+                    <li><strong>TTS 변환:</strong> POST /tts</li>
+                    <li><strong>음성 응답:</strong> POST /stt</li>
+                    <li><strong>추가 질문:</strong> POST /questions/followup</li>
+                    <li><strong>대화 저장:</strong> POST /conversations/save</li>
+                    <li><strong>스토리 생성:</strong> POST /stories</li>
+                    <li><strong>이상 징후 분석:</strong> POST /reports/anomalies</li>
+                </ol>
+            </div>
+            
+            <h2>📋 사용 가능한 API 엔드포인트</h2>
+            
+            <div class="endpoint-group">
+                <h3>📸 사진 관리</h3>
+                <div class="endpoint">
+                    <span class="method get">GET</span><strong>/api/v1/photos</strong>
+                    <div class="description">가족의 업로드된 전체 사진 목록 조회</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/photos/upload</strong>
+                    <div class="description">사진과 메타데이터 업로드</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span><strong>/api/v1/photos/{photoId}</strong>
+                    <div class="description">특정 사진 정보 조회</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>❓ 질문 생성</h3>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/questions/initial</strong>
+                    <div class="description">이미지 기반 첫 질문 생성</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/questions/followup</strong>
+                    <div class="description">대화 기반 추가 질문 생성</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>🎤 음성 처리</h3>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/tts</strong>
+                    <div class="description">텍스트를 음성으로 변환</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/stt</strong>
+                    <div class="description">음성을 텍스트로 변환</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/answers/audio</strong>
+                    <div class="description">음성 분석 및 이상 징후 탐지</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>💬 대화 관리</h3>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/conversations/save</strong>
+                    <div class="description">대화 내용 저장</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span><strong>/api/v1/conversations/{mentionId}</strong>
+                    <div class="description">대화 내역 조회</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-group">
+                <h3>📖 스토리 & 분석</h3>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/stories</strong>
+                    <div class="description">회상 스토리 생성</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span><strong>/api/v1/stories/{mentionId}</strong>
+                    <div class="description">회상 스토리 조회</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method post">POST</span><strong>/api/v1/reports/anomalies</strong>
+                    <div class="description">이상 징후 리포트 생성</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span><strong>/api/v1/reports/anomalies/{mentionId}</strong>
+                    <div class="description">이상 징후 리포트 조회</div>
+                </div>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🖼️ 이미지 분석</h3>
+                    <p>GPT-4V를 사용한 사진 내용 분석과 맞춤형 질문 생성</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎯 개인화 대화</h3>
+                    <p>사진과 메타데이터를 기반으로 한 개인화된 회상 치료</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 이상 징후 탐지</h3>
+                    <p>대화와 음성 분석을 통한 인지 기능 이상 징후 조기 발견</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📚 자동 스토리 생성</h3>
+                    <p>대화 내용을 바탕으로 한 감성적인 회상 스토리 자동 생성</p>
+                </div>
+            </div>
+            
+            <div class="links">
+                <a href="/docs" target="_blank">📖 API 문서 (Swagger)</a>
+                <a href="/redoc" target="_blank">📚 API 문서 (ReDoc)</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
-# 메인 실행부
 if __name__ == "__main__":
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", 8000))
-    debug = get_env_bool("DEBUG", False)
-    
-    logger.info(f"서버 설정 - Host: {host}, Port: {port}, Debug: {debug}")
-    
-    try:
-        uvicorn.run(
-            "main:app" if debug else app,
-            host=host,
-            port=port,
-            reload=debug,
-            log_level="debug" if debug else "info"
-        )
-    except Exception as e:
-        logger.error(f"서버 시작 실패: {e}")
-        print(f"\n❌ 서버 실행 중 오류 발생: {e}")
-        print("\n🔧 해결 방법:")
-        print("1. 필요한 파일들이 모두 있는지 확인")
-        print("2. .env 파일 설정 확인")
-        print("3. python -m pip install -r requirements.txt")
-        print("4. python scripts/setup_dev.py 실행")
+    import uvicorn
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=8000, 
+        reload=True,
+        log_level="info"
+    )
