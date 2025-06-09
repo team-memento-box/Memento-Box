@@ -4,13 +4,37 @@
 // 수정일: 25.06.03
 
 import 'package:flutter/material.dart';
+import 'package:memento_box_app/utils/audio_service.dart';
 import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import '../widgets/ai_record_play_sheet.dart';
 import '../data/user_data.dart';
+import '../utils/routes.dart';
+import '../utils/audio_service.dart';
+import '../utils/styles.dart';
+import '../widgets/audio_player_widget.dart';
 
-class PhotoDetailScreen extends StatelessWidget {
+class PhotoDetailScreen extends StatefulWidget {
   const PhotoDetailScreen({Key? key}) : super(key: key);
+  @override
+  State<PhotoDetailScreen> createState() => _PhotoDetailScreenState();
+}
+
+class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
+  late AudioService _audioService;
+  final audioPath = 'assets/voice/2025-05-26_서봉봉님_대화분석보고서.mp3';
+
+  @override
+  void initState() {
+    super.initState();
+    _audioService = AudioService(); // ✅ 화면 동안만 유지
+  }
+
+  @override
+  void dispose() {
+    _audioService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,8 +114,9 @@ class PhotoDetailScreen extends StatelessWidget {
                               photoData['role'] ?? '',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
-                                height: 1.0,
+                                fontFamily: 'Pretendard',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
@@ -101,9 +126,10 @@ class PhotoDetailScreen extends StatelessWidget {
                       Text(
                         photoData['date'] ?? '',
                         style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                          height: 1.2,
+                          fontFamily: 'Pretendard',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF555555),
                         ),
                       ),
                     ],
@@ -139,15 +165,15 @@ class PhotoDetailScreen extends StatelessWidget {
                       photoData['year'] ?? '',
                       style: const TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 8),
                     Text(
                       photoData['season'] ?? '',
                       style: const TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -155,7 +181,12 @@ class PhotoDetailScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   photoData['description'] ?? '',
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF555555),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -165,7 +196,11 @@ class PhotoDetailScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          showSummaryModal(context);
+                          showSummaryModal(
+                            context,
+                            audioPath: audioPath,
+                            audioService: _audioService,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00C8B8),
@@ -188,7 +223,8 @@ class PhotoDetailScreen extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/report');
+                          Navigator.pop(context);
+                          // Navigator.pushNamed(context, Routes.report); // 리포트 목록 이동
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
@@ -201,7 +237,7 @@ class PhotoDetailScreen extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          '보고서 보기',
+                          '목록 보기',
                           style: TextStyle(
                             color: Color(0xFF00C8B8),
                             fontSize: 20,

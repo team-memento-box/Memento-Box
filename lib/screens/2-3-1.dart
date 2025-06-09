@@ -98,14 +98,14 @@ class _ConversationTranscriptScreenState
           child: Center(
             child: Row(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
+                // IconButton(
+                //   onPressed: () => Navigator.pop(context),
+                //   icon: const Icon(
+                //     Icons.arrow_back,
+                //     color: Colors.white,
+                //     size: 24,
+                //   ),
+                // ),
                 Expanded(
                   child: const Text(
                     '화목한 우리 가족^~^',

@@ -87,10 +87,10 @@ class _PictureGuardianLlmScreenState extends State<PictureGuardianLlmScreen>
       color: const Color(0xFF00C8B8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-          ),
+          // IconButton(
+          //   onPressed: () => Navigator.pop(context),
+          //   icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          // ),
           Expanded(
             child: const Text(
               '원본 대화 듣기',
