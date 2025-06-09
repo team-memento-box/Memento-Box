@@ -3,6 +3,7 @@ from db.models.user import User
 from db.models.family import Family
 from uuid import uuid4
 from datetime import datetime
+from core.auth import get_password_hash
 
 async def seed_data(db: AsyncSession):
     # 가족 데이터 생성
@@ -28,6 +29,7 @@ async def seed_data(db: AsyncSession):
         User(
             id=uuid4(),
             kakao_id="kakao_001",
+            password=get_password_hash("test0001"),
             username="김할머니",
             gender="여",
             birthday="1940-01-01",
@@ -43,6 +45,7 @@ async def seed_data(db: AsyncSession):
         User(
             id=uuid4(),
             kakao_id="kakao_002",
+            password=get_password_hash("test0002"),
             username="김손자",
             gender="남",
             birthday="2010-01-01",
@@ -58,6 +61,7 @@ async def seed_data(db: AsyncSession):
         User(
             id=uuid4(),
             kakao_id="kakao_003",
+            password=get_password_hash("test0003"),
             username="이할아버지",
             gender="남",
             birthday="1935-01-01",
@@ -73,6 +77,7 @@ async def seed_data(db: AsyncSession):
         User(
             id=uuid4(),
             kakao_id="kakao_004",
+            password=get_password_hash("test0004"),
             username="이손녀",
             gender="여",
             birthday="2012-01-01",

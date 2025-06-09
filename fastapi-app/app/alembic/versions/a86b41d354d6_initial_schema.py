@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 8dd81faa0c11
+Revision ID: a86b41d354d6
 Revises: 
-Create Date: 2025-06-06 10:48:01.061111
+Create Date: 2025-06-09 05:53:40.364548
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8dd81faa0c11'
+revision: str = 'a86b41d354d6'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table('families',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('family_code', sa.String(), nullable=True),
+    sa.Column('family_name', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     mysql_charset='utf8mb4',
@@ -34,7 +35,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('photo_name', sa.Text(), nullable=True),
     sa.Column('photo_url', sa.Text(), nullable=True),
-    sa.Column('story_year', sa.DateTime(), nullable=True),
+    sa.Column('story_year', sa.Integer(), nullable=True),
     sa.Column('story_season', sa.String(), nullable=True),
     sa.Column('story_nudge', sa.JSON(), nullable=True),
     sa.Column('summary_text', sa.Text(), nullable=True),
@@ -42,20 +43,24 @@ def upgrade() -> None:
     sa.Column('family_id', sa.UUID(), nullable=False),
     sa.Column('uploaded_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['family_id'], ['families.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    mysql_charset='utf8mb4',
-    mysql_collate='utf8mb4_general_ci'
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('kakao_id', sa.String(), nullable=True),
     sa.Column('username', sa.String(), nullable=True),
+    sa.Column('password', sa.String(), nullable=True),
     sa.Column('gender', sa.String(), nullable=True),
-    sa.Column('birthday', sa.DateTime(), nullable=True),
+    sa.Column('birthday', sa.String(), nullable=True),
     sa.Column('profile_img', sa.Text(), nullable=True),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('phone_number', sa.String(), nullable=True),
     sa.Column('family_id', sa.UUID(), nullable=True),
     sa.Column('family_role', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('is_guardian', sa.Boolean(), nullable=True),
+    sa.Column('family_code', sa.String(), nullable=True),
+    sa.Column('family_name', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['family_id'], ['families.id'], ),
     sa.PrimaryKeyConstraint('id'),
     mysql_charset='utf8mb4',

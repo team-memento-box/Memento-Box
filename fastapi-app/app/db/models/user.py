@@ -22,6 +22,8 @@ class User(Base):
     kakao_id = Column(String, index=True)
     # 사용자명
     username = Column(String)
+    # 비밀번호
+    password = Column(String)
     # 성별
     gender = Column(String)
     # 생년월일

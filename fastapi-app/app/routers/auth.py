@@ -12,6 +12,7 @@ from uuid import uuid4
 from datetime import datetime, timedelta
 import random, string
 from core.auth import (
+    get_password_hash,
     verify_password,
     create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
@@ -118,7 +119,8 @@ async def register_user(user_data: dict = Body(...)):
                 family_name=user_data.get("family_name"),
                 family_role=user_data.get("family_role"),
                 created_at=user_data.get("created_at"),
-                is_guardian=user_data.get("is_guardian")
+                is_guardian=user_data.get("is_guardian"),
+                password=get_password_hash("test1234")  # 비밀번호 해싱
             )
             session.add(new_user)
         try:
