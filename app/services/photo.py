@@ -1,16 +1,15 @@
 import os
+import uuid
+from uuid import UUID
 from fastapi import UploadFile, HTTPException
-from datetime import datetime
-import shutil
-from typing import Optional, List
+from datetime import datetime, timezone, timedelta
+from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from uuid import UUID
 from schemas.photo import PhotoCreate
 from db.models.photo import Photo
 from db.models.user import User
-from .blob_storage import BlobStorageService, get_blob_service_client
-import uuid
+from services.blob_storage import BlobStorageService, get_blob_service_client
 
 UPLOAD_DIR = "uploads"
 
@@ -19,9 +18,23 @@ class PhotoService:
         self.db = db
         self.blob_storage = BlobStorageService()
 
-    async def create_photo(self, file: UploadFile, current_user: User) -> Photo:
+    async def create_photo(
+        self, 
+        file: UploadFile, 
+        current_user: User,
+        year: int,
+        season: str,
+        description: Optional[str] = None
+    ) -> Photo:
         """
         사진을 업로드하고 메타데이터를 저장합니다.
+        
+        Args:
+            file: 업로드할 파일
+            current_user: 현재 사용자
+            year: 사진 연도
+            season: 사진 계절 (spring, summer, autumn, winter)
+            description: 사진 설명 (텍스트)
         """
         temp_file_path = None
         try:
@@ -39,12 +52,12 @@ class PhotoService:
 
             # DB에 메타데이터 저장
             photo_data = PhotoCreate(
-                photo_name=file.filename,
+                name=file.filename,
                 family_id=current_user.family_id,
-                photo_url=photo_url,
-                story_year=datetime.now(),
-                story_season="summer",
-                story_nudge={"note": "auto-uploaded"}
+                url=photo_url,
+                year=year,
+                season=season,
+                description=description
             )
             
             return await save_photo_to_db(photo_data, self.db)
@@ -69,7 +82,7 @@ class PhotoService:
                 return False
             
             # Azure Blob Storage에서 파일 삭제
-            if await self.blob_storage.delete_file(photo.photo_name):
+            if await self.blob_storage.delete_file(photo.name):
                 await self.db.delete(photo)
                 await self.db.commit()
                 return True
@@ -103,15 +116,15 @@ async def save_photo_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
     """
     try:
         photo = Photo(
-            photo_name=photo_data.photo_name,
-            photo_url=photo_data.photo_url,
-            story_year=photo_data.story_year,
-            story_season=photo_data.story_season,
-            story_nudge=photo_data.story_nudge,
+            name=photo_data.name,
+            url=photo_data.url,
+            year=photo_data.year,
+            season=photo_data.season,
+            description=photo_data.description,
             summary_text=photo_data.summary_text,
             summary_voice=photo_data.summary_voice,
             family_id=photo_data.family_id,
-            uploaded_at=datetime.utcnow()
+            uploaded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         
         db.add(photo)

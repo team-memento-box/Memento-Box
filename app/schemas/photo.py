@@ -5,13 +5,13 @@ from uuid import UUID
 
 class PhotoBase(BaseModel):
     id: UUID
-    photo_name: Optional[str] = None
-    photo_url: str
-    story_year: int
-    story_season: Literal["spring", "summer", "autumn", "winter"]
-    story_nudge: Optional[Dict[str, Any]] = None
-    summary_text: Optional[str] = None
-    summary_voice: Optional[str] = None
+    name: Optional[str] = None
+    url: str
+    year: int
+    season: Literal["spring", "summer", "autumn", "winter"]
+    description: Optional[str] = None
+    summary_text: Optional[Dict[str, Any]] = None
+    summary_voice: Optional[Dict[str, Any]] = None
     family_id: UUID
 
 # PhotoCreate가 PhotoBase를 상속받지 않는 이유:
@@ -19,13 +19,13 @@ class PhotoBase(BaseModel):
 # 2. PhotoBase는 id를 포함하고 있어서, 상속받으면 불필요한 id 필드가 생성 요청에 포함됨
 # 3. 생성 요청과 응답의 스키마를 명확하게 분리하여 관리
 class PhotoCreate(BaseModel):
-    photo_name: Optional[str] = None
-    photo_url: str
-    story_year: int
-    story_season: Literal["spring", "summer", "autumn", "winter"]
-    story_nudge: Optional[Dict[str, Any]] = None
-    summary_text: Optional[str] = None
-    summary_voice: Optional[str] = None
+    name: Optional[str] = None
+    url: str
+    year: int
+    season: Literal["spring", "summer", "autumn", "winter"]
+    description: Optional[str] = None
+    summary_text: Optional[Dict[str, Any]] = None
+    summary_voice: Optional[Dict[str, Any]] = None
     family_id: UUID
 
 class PhotoResponse(PhotoBase):

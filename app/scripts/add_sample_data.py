@@ -1,15 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, date, timezone, timedelta
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import os
 import sys
 from dotenv import load_dotenv
+
+# PYTHONPATH를 /app으로 설정, 다른 디렉토리를 참조하기 전에 다음 라인 명시 필요
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from core.auth import get_password_hash
-
-# app 디렉토리를 Python 경로에 추가
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from db.models.family import Family
 from db.models.user import User
 from db.database import Base
@@ -31,8 +31,9 @@ async def seed():
         family_id = uuid.uuid4()
         family = Family(
             id=family_id,
-            family_code="TESTFAMILY001",
-            created_at=datetime.utcnow()
+            code="TESTFAMILY001",
+            name="테스트가족",
+            created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         session.add(family)
 
@@ -41,13 +42,16 @@ async def seed():
             id=uuid.uuid4(),
             kakao_id="kakao_test_001",
             password=get_password_hash("test1234"),  # 테스트용 비밀번호 추가
-            username="테스트유저",
+            name="테스트유저",
+            email="testuser@example.com",
+            phone="010-1234-5678",
             gender="female",
-            birthday=datetime(1990, 1, 1),
+            birthday=date(1990, 1, 1),
             profile_img=None,
             family_id=family_id,
             family_role="손녀",
-            created_at=datetime.utcnow()
+            is_guardian=True,
+            created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         session.add(user)
 
