@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // ✅ Provider import
 import '../user_provider.dart'; // ✅ 사용자 Provider import
 import '../utils/routes.dart';
+import '../utils/routes.dart';
 
 class KakaoSigninScreen extends StatelessWidget {
   const KakaoSigninScreen({super.key});
@@ -46,12 +47,12 @@ class KakaoSigninScreen extends StatelessWidget {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.setUserInfo(
           kakaoId: userInfo['kakao_id'].toString(),
-          username: userInfo['username'].toString(),
+          name: userInfo['name'].toString(),
           profileImg: userInfo['profile_img'].toString(),
           gender: userInfo['gender'].toString(),
           birthday: userInfo['birthday'].toString(),
           email: userInfo['email'].toString(),
-          phone_number: userInfo['phone_number'].toString(),
+          phone: userInfo['phone'].toString(),
         );
 
         // 이미 가입된 사용자인 경우
@@ -65,13 +66,17 @@ class KakaoSigninScreen extends StatelessWidget {
           userProvider.setFamilyInfo(familyRole: userInfo['family_role']);
 
           // 바로 홈 화면으로 이동
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            Routes.home,
+            (route) => false,
+          );
         } else {
           // 새로운 사용자인 경우 isGuardian 값에 따라 분기 이동
           if (userProvider.isGuardian == true) {
-            Navigator.pushNamed(context, '/0-3-1');
+            Navigator.pushNamed(context, Routes.groupSelect);
           } else if (userProvider.isGuardian == false) {
-            Navigator.pushNamed(context, '/0-3-2');
+            Navigator.pushNamed(context, Routes.groupCodeInput);
           } else {
             // 예외: 값이 없는 경우
             ScaffoldMessenger.of(context).showSnackBar(
@@ -79,7 +84,7 @@ class KakaoSigninScreen extends StatelessWidget {
             );
             Navigator.pushNamedAndRemoveUntil(
               context,
-              '/signin',
+              Routes.startSelect,
               (route) => false,
             );
           }

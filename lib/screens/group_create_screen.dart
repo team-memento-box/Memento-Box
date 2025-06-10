@@ -26,9 +26,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
   Future<void> _generateCode() async {
     if (isCreating && familyNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('가족 그룹명을 입력해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('가족 그룹명을 입력해주세요')));
       return;
     }
 
@@ -36,12 +36,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/family/create'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'family_name': familyNameController.text.trim(),
-        }),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'family_name': familyNameController.text.trim()}),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -58,13 +54,15 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('가족 코드 발급 실패: \n${utf8.decode(response.bodyBytes)}')),
+          SnackBar(
+            content: Text('가족 코드 발급 실패: \n${utf8.decode(response.bodyBytes)}'),
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('네트워크 오류: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
     }
   }
 
@@ -73,10 +71,8 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     final baseUrl = dotenv.env['BASE_URL']!;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/join/family'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        Uri.parse('$baseUrl/family/join'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode({'family_code': code}),
       );
       if (response.statusCode == 200) {
@@ -84,13 +80,13 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         setState(() {
           familyId = data['family_id'];
           familyCode = data['family_code'];
-          familyName = data['family_name'];  // 그룹명도 저장
+          familyName = data['family_name']; // 그룹명도 저장
           showRelationDropdown = true;
         });
         Provider.of<UserProvider>(context, listen: false).setFamilyJoin(
           familyId: data['family_id'],
           familyCode: data['family_code'],
-          familyName: data['family_name'],  // Provider에도 저장
+          familyName: data['family_name'], // Provider에도 저장
         );
         error = null;
       } else {
@@ -114,12 +110,12 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
       final userData = {
         'kakao_id': userProvider.kakaoId,
-        'username': userProvider.username,
+        'name': userProvider.name,
         'profile_img': userProvider.profileImg,
         'gender': userProvider.gender,
         'birthday': userProvider.birthday,
         'email': userProvider.email,
-        'phone_number': userProvider.phone_number,
+        'phone': userProvider.phone,
         'family_id': userProvider.familyId,
         'family_code': userProvider.familyCode,
         'family_role': userProvider.familyRole,
@@ -132,22 +128,22 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         final baseUrl = dotenv.env['BASE_URL']!;
         final response = await http.post(
           Uri.parse('$baseUrl/auth/register_user'),
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
+          headers: {'Content-Type': 'application/json; charset=UTF-8'},
           body: jsonEncode(userData),
         );
         if (response.statusCode == 200) {
           Navigator.pushNamed(context, '/home');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('회원정보 저장 실패: \n${utf8.decode(response.bodyBytes)}')),
+            SnackBar(
+              content: Text('회원정보 저장 실패: \n${utf8.decode(response.bodyBytes)}'),
+            ),
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('네트워크 오류: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
       }
     }
   }
@@ -175,9 +171,9 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isCreating 
-                    ? '가족 그룹을 생성하고 코드를 발급받으세요.'
-                    : '가족 그룹 코드를 입력하여 가입하세요.',
+                  isCreating
+                      ? '가족 그룹을 생성하고 코드를 발급받으세요.'
+                      : '가족 그룹 코드를 입력하여 가입하세요.',
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
@@ -185,7 +181,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // 모드 전환 버튼
                 Center(
                   child: Container(
@@ -214,7 +210,10 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                       textInputAction: TextInputAction.done,
                       keyboardType: TextInputType.text,
@@ -229,7 +228,10 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         onPressed: _generateCode,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00C8B8),
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -256,7 +258,10 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -294,9 +299,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  FamilyRelationDropdown(
-                    onChanged: _onRelationSelected,
-                  ),
+                  FamilyRelationDropdown(onChanged: _onRelationSelected),
                 ],
               ],
             ),
@@ -367,10 +370,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           const SizedBox(height: 16),
           Text(
             '가족 그룹명: ${familyName ?? ''}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-            ),
+            style: const TextStyle(fontSize: 16, fontFamily: 'Pretendard'),
           ),
           const SizedBox(height: 16),
           const Text(

@@ -8,7 +8,7 @@ import 'utils/routes.dart'; // 화면 연결 관리 파일
 
 import 'screens/start_select_screen.dart'; // 보호자/피보호자 선택 화면
 import 'screens/kakao_signin_screen.dart'; // 카카오 로그인 화면
-import 'screens/group_select_screen.dart'; // 그룹 입력 화면
+import 'screens/group_select_screen.dart'; // 그룹 선택 화면
 
 import 'screens/home_screen.dart'; // 홈 화면
 import 'screens/add_photo_screen.dart'; // 사진 추가 화면
@@ -18,13 +18,11 @@ import 'screens/conversation_screen.dart'; // 피보호자-AI 대화 화면
 import 'screens/report_list_screen.dart'; // 보고서 목록 화면
 import 'screens/report_detail_screen.dart'; // 보고서 상세보기 화면
 
-import 'screens/group_code_input_screen.dart';
-import 'screens/mypage_screen.dart';
-import 'screens/group_create_screen.dart';
-import 'screens/group_code_input_screen.dart';
+import 'screens/group_code_input_screen.dart'; // 그룹 입력 화면
+import 'screens/mypage_screen.dart'; // 나의 정보 화면
+import 'screens/group_create_screen.dart'; // 그룹 생성 화면
 //우회용// //* 'front' branch 코드 추가
 import 'dart:io';
-import 'package:flutter/material.dart';
 
 //우회용//
 Future<void> main() async {
@@ -34,14 +32,9 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
 
   // ✅ 카카오 SDK 초기화
-  KakaoSdk.init(
-    nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY'],
-    // javaScriptAppKey: dotenv.env['KAKAO_JS_APP_KEY'],
-  );
+  KakaoSdk.init(nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY']);
   print("KAKAO_NATIVE_APP_KEY: ${dotenv.env['KAKAO_NATIVE_APP_KEY']}");
-  // print("KAKAO_JS_APP_KEY: ${dotenv.env['KAKAO_JS_APP_KEY']}");
 
-  //runApp(const MyCustomApp());
   runApp(
     MultiProvider(
       providers: [
@@ -57,24 +50,44 @@ class MyCustomApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGuardian = context.watch<UserProvider>().isGuardian;
+
     return MaterialApp(
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      home: const StartSelectScreen(),
+      initialRoute: Routes.startSelect,
       routes: {
+        // 로그인 및 그룹 생성 화면
+        Routes.startSelect: (context) =>
+            const StartSelectScreen(), // 보호자/피보호자 선택
+        Routes.kakaoSignIn: (context) => const KakaoSigninScreen(), // 카카오 로그인
+        Routes.groupCreate: (context) => const GroupCreateScreen(), // 그룹 코드 생성
+        Routes.groupSelect: (context) =>
+            const GroupSelectScreen(), // 그룹 및 관계 선택
+        Routes.groupCodeInput: (context) =>
+            const GroupCodeInputScreen(), // 그룹 입력
+        //
+        // 홈 화면
         Routes.home: (context) => const HomeUpdateScreen(),
-        Routes.startSelect: (context) => const StartSelectScreen(),
+        //
+        // 사진첩 화면
         Routes.gallery: (context) => const GalleryScreen(),
-        Routes.addPhoto: (context) => const AddPhotoScreen(),
-        Routes.conversation: (context) => const PhotoConversationScreen(),
-        Routes.kakaoSignIn: (context) => const KakaoSigninScreen(),
-        Routes.groupSelect: (context) => const GroupSelectScreen(),
-        Routes.groupCodeInput: (context) => const GroupCodeInputScreen(),
-
-        Routes.groupCreate: (context) => const GroupCreateScreen(),
-
+        Routes.photoDetail: (contesx) =>
+            const PhotoDetailScreen(), // 사진 상세정보 (오디오 재생 포함)
+        //
+        // 사진/대화 추가 화면
+        Routes.quickAdd: (context) => (isGuardian == true)
+            ? const AddPhotoScreen() // 보호자-사진 추가
+            : const PhotoConversationScreen(), // 피보호자-AI 대화
+        //
+        // 보고서 화면
+        Routes.report: (context) => const ReportListScreen(),
+        Routes.reportDetail: (context) => const ReportDetailScreen(),
+        //
+        // 나의 정보 화면
         Routes.myPage: (context) => const MyPageScreen(),
+
         // // ✅ 잘못된 경로 대비 fallback
         // return MaterialPageRoute(
         //   builder: (context) =>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
 import '../widgets/tap_widget.dart';
+import '../widgets/group_bar_widget.dart';
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -11,122 +12,93 @@ class MyPageScreen extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          '나의 정보',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF00C8B8),
-      ),
+      backgroundColor: Color(0xFFF7F7F7),
+      appBar: GroupBar(title: '나의 정보'),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
               width: double.infinity,
-              height: 209,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white, // 배경색
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0x0C000000),
-                    blurRadius: 20,
-                    offset: const Offset(0, -1),
+                    color: const Color.fromARGB(
+                      10,
+                      231,
+                      231,
+                      231,
+                    ).withOpacity(0.3), // 그림자 색
+                    spreadRadius: 7, // 그림자 번짐 정도
+                    blurRadius: 10, // 흐림 정도
                   ),
                 ],
               ),
-              child: Stack(
+              child: Column(
                 children: [
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 18,
-                    child: Center(
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color(0xFFFFC9B3),
-                        backgroundImage:
-                            userProvider.profileImg != null &&
-                                userProvider.profileImg!.isNotEmpty
-                            ? NetworkImage(userProvider.profileImg!)
-                            : null,
-                        child:
-                            (userProvider.profileImg == null ||
-                                userProvider.profileImg!.isEmpty)
-                            ? const Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 130,
-                    child: Center(
-                      child: Text(
-                        userProvider.username ?? '이름 없음',
-                        style: const TextStyle(
-                          color: Color(0xFF111111),
-                          fontSize: 22,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 159,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF777777),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Text(
-                          userProvider.familyRole ?? '역할 없음',
-                          style: const TextStyle(
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: const Color(0xFFFFC9B3),
+                    backgroundImage:
+                        userProvider.profileImg != null &&
+                            userProvider.profileImg!.isNotEmpty
+                        ? NetworkImage(userProvider.profileImg!)
+                        : null,
+                    child:
+                        (userProvider.profileImg == null ||
+                            userProvider.profileImg!.isEmpty)
+                        ? const Icon(
+                            Icons.person,
+                            size: 50,
                             color: Colors.white,
-                            fontSize: 17,
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    userProvider.name ?? '이름 없음',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 5.0,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF777777),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      userProvider.familyRole ?? '역할 없음',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             Container(
               width: 329,
               height: 150,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Color.fromARGB(255, 231, 231, 231),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0x33555555),
-                    blurRadius: 4,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                // boxShadow: [
+                //   BoxShadow(
+                //     color: const Color(0xFF555555),
+                //     blurRadius: 4,
+                //     offset: const Offset(0, 4),
+                //   ),
+                // ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -165,7 +137,7 @@ class MyPageScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
@@ -175,21 +147,15 @@ class MyPageScreen extends StatelessWidget {
                     '회원 정보',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 15,
+                      fontSize: 18,
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _InfoRow(
-                    label: '이름',
-                    value: userProvider.username ?? '이름 없음',
-                  ),
+                  _InfoRow(label: '이름', value: userProvider.name ?? '이름 없음'),
                   _InfoRow(label: '이메일', value: userProvider.email ?? '이메일 없음'),
-                  _InfoRow(
-                    label: '연락처',
-                    value: userProvider.phone_number ?? '연락처 없음',
-                  ),
+                  _InfoRow(label: '연락처', value: userProvider.phone ?? '연락처 없음'),
                   _InfoRow(
                     label: '피보호자와의 관계',
                     value: userProvider.familyRole ?? '역할 없음',

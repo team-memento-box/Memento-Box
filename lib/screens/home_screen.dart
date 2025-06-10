@@ -2,11 +2,13 @@
 // 작성일: 2025.05
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/image_card_widget.dart';
 import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import '../data/user_data.dart';
 import '../utils/routes.dart';
+import '../user_provider.dart';
 
 class HomeUpdateScreen extends StatelessWidget {
   const HomeUpdateScreen({super.key});
@@ -16,6 +18,8 @@ class HomeUpdateScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
+    final userProvider = context.watch<UserProvider>();
+
     final List<Map<String, String>> recentPhotoNews = [
       {
         'name': '김땡땡',
@@ -33,25 +37,9 @@ class HomeUpdateScreen extends StatelessWidget {
       },
     ];
 
-    // TODO: 아래 dummy 데이터는 나중에 API 요청으로 대체 예정
-    // final response = await http.get(Uri.parse("http://your-api.com/api/recent_photos"));
-    // final List<dynamic> news = json.decode(response.body);
-
-    // return Scaffold(
-    //   backgroundColor: const Color(0xFFF7F7F7),
-    //   appBar: const GroupBar(title: user_title),
-    //   body: SingleChildScrollView(
-    //     padding: const EdgeInsets.symmetric(horizontal: 16),
-    //     child: Column(
-    //       children: [
-    //         const ProfileHeader(),
-    //         const SizedBox(height: 20),
-    //         const SectionTitle(title: '최근 소식'),
-    //         const SizedBox(height: 10),
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: const GroupBar(title: user_title),
+      appBar: GroupBar(title: userProvider.familyName ?? '화목한 우리 가족'),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -100,22 +88,6 @@ class HomeUpdateScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // NewsCard(
-            //   name: '김땡땡',
-            //   role: '딸',
-            //   content: '새로운 사진 추가',
-            //   assetImagePath: 'assets/photos/2.png',
-            //   date: '2025년 5월 25일',
-            // ),
-            // const SizedBox(height: 15),
-            // NewsCard(
-            //   name: '서봉봉',
-            //   role: '엄마',
-            //   content: '새로운 대화 생성',
-            //   assetImagePath: 'assets/photos/3.png',
-            //   date: '2025년 5월 16일',
-            // ),
           ],
         ),
       ),
@@ -129,11 +101,19 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Provider에서 데이터 읽어오기
+    final userProvider = Provider.of<UserProvider>(context);
+    print('ProfileHeader - Provider 데이터:');
+    print('kakaoId: ${userProvider.kakaoId}');
+    print('username: ${userProvider.name}');
+    print('profileImg: ${userProvider.profileImg}');
+    print('gender: ${userProvider.gender}');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(200, 255, 255, 255), // 배경색
+        color: Colors.white, // 배경색
         boxShadow: [
           BoxShadow(
             color: const Color.fromARGB(
@@ -152,11 +132,20 @@ class ProfileHeader extends StatelessWidget {
           CircleAvatar(
             radius: 50,
             backgroundColor: const Color(0xFFFFC9B3),
-            child: const Icon(Icons.person, size: 50, color: Colors.white),
+            backgroundImage:
+                userProvider.profileImg != null &&
+                    userProvider.profileImg!.isNotEmpty
+                ? NetworkImage(userProvider.profileImg!)
+                : null,
+            child:
+                (userProvider.profileImg == null ||
+                    userProvider.profileImg!.isEmpty)
+                ? const Icon(Icons.person, size: 50, color: Colors.white)
+                : null,
           ),
           const SizedBox(height: 7),
-          const Text(
-            '김땡땡',
+          Text(
+            userProvider.name ?? '이름 없음',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -170,8 +159,8 @@ class ProfileHeader extends StatelessWidget {
               color: const Color(0xFF777777),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
-              '딸',
+            child: Text(
+              userProvider.familyRole ?? '역할 없음',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
