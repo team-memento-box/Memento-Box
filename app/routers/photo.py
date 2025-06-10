@@ -10,6 +10,7 @@ from core.auth import get_current_user
 from db.database import get_db
 from db.models.photo import Photo
 from db.models.user import User
+from db.models.conversation import Conversation
 from schemas.photo import PhotoCreate, PhotoResponse
 from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db, get_photos_by_family
 from services.blob_storage import get_blob_service_client
@@ -78,28 +79,49 @@ async def list_photos(
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(
     photo_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     특정 사진의 상세 정보를 조회합니다.
+    현재 사용자가 속한 가족의 사진만 조회 가능합니다.
     """
     result = await db.execute(
-        select(Photo).where(Photo.id == photo_id)
+        select(Photo).where(
+            Photo.id == photo_id,
+            Photo.family_id == current_user.family_id
+        )
     )
     photo = result.scalar_one_or_none()
     if not photo:
-        raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="사진을 찾을 수 없거나 접근 권한이 없습니다.")
     return photo
 
 @router.delete("/{photo_id}")
 async def delete_photo(
     photo_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     특정 사진을 삭제합니다.
+    현재 사용자가 속한 가족의 사진만 삭제 가능합니다.
     """
+    # 먼저 사진이 존재하고 접근 권한이 있는지 확인
+    result = await db.execute(
+        select(Photo).where(
+            Photo.id == photo_id,
+            Photo.family_id == current_user.family_id
+        )
+    )
+    photo = result.scalar_one_or_none()
+    if not photo:
+        raise HTTPException(status_code=404, detail="사진을 찾을 수 없거나 삭제 권한이 없습니다.")
+
     photo_service = PhotoService(db)
-    if await photo_service.delete_photo(photo_id):
-        return {"message": "사진이 삭제되었습니다."}
-    raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.") 
+    try:
+        if await photo_service.delete_photo(photo_id):
+            return {"message": "사진이 삭제되었습니다."}
+        raise HTTPException(status_code=500, detail="사진 삭제 중 오류가 발생했습니다.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
