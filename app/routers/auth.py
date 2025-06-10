@@ -1,8 +1,8 @@
 import os
 import random, string
 import requests
+from core.config import settings
 from uuid import uuid4
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -20,8 +20,6 @@ from core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
-
-load_dotenv()
 
 router = APIRouter(
     prefix="/auth",
