@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone, timedelta
 from db.database import Base
 from sqlalchemy.orm import relationship
+from uuid import uuid4
 
 class Conversation(Base):
     
@@ -19,7 +20,7 @@ class Conversation(Base):
         "mysql_collate": "utf8mb4_general_ci" 
     }
     # 대화 회기 id
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     # 관계 사진 id
     photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
     # 대화 생성 일자
