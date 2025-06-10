@@ -91,6 +91,44 @@ async def get_photo(
         raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
     return photo
 
+@router.get("/{photo_id}/summary_text")
+async def get_photo_summary_text(
+    photo_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    특정 사진의 summary_text(요약 내용)만 반환합니다.
+    """
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id)
+    )
+    photo = result.scalar_one_or_none()
+    if not photo:
+        raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+    return {
+        "photo_id": str(photo.id),
+        "summary_text": photo.summary_text
+    }
+
+@router.get("/{photo_id}/summary_voice")
+async def get_photo_summary_voice(
+    photo_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    특정 사진의 summary_voice(요약 음성)만 반환합니다.
+    """
+    result = await db.execute(
+        select(Photo).where(Photo.id == photo_id)
+    )
+    photo = result.scalar_one_or_none()
+    if not photo:
+        raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+    return {
+        "photo_id": str(photo.id),
+        "summary_voice": photo.summary_voice
+    }
+
 @router.delete("/{photo_id}")
 async def delete_photo(
     photo_id: uuid.UUID,
