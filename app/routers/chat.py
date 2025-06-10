@@ -14,9 +14,10 @@ from services.blob_storage import get_blob_service_client, download_file_from_ur
 from db.models.user import User
 from db.models.turn import Turn
 from db.models.conversation import Conversation
+from db.models.anomaly_report import AnomalyReport
 from db.models.photo import Photo
 from schemas.turn import TurnRequest
-from schemas.chat import ConversationCreate, TurnCreate
+from schemas.chat import ConversationCreate, TurnCreate, SummaryUpdateRequest
 
 import uuid
 import os
@@ -69,23 +70,60 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"이미지 다운로드 실패: {str(e)}")
     
-    # [1] Conversation 데이터 생성 & 첫 질문 LLM 생성 및 
-    try:
-        new_conversation = Conversation(
-            id=uuid4(),
-            photo_id=photo_uuid,
-            # created_at은 자동으로 처리됨 -> 과연
-            created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
-        )
-        db.add(new_conversation)
-        await db.commit()
-        await db.refresh(new_conversation)
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
-    
-    first_question, audio_path = system.analyze_and_start_conversation(image_path)
-    conversation_id = new_conversation.id
+    # 해당 이미지에 대한 가장 최근 대화 확인
+    stmt = select(Conversation).where(
+        Conversation.photo_id == photo_uuid
+    ).order_by(Conversation.created_at.desc())
+    result = await db.execute(stmt)
+    latest_conversation = result.scalars().first()
+
+    first_question = None
+    audio_path = None
+    is_continuation = False
+
+    if latest_conversation:
+        # 가장 최근 턴 가져오기
+        stmt = select(Turn).where(
+            Turn.conv_id == latest_conversation.id
+        ).order_by(Turn.recorded_at.desc())
+        result = await db.execute(stmt)
+        latest_turn = result.scalars().first()
+
+        if latest_turn and latest_turn.turn:
+            # 세션이 완료되었는지 확인
+            is_session_completed = (
+                latest_turn.turn.get("q_text") == "session_completed" or 
+                latest_turn.turn.get("a_text") == "session_completed"
+            )
+            
+            if not is_session_completed:
+                # 이전 대화가 있고 세션이 완료되지 않은 경우에만 이어서 대화 생성
+                previous_question = latest_turn.turn.get("q_text")
+                previous_answer = latest_turn.turn.get("a_text")
+                
+                if previous_answer and previous_answer != "session_completed":
+                    first_question, audio_path = system.generate_next_question(previous_question, previous_answer)
+                    is_continuation = True
+
+    # conversation 생성이 필요한 경우 first_question,audio_path 만들어야 함
+    if not is_continuation:
+        # [1] Conversation 데이터 생성 & 첫 질문 LLM 생성 및 
+        try:
+            new_conversation = Conversation(
+                id=uuid4(),
+                photo_id=photo_uuid,
+                # created_at은 자동으로 처리됨 -> 과연
+                created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
+            )
+            db.add(new_conversation)
+            await db.commit()
+            await db.refresh(new_conversation)
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
+        
+        first_question, audio_path = system.analyze_and_start_conversation(image_path)
+        conversation_id = new_conversation.id
     
     # [2] audio Blob 저장
     try:
@@ -192,15 +230,25 @@ async def force_end_chat(
             turn={
                 "q_text": current_question,
                 "q_voice": None,
-                "a_text": None,  # 답변하지 않았으므로 null 처리
+                "a_text": "session_completed",  # 답변하지 않고 종료된 경우
                 "a_voice": None
             },
             recorded_at=datetime.now()
         )
         db.add(force_end_turn)
-        db.commit()
+        await db.commit()
         
-        print(f"🔚 강제 종료: 미답변 질문을 null 처리하여 저장했습니다. (conversation_id: {conversation_id})")
+        print(f"🔚 강제 종료: 미답변 질문을 session_completed로 처리하여 저장했습니다. (conversation_id: {conversation_id})")
+    else:
+        # 마지막 턴을 찾아서 질문에 session_completed 표시
+        stmt = select(Turn).where(Turn.conv_id == conversation_id).order_by(Turn.recorded_at.desc())
+        result = await db.execute(stmt)
+        latest_turn = result.scalar_one_or_none()
+        
+        if latest_turn:
+            latest_turn.turn["q_text"] = "session_completed"
+            await db.commit()
+            print(f"🔚 강제 종료: 마지막 질문을 session_completed로 처리했습니다. (conversation_id: {conversation_id})")
     
     # 기존 end 로직 호출
     return await end_chat(conversation_id, db)
@@ -218,6 +266,49 @@ async def end_chat(conversation_id: UUID = Form(...), db: Session = Depends(get_
     
     # 2. Turn 데이터를 스토리 생성에 사용할 수 있는 형태로 변환
     results = system.generate_complete_analysis_from_turns(turns, conversation_id)
+    analysis_file = results.get("analysis_file")
+    story_txt = results.get("story_content")
+
+    with open(analysis_file, "r", encoding="utf-8") as file:
+        analysis_txt = file.read()
+
+    try:
+        # 기존 대화 찾기
+        stmt = select(Conversation).where(Conversation.id == conversation_id)
+        result = await db.execute(stmt)
+        conversation = result.scalar_one_or_none()
+        
+        if not conversation:
+            raise HTTPException(status_code=404, detail="대화를 찾을 수 없습니다.")
+        
+        # summary_text에 story_txt 저장
+        conversation.summary_text = story_txt
+        
+        await db.commit()
+        await db.refresh(conversation)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"요약 업데이트 실패: {str(e)}")
+    
+
+    # [] Anomaly Report 데이터 생성
+    try:
+        new_report = AnomalyReport(
+            id=uuid4(),
+            conv_id=conversation_id,
+            anomaly_report = analysis_txt,
+            anomaly_turn = None
+        )
+        db.add(new_report)
+        await db.commit()
+        await db.refresh(new_report)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
+
     return results
 
 # 🧪 테스트용 엔드포인트들

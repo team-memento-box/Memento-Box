@@ -41,3 +41,7 @@ class TurnCreate(BaseModel):
 
     class Config:
         orm_mode = True
+
+# SummaryUpdate
+class SummaryUpdateRequest(BaseModel):
+    summary_text: str

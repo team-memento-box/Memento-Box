@@ -249,6 +249,9 @@ class OptimizedDementiaSystem:
             )
             
             next_question = response.choices[0].message.content.strip()
+
+            # 다음 질문 TTS
+            audio_path = self.voice_system.synthesize_speech(next_question)
             
             # 생성된 질문을 대화 히스토리에 추가
             self.chat_system.conversation_history.append({
@@ -265,7 +268,7 @@ class OptimizedDementiaSystem:
             if self.chat_system.token_count > int(self.chat_system.max_tokens):
                 return "대화 시간이 다 되었어요. 오늘도 즐거운 시간이었습니다. 감사합니다."
             
-            return next_question
+            return next_question, audio_path
             
         except Exception as e:
             print(f"❌ 다음 질문 생성 중 오류: {str(e)}")
