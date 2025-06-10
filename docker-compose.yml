@@ -70,26 +70,26 @@ services:
     #     db:
     #       condition: service_healthy
 
-    # fish-speech:
-    #   build:
-    #     context: ./fish-speech
-    #     dockerfile: Dockerfile
-    #   container_name: fish-speech
-    #   expose:
-    #     - "5000"
-    #   volumes:
-    #     - ./fish-speech/checkpoints:/app/checkpoints
-    #     - ./shared/input_wav:/app/input_wav
-    #     - ./shared/output_wav:/app/output_wav
-    #     - ./shared/model_output:/app/model_output
-    #   runtime: nvidia
-    #   environment:
-    #     - NVIDIA_VISIBLE_DEVICES=all
-    #   networks:
-    #     - memento_net
-    #   depends_on:
-    #     db:
-    #       condition: service_healthy
+    fish-speech:
+      build:
+        context: ./fish-speech
+        dockerfile: Dockerfile
+      container_name: fish-speech
+      expose:
+        - "5000"
+      volumes:
+        - ./fish-speech/checkpoints:/app/checkpoints
+        - ./shared/input_wav:/app/input_wav
+        - ./shared/output_wav:/app/output_wav
+        - ./shared/model_output:/app/model_output
+      runtime: nvidia
+      environment:
+        - NVIDIA_VISIBLE_DEVICES=all
+      networks:
+        - memento_net
+      depends_on:
+        db:
+          condition: service_healthy
 
 volumes:
     fastapi-app_pgdata:

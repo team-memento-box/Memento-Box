@@ -149,3 +149,5 @@ async def get_photos_by_family(family_id: UUID, db: AsyncSession) -> List[Photo]
         return result.scalars().all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사진 조회 실패: {str(e)}") 
+    
+

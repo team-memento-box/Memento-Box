@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Literal
 from core.config import settings
 
-ContainerType = Literal["photo", "voice"]
+ContainerType = Literal["photo", "voice", "summary-voice"]
 
 class BlobStorageService:
     def __init__(self, container_type: ContainerType = "photo"):
