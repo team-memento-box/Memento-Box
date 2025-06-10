@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone, timedelta
 from db.database import Base
@@ -22,6 +22,10 @@ class Conversation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True)
     # 관계 사진 id
     photo_id = Column(UUID(as_uuid=True), ForeignKey('photos.id'))
+    # 요약 텍스트
+    summary_text = Column(Text, nullable=True)
+    # 요약 음성
+    summary_voice = Column(Text, nullable=True)
     # 대화 생성 일자
     created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Photo ↔ Conversation 
