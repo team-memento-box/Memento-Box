@@ -93,19 +93,24 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
         blob_url = "블롭 스토리지 에러"
     
     # [3] turn 데이터 추가
-    new_turn = Turn(
-        id=uuid4(),
-        conv_id=conversation_id,
-        turn={
-            "q_text": first_question,
-            "q_voice": blob_url,
-            "a_text": None,
-            "a_voice": None
-        },
-        recorded_at=datetime.now()
-    )
-    db.add(new_turn)
-    db.commit()
+    try:
+        new_turn = Turn(
+            id=uuid4(),
+            conv_id=conversation_id,
+            turn={
+                "q_text": first_question,
+                "q_voice": blob_url,
+                "a_text": None,
+                "a_voice": None
+            },
+            recorded_at=datetime.now()
+        )
+        db.add(new_turn)
+        await db.commit()
+        await db.refresh(new_turn)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Turn 데이터 저장 실패: {str(e)}")
 
     # [4] 응답 생성
     response_data = {
@@ -143,19 +148,24 @@ async def answer_chat(
     should_end = system.check_end_keywords(user_answer)
     
     # 2. 질의응답 쌍을 하나의 Turn으로 저장
-    qa_turn = Turn(
-        id=uuid4(),
-        conv_id=conversation_id,
-        turn={
-            "q_text": current_question,
-            "q_voice": None,  # 추후 TTS 파일 경로
-            "a_text": user_answer,
-            "a_voice": audio_path
-        },
-        recorded_at=datetime.now()
-    )
-    db.add(qa_turn)
-    db.commit()
+    try:
+        qa_turn = Turn(
+            id=uuid4(),
+            conv_id=conversation_id,
+            turn={
+                "q_text": current_question,
+                "q_voice": None,  # 추후 TTS 파일 경로
+                "a_text": user_answer,
+                "a_voice": audio_path
+            },
+            recorded_at=datetime.now()
+        )
+        db.add(qa_turn)
+        await db.commit()
+        await db.refresh(qa_turn)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Turn 데이터 저장 실패: {str(e)}")
 
     # 3. 종료가 아닌 경우 다음 질문 생성
     next_question = None
@@ -179,22 +189,27 @@ async def force_end_chat(
     
     # 현재 진행 중인 질문이 있다면 답변 null로 저장
     if current_question and current_question.strip():
-        # 사용자가 답변하지 않은 질문을 답변 null로 저장
-        force_end_turn = Turn(
-            id=uuid4(),
-            conv_id=conversation_id,
-            turn={
-                "q_text": current_question,
-                "q_voice": None,
-                "a_text": None,  # 답변하지 않았으므로 null 처리
-                "a_voice": None
-            },
-            recorded_at=datetime.now()
-        )
-        db.add(force_end_turn)
-        db.commit()
-        
-        print(f"🔚 강제 종료: 미답변 질문을 null 처리하여 저장했습니다. (conversation_id: {conversation_id})")
+        try:
+            # 사용자가 답변하지 않은 질문을 답변 null로 저장
+            force_end_turn = Turn(
+                id=uuid4(),
+                conv_id=conversation_id,
+                turn={
+                    "q_text": current_question,
+                    "q_voice": None,
+                    "a_text": None,  # 답변하지 않았으므로 null 처리
+                    "a_voice": None
+                },
+                recorded_at=datetime.now()
+            )
+            db.add(force_end_turn)
+            await db.commit()
+            await db.refresh(force_end_turn)
+            
+            print(f"🔚 강제 종료: 미답변 질문을 null 처리하여 저장했습니다. (conversation_id: {conversation_id})")
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=500, detail=f"Turn 데이터 저장 실패: {str(e)}")
     
     # 기존 end 로직 호출
     return await end_chat(conversation_id, db)
