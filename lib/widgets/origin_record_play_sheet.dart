@@ -71,16 +71,18 @@ class _OriginalModalState extends State<OriginalModal>
                   onPressed: () {
                     if (showAllTranscript)
                       setState(() => showAllTranscript = false);
-                    if (!showAllTranscript) Navigator.pop(context); // 현재 모달 닫기
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      if (context.mounted) {
-                        showSummaryModal(
-                          context,
-                          audioPath: widget.audioPath,
-                          audioService: widget.audioService,
-                        ); // 새 모달 열기
-                      }
-                    });
+                    if (!showAllTranscript) {
+                      Navigator.pop(context); // 현재 모달 닫기
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (context.mounted) {
+                          showSummaryModal(
+                            context,
+                            audioPath: widget.audioPath,
+                            audioService: widget.audioService,
+                          ); // 새 모달 열기
+                        }
+                      });
+                    }
                   },
                 ),
               ),
@@ -157,7 +159,7 @@ class _OriginalModalState extends State<OriginalModal>
                   Container(
                     width: double.infinity,
                     constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
                     ),
                     margin: const EdgeInsets.symmetric(horizontal: 8),
                     padding: const EdgeInsets.symmetric(

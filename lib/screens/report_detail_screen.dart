@@ -529,7 +529,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               color: isAudioLoaded
                   ? AppColors.timeText
                   : AppColors.timeText.withOpacity(0.5),
-              fontSize: 14,
+              fontSize: 15,
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
             ),

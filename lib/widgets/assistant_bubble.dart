@@ -15,22 +15,31 @@ class AssistantBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? Colors.orange : Colors.transparent,
-              border: isActive ? Border.all(color: Colors.orange, width: 3) : null,
-            ),
-            child: const CircleAvatar(
-              radius: 24,
-              backgroundImage: AssetImage('assets/images/chatbot_profile.png'),
-              backgroundColor: Colors.transparent,
-            ),
+          Image.asset(
+            'assets/icons/Robot.png',
+            color: isActive ? Color(0xFF00C8B8) : null,
+            colorBlendMode: BlendMode.srcIn,
           ),
+          // child: const CircleAvatar(
+          //   radius: 24,
+          //   backgroundImage: AssetImage(
+          //     'assets/icons/Robot.png',
+          //     color: isActive ? Color(0xFFD95753) : null,
+          //   ),
+          // ),
+          // Container(
+          //   width: 48,
+          //   height: 48,
+          //   decoration: BoxDecoration(
+          //     shape: BoxShape.circle,
+          //     color: isActive ? Color(0xFF00C8B8) : Colors.transparent,
+          //     border: isActive
+          //         ? Border.all(color: Colors.orange, width: 3)
+          //         : null,
+          //   ),
+          // ),
           const SizedBox(width: 12),
           Flexible(
             child: Container(
@@ -42,10 +51,10 @@ class AssistantBubble extends StatelessWidget {
               child: Text(
                 text,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Pretendard',
-                  height: 1.3,
+                  height: 1.2,
                 ),
               ),
             ),

@@ -15,13 +15,18 @@ class UserSpeechBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.mic, size: 36, color: isActive ? Colors.orange : Colors.grey),
+          Image.asset(
+            'assets/icons/Mic.png',
+            color: isActive ? Color(0xFFD95753) : null,
+            // Color(0xFF555555)
+            colorBlendMode: BlendMode.srcIn,
+          ),
           const SizedBox(width: 12),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFDEDEDE),
                 borderRadius: BorderRadius.circular(10),
@@ -32,7 +37,7 @@ class UserSpeechBubble extends StatelessWidget {
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Pretendard',
-                  height: 1.25,
+                  height: 1.2,
                 ),
               ),
             ),

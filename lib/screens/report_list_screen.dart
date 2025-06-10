@@ -7,15 +7,14 @@ import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import 'report_detail_screen.dart'; // ReportDetailScreen import 추가
 
-class FamilyChatAnalysisScreen extends StatefulWidget {
-  const FamilyChatAnalysisScreen({Key? key}) : super(key: key);
+class ReportListScreen extends StatefulWidget {
+  const ReportListScreen({Key? key}) : super(key: key);
 
   @override
-  State<FamilyChatAnalysisScreen> createState() =>
-      _FamilyChatAnalysisScreenState();
+  State<ReportListScreen> createState() => _ReportListScreenState();
 }
 
-class _FamilyChatAnalysisScreenState extends State<FamilyChatAnalysisScreen> {
+class _ReportListScreenState extends State<ReportListScreen> {
   List<Map<String, String>> analysisFiles = [];
   bool isLoading = true;
 

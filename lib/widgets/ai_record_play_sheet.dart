@@ -202,26 +202,26 @@ class _SummaryModalState extends State<SummaryModal>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '대화 내용:',
+                          '대화 요약:',
                           style: TextStyle(
                             color: Color(0xFF00C8B8),
                             fontSize: 14,
                             fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 5),
                         Text(
                           '옛날 국민 학교 다닐 시절에 친구들하고 삼삼오오 모여서 공기놀이를 자주 하곤 했지. 근데 할머니가 영 실력이 없어서 항상 콧수염을 붙이는 벌칙을 했어. 그때 참 재미있었는데...',
                           style: TextStyle(
                             color: Color(0xFF333333),
-                            fontSize: 14,
+                            fontSize: 16,
                             fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
                           ),
                         ),
-                        SizedBox(height: 15),
+                        // SizedBox(height: 5),
                       ],
                     ),
                   ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/routes.dart';
 import '../utils/styles.dart';
+import '../user_provider.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -9,6 +11,8 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGuardian = context.watch<UserProvider>().isGuardian;
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
@@ -25,13 +29,13 @@ class CustomBottomNavBar extends StatelessWidget {
             Navigator.pushReplacementNamed(context, Routes.gallery);
             break;
           case 2:
-            Navigator.pushReplacementNamed(context, Routes.addPhoto);
+            Navigator.pushReplacementNamed(context, Routes.quickAdd);
             break;
           case 3:
             Navigator.pushReplacementNamed(context, Routes.report);
             break;
           case 4:
-            Navigator.pushReplacementNamed(context, Routes.profile);
+            Navigator.pushReplacementNamed(context, Routes.myPage);
             break;
         }
       },
@@ -55,13 +59,19 @@ class CustomBottomNavBar extends StatelessWidget {
           label: '사진첩',
         ),
         BottomNavigationBarItem(
-          icon: Image.asset('assets/icons/Add.png'),
+          icon: Image.asset(
+            isGuardian == true
+                ? 'assets/icons/Add.png'
+                : 'assets/icons/Comment-plus.png',
+          ),
           activeIcon: Image.asset(
-            'assets/icons/Add_fill.png',
+            isGuardian == true
+                ? 'assets/icons/Add_fill.png'
+                : 'assets/icons/Comment-plus_fill.png',
             color: const Color(0xFF00C8B8), // 덮어씌울 색상
             colorBlendMode: BlendMode.srcIn, // 색상만 입히기
           ),
-          label: '사진 추가',
+          label: isGuardian == true ? '사진 추가' : '대화하기',
         ),
         BottomNavigationBarItem(
           icon: Image.asset('assets/icons/Invoice.png'),
@@ -74,11 +84,11 @@ class CustomBottomNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Image.asset('assets/icons/User.png'),
-          // activeIcon: Image.asset(
-          //   'assets/icons/User_fill.png',
-          //   color: const Color(0xFF00C8B8), // 덮어씌울 색상
-          //   colorBlendMode: BlendMode.srcIn, // 색상만 입히기
-          // ),
+          activeIcon: Image.asset(
+            'assets/icons/User_fill.png',
+            color: const Color(0xFF00C8B8), // 덮어씌울 색상
+            colorBlendMode: BlendMode.srcIn, // 색상만 입히기
+          ),
           label: '나의 정보',
         ),
 
