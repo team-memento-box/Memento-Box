@@ -24,13 +24,13 @@ class User(Base):
     # 사용자명
     name = Column(String)
     # 이메일
-    email = Column(String)
+    email = Column(String, nullable=True)
     # 전화번호
-    phone = Column(String)
+    phone = Column(String, nullable=True)
     # 성별
-    gender = Column(String)
+    gender = Column(String, nullable=True)
     # 생년월일
-    birthday = Column(Date)
+    birthday = Column(Date, nullable=True)
     # 프로필 사진
     profile_img = Column(Text, nullable=True)
     # 관계 가족 id
@@ -43,4 +43,6 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Family ↔ User
     family = relationship("Family", back_populates="users")
+    # User ↔ Photo
+    photos = relationship("Photo", back_populates="user", cascade="all, delete-orphan")
     
