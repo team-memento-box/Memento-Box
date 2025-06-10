@@ -34,12 +34,13 @@ KST = timezone(timedelta(hours=9))
 app.state.timezone = KST
 
 # 라우터 등록
-# app.include_router(photo.router)
+app.include_router(auth.router, prefix="/api", tags=["auth"])  # auth 라우터 추가
+app.include_router(chat.router, prefix="/api", tags=["llm"])
+app.include_router(photo.router, prefix="/api", tags=["photo"])
 # app.include_router(user_create.router)
 # app.include_router(conv_tts.router)
 # app.include_router(conv_stt.router)
 # app.include_router(photo_router.router)
-app.include_router(chat.router, prefix="/api/chat", tags=["llm"])
 
 
 # app.include_router(photo.router, prefix="/api/v1", tags=["photos"])

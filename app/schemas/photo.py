@@ -43,3 +43,22 @@ class PhotoInfo(PhotoBase):
     title: Optional[str] = None
     image_url: str
     uploaded_at: datetime 
+
+class PhotoResponse(BaseModel):
+    id: UUID
+    name: Optional[str] = None
+    url: str
+    year: int
+    season: Literal["spring", "summer", "autumn", "winter"]
+    description: Optional[str] = None
+    image_url: str
+    created_at: datetime
+    analysis: Optional[Dict[str, Any]] = None
+    summary_text: Optional[Dict[str, Any]] = None
+    summary_voice: Optional[Dict[str, Any]] = None
+    story_year: Optional[str] = None
+    story_season: Optional[str] = None
+    story_nudge: Optional[Dict[str, Any]] = None
+
+    class Config:
+        from_attributes = True 
