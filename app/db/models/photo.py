@@ -22,7 +22,7 @@ class Photo(Base):
     # 계절
     season = Column(String)
     # 설명
-    description = Column(Text, nullable = True)
+    description = Column(Text, nullable=True)
     # 관계 사용자 id
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'))
     # 관계 가족 id

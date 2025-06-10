@@ -2,6 +2,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone, timedelta
 
 
 class Turn(Base):
@@ -34,6 +35,6 @@ class Turn(Base):
     # 질답쌍 {q_text:txt, a_text:txt, q_voice: url, a_voice: url}
     turn = Column(JSON, nullable=True)
     # 기록일자
-    recorded_at = Column(DateTime, nullable=True)
+    recorded_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Conversation ↔ Turn 
     conversation = relationship("Conversation", back_populates="turns")
