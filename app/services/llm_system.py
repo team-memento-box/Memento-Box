@@ -56,21 +56,92 @@ class OptimizedDementiaSystem:
         
         return initial_question, audio_path
     
-    def generate_complete_analysis(self, image_path):
-        """완전한 분석 생성"""
-        print("\n📊 종합 분석 결과 생성 중...")
+    # def generate_complete_analysis(self, image_path):
+    #     """완전한 분석 생성"""
+    #     print("\n📊 종합 분석 결과 생성 중...")
         
-        # 1. 대화 기록 저장 (새로운 폴더 구조)
-        conversation_file, analysis_file = self.story_generator.save_conversation_to_file(image_path)
+    #     # 1. 대화 기록 저장 (새로운 폴더 구조)
+    #     conversation_file, analysis_file = self.story_generator.save_conversation_to_file(image_path)
         
-        # 2. 추억 스토리 생성
-        story, story_file = self.story_generator.generate_story_from_conversation(image_path)
+    #     # 2. 추억 스토리 생성
+    #     story, story_file = self.story_generator.generate_story_from_conversation(image_path)
         
-        # 3. 콘솔에 요약 출력
+    #     # 3. 콘솔에 요약 출력
+    #     summary = self.story_generator.save_conversation_summary()
+    #     print(summary)
+        
+    #     # 4. 스토리 출력
+    #     if story:
+    #         print(f"\n{'='*50}")
+    #         print("📖 생성된 추억 이야기")
+    #         print(f"{'='*50}")
+    #         print(story)
+    #         print(f"{'='*50}")
+        
+    #     return {
+    #         'conversation_file': conversation_file,
+    #         'analysis_file': analysis_file,
+    #         'story_file': story_file,
+    #         'story_content': story,
+    #         'summary': summary,
+    #         'conversation_id': self.story_generator.conversation_id
+    #     }
+
+    def generate_complete_analysis_from_turns(self, turns, conversation_id):
+        """Turn 데이터로부터 완전한 분석 생성"""
+        print("\n📊 Turn 데이터 기반 종합 분석 결과 생성 중...")
+        
+        # Turn 데이터를 ConversationTurn 형태로 변환
+        from services.chat_system import ConversationTurn
+        conversation_turns = []
+        
+        for turn in turns:
+            if turn.turn and isinstance(turn.turn, dict):
+                question = turn.turn.get('q_text', '')
+                answer = turn.turn.get('a_text', '')
+                
+                # 질문이 있고, 답변이 null이 아닌 경우만 포함 (빈 문자열도 포함)
+                if question and answer is not None:
+                    conversation_turn = ConversationTurn(
+                        question=question,
+                        answer=answer,
+                        timestamp=turn.recorded_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        answer_length=len(answer.strip()) if answer else 0,
+                        audio_file=turn.turn.get('a_voice', '') or ''
+                    )
+                    conversation_turns.append(conversation_turn)
+        
+        if not conversation_turns:
+            return {
+                'error': 'No valid conversation turns found',
+                'conversation_id': str(conversation_id)
+            }
+        
+        # StoryGenerator의 chat_system에 conversation_turns 설정
+        self.story_generator.chat_system.conversation_turns = conversation_turns
+        self.story_generator.conversation_id = str(conversation_id)
+        
+        # 1. 추억 스토리 생성 (Turn 데이터 직접 사용)
+        story = self.story_generator.generate_story_from_turns(conversation_turns)
+        
+        # 2. 대화 기록 저장
+        conversation_file, analysis_file = self.story_generator.save_conversation_to_file_from_turns(conversation_turns, str(conversation_id))
+        
+        # 3. 스토리 파일 저장
+        story_file = None
+        if story:
+            story_dir = "story_telling"
+            os.makedirs(story_dir, exist_ok=True)
+            story_file = os.path.join(story_dir, f"{conversation_id}_story.txt")
+            
+            with open(story_file, 'w', encoding='utf-8') as f:
+                f.write(story)
+        
+        # 4. 요약 생성
         summary = self.story_generator.save_conversation_summary()
         print(summary)
         
-        # 4. 스토리 출력
+        # 5. 스토리 출력
         if story:
             print(f"\n{'='*50}")
             print("📖 생성된 추억 이야기")
@@ -84,7 +155,8 @@ class OptimizedDementiaSystem:
             'story_file': story_file,
             'story_content': story,
             'summary': summary,
-            'conversation_id': self.story_generator.conversation_id
+            'conversation_id': str(conversation_id),
+            'turns_processed': len(conversation_turns)
         }
     
     def _run_conversation(self, initial_question, is_voice=False):
@@ -123,35 +195,82 @@ class OptimizedDementiaSystem:
                 should_end = True
         else:
             user_input = input("\n👤 답변: ").strip()
-            if user_input.lower() in ['exit', '종료', 'quit', 'q']:
+            if user_input.lower() in ['exit', '종료', 'quit', '그만']:
                 print("대화를 종료합니다.")
                 should_end = True
 
         return user_input, audio_path, should_end
 
-        # # AI 응답 (음성 모드일 때는 녹음된 오디오 파일 정보 전달)
-        # answer, should_end = self.chat_system.chat_about_image2(user_input, with_audio=is_voice)
-        # print(f"🤖 {answer}")
+    def check_end_keywords(self, user_answer):
+        """사용자 답변에서 종료 키워드 확인"""
+        if not user_answer:
+            return False
+            
+        # 종료 키워드 목록
+        end_keywords = ['종료', 'exit', 'quit', 'q', '그만', '끝', '종료해줘', '그만해', '멈춰']
         
-        # if is_voice and self.voice_system:
-        #     self.voice_system.synthesize_speech(answer)
+        user_answer_lower = user_answer.lower().strip()
         
-        # if should_end:
-        #     end_msg = "대화 시간이 종료되었습니다."
-        #     print(f"⏰ {end_msg}")
-        #     if is_voice and self.voice_system:
-        #         self.voice_system.synthesize_speech(end_msg)
+        # 정확한 매칭 또는 포함 여부 확인
+        for keyword in end_keywords:
+            if keyword in user_answer_lower:
+                print(f"🔚 종료 키워드 감지: '{keyword}' in '{user_answer}'")
+                return True
         
-        # # 종합 분석 생성
-        # analysis_results = self.generate_complete_analysis(image_path)
-        
-        # if analysis_results['conversation_file']:
-        #     print(f"📂 대화기록: {analysis_results['conversation_file']}")
-        #     print(f"📊 분석결과: {analysis_results['analysis_file']}")
-        #     if analysis_results['story_file']:
-        #         print(f"📖 스토리: {analysis_results['story_file']}")
-        # return analysis_results
+        return False
     
+    def generate_next_question(self, previous_question, user_answer):
+        """사용자 답변을 바탕으로 다음 질문 생성"""
+        try:
+            # 대화 컨텍스트에 사용자 답변 추가
+            self.chat_system.conversation_history.append({
+                "role": "user", 
+                "content": user_answer
+            })
+            
+            # 다음 질문 생성을 위한 프롬프트
+            next_question_prompt = """이전 질문에 대한 어르신의 답변을 듣고, 자연스럽게 대화를 이어갈 다음 질문을 생성해주세요. 
+다음 원칙을 지켜주세요:
+1. 50자 이내로 간결하게
+2. 어르신의 답변에 공감하는 표현 포함
+3. 사진과 관련된 추가 질문
+4. 따뜻하고 친근한 어조
+5. 한 번에 하나의 질문만
+
+어르신의 답변에 맞춰 자연스럽게 대화를 이어가는 질문을 해주세요."""
+
+            response = self.chat_system.client.chat.completions.create(
+                model=self.chat_system.deployment,
+                messages=self.chat_system.conversation_history + [
+                    {"role": "user", "content": next_question_prompt}
+                ],
+                max_tokens=512,
+                temperature=0.8
+            )
+            
+            next_question = response.choices[0].message.content.strip()
+            
+            # 생성된 질문을 대화 히스토리에 추가
+            self.chat_system.conversation_history.append({
+                "role": "assistant", 
+                "content": next_question
+            })
+            
+            # 토큰 수 업데이트
+            user_tokens = len(self.chat_system.tokenizer.encode(user_answer))
+            question_tokens = len(self.chat_system.tokenizer.encode(next_question))
+            self.chat_system.token_count += user_tokens + question_tokens
+            
+            # 토큰 제한 확인
+            if self.chat_system.token_count > int(self.chat_system.max_tokens):
+                return "대화 시간이 다 되었어요. 오늘도 즐거운 시간이었습니다. 감사합니다."
+            
+            return next_question
+            
+        except Exception as e:
+            print(f"❌ 다음 질문 생성 중 오류: {str(e)}")
+            return "계속해서 이야기를 나눠볼까요?"
+
     def one_chat_about_image(self, user_query, with_audio=False):
         """대화 처리"""
         user_tokens = len(self.tokenizer.encode(user_query))

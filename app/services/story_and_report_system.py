@@ -46,19 +46,7 @@ class StoryGenerator:
         print(f"   대화 파일: {self.conversation_id}.txt")
         return conversation_dir
     
-    def _save_individual_qa_pairs(self, conversation_dir):
-        """개별 질의응답 쌍 저장 - 간소화된 형식"""
-        for i, turn in enumerate(self.chat_system.conversation_turns, 1):
-            qa_filename = conversation_dir / f"qa_{i:02d}.txt"
-            
-            with open(qa_filename, 'w', encoding='utf-8') as f:
-                f.write(f"=== 질의응답 {i}번 ===\n")
-                f.write(f"대화 ID: {self.conversation_id}\n")
-                f.write(f"시간: {turn.timestamp}\n")
-                f.write(f"{'='*25}\n\n")
-                f.write(f"🤖 질문:\n{turn.question}\n\n")
-                f.write(f"👤 답변:\n{turn.answer}\n")
-                f.write(f"{'='*25}\n")
+
     
     def _load_qa_pairs_for_report(self, pairs_dir):
         qa_files = sorted([f for f in pairs_dir.glob("qa_*.txt")])
@@ -482,9 +470,6 @@ JSON: {{"conversation_analysis": [{{"turn_number": 1, "is_strange": true/false, 
         # 폴더 구조 생성
         conversation_dir = self._create_conversation_folders(image_path)
         
-        # 개별 질의응답 쌍 저장 (같은 폴더 안에)
-        self._save_individual_qa_pairs(conversation_dir)
-        
         # 메인 대화 파일 저장: {이미지명}_conv{번호}/{이미지명}_conv{번호}.txt
         conversation_filename = conversation_dir / f"{self.conversation_id}.txt"
         with open(conversation_filename, 'w', encoding='utf-8') as f:
@@ -515,6 +500,86 @@ JSON: {{"conversation_analysis": [{{"turn_number": 1, "is_strange": true/false, 
         print(f"📁 대화 폴더: {conversation_dir}")
         print(f"📄 대화 파일: {conversation_filename}")
         print(f"📊 분석 파일: {analysis_filename}")
-        print(f"📋 QA 파일들: {len(self.chat_system.conversation_turns)}개")
+        
+        return str(conversation_filename), str(analysis_filename)
+
+    def generate_story_from_turns(self, turns):
+        """Turn 데이터로부터 직접 스토리 생성"""
+        conversation_text = ""
+        for turn in turns:
+            # 답변이 null이거나 비어있는 경우 건너뛰기
+            if turn.answer and turn.answer.strip():
+                conversation_text += f"질문: {turn.question}\n답변: {turn.answer}\n\n"
+        
+        if not conversation_text.strip():
+            return None
+        
+        story_prompt = f"""대화 기반으로 어르신 1인칭 추억 스토리 15줄 작성:
+{conversation_text}
+지침: 답변 기반 작성, 감정과 감각 포함, 따뜻한 톤, 손자/손녀에게 들려주는 어투"""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.deployment,
+                messages=[
+                    {"role": "system", "content": "노인 추억 스토리텔러"},
+                    {"role": "user", "content": story_prompt}
+                ],
+                max_tokens=512,
+                temperature=0.8
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            print(f"Error generating story: {str(e)}")
+            return None
+
+    def save_conversation_to_file_from_turns(self, conversation_turns, conversation_id):
+        """Turn 데이터로부터 직접 대화 기록 저장"""
+        # 대화 ID 설정
+        self.conversation_id = conversation_id
+        
+        # 폴더 구조 생성 (대화 ID 기반)
+        conversation_dir = Path("conversation_log") / conversation_id
+        conversation_dir.mkdir(parents=True, exist_ok=True)
+        
+        print(f"📁 저장 구조:")
+        print(f"   메인 폴더: conversation_log/{conversation_id}/")
+        print(f"   대화 파일: {conversation_id}.txt")
+        
+        # 메인 대화 파일 저장
+        conversation_filename = conversation_dir / f"{conversation_id}.txt"
+        with open(conversation_filename, 'w', encoding='utf-8') as f:
+            f.write(f"{'='*50}\n")
+            f.write(f"💬 치매 진단 대화 기록\n")
+            f.write(f"{'='*50}\n")
+            f.write(f"🆔 대화 ID: {conversation_id}\n")
+            f.write(f"📊 총 대화 수: {len(conversation_turns)}회\n")
+            f.write(f"{'='*50}\n\n")
+            
+            # 대화 내용 출력
+            for i, turn in enumerate(conversation_turns, 1):
+                f.write(f"[{turn.timestamp}]\n")
+                f.write(f"🤖 질문: {turn.question}\n")
+                f.write(f"👤 답변: {turn.answer}\n")
+                f.write(f"{'-'*30}\n\n")
+        
+        # analysis 폴더에 분석 리포트 저장
+        analysis_dir = Path("analysis")
+        analysis_dir.mkdir(exist_ok=True)
+        analysis_filename = analysis_dir / f"{conversation_id}_analysis.txt"
+        
+        # 분석을 위해 chat_system.conversation_turns 설정
+        self.chat_system.conversation_turns = conversation_turns
+        
+        with open(analysis_filename, 'w', encoding='utf-8') as f:
+            f.write(self.save_conversation_summary(conversation_dir))
+        
+        # 저장 완료 메시지
+        print(f"\n✅ 파일 저장 완료!")
+        print(f"📁 대화 폴더: {conversation_dir}")
+        print(f"📄 대화 파일: {conversation_filename}")
+        print(f"📊 분석 파일: {analysis_filename}")
         
         return str(conversation_filename), str(analysis_filename)
