@@ -1,3 +1,5 @@
+from sas import generate_sas_url
+
 import os
 import uuid
 import json
@@ -66,17 +68,35 @@ async def upload_photo(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# @router.get("/", response_model=List[PhotoResponse])
+# async def list_photos(
+#     current_user: User = Depends(get_current_user),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     현재 사용자가 속한 가족의 모든 사진을 조회합니다.
+#     연도와 계절별로 정렬되어 반환됩니다.
+#     """
+#     photos = await get_photos_by_family(current_user.family_id, db)
+#     return photos
+
 @router.get("/", response_model=List[PhotoResponse])
 async def list_photos(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    현재 사용자가 속한 가족의 모든 사진을 조회합니다.
-    연도와 계절별로 정렬되어 반환됩니다.
-    """
     photos = await get_photos_by_family(current_user.family_id, db)
-    return photos
+    response = []
+    for photo in photos:
+        # url에서 파일명만 추출
+        blob_name = photo.url.split('/')[-1]
+        sas_url = generate_sas_url(blob_name=blob_name, container_name="photo")
+        print(f"[DEBUG] blob_name: {blob_name}")
+        print(f"[DEBUG] sas_url: {sas_url}")
+        photo_dict = photo.__dict__.copy()
+        photo_dict["sas_url"] = sas_url
+        response.append(PhotoResponse(**photo_dict))
+    return response
 
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(

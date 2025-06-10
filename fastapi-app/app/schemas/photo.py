@@ -30,4 +30,5 @@ class PhotoCreate(BaseModel):
 
 class PhotoResponse(PhotoBase):
     uploaded_at: datetime
-    model_config = ConfigDict(from_attributes=True) 
+    sas_url: Optional[str] = None  # ← SAS URL 필드 추가!
+    model_config = ConfigDict(from_attributes=True)
