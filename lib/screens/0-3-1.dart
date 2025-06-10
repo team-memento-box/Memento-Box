@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../widgets/family_dropdown.dart';
+import '../utils/routes.dart'; 
 
 class GroupSelectScreen extends StatelessWidget {
   const GroupSelectScreen({super.key});
@@ -88,7 +89,8 @@ class GroupSelectScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    Navigator.pushNamed(context, '/group_create');
+                    Navigator.pushNamed(context, Routes.groupCreate);
+
                   },
                   child: const Text(
                     '가족 그룹 생성하기',
@@ -118,7 +120,7 @@ class GroupSelectScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    Navigator.pushNamed(context, '/group_join');
+                    Navigator.pushNamed(context, Routes.familyCodeInput);
                   },
                   child: const Text(
                     '가족 코드 입력',

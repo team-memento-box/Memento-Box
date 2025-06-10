@@ -6,6 +6,7 @@ import 'dart:convert' show utf8;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../user_provider.dart';
 import '../widgets/family_dropdown.dart';
+import '../utils/routes.dart';
 
 class GroupCreateScreen extends StatefulWidget {
   const GroupCreateScreen({super.key});
@@ -138,7 +139,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           body: jsonEncode(userData),
         );
         if (response.statusCode == 200) {
-          Navigator.pushNamed(context, '/home');
+          Navigator.pushNamed(context, Routes.home);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('회원정보 저장 실패: \n${utf8.decode(response.bodyBytes)}')),

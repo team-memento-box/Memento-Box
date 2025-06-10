@@ -40,9 +40,9 @@ class ProfileScreen extends StatelessWidget {
                   )
                 ],
               ),
-              child: Stack(
-                children: [
-                  Positioned(
+          child: Stack(
+            children: [
+              Positioned(
                     left: 0,
                     right: 0,
                     top: 18,
@@ -56,26 +56,26 @@ class ProfileScreen extends StatelessWidget {
                         child: (userProvider.profileImg == null || userProvider.profileImg!.isEmpty)
                             ? const Icon(Icons.person, size: 50, color: Colors.white)
                             : null,
-                      ),
-                    ),
                   ),
-                  Positioned(
+                ),
+              ),
+              Positioned(
                     left: 0,
                     right: 0,
                     top: 130,
                     child: Center(
-                      child: Text(
+                  child: Text(
                         userProvider.name ?? '이름 없음',
                         style: const TextStyle(
                           color: Color(0xFF111111),
                           fontSize: 22,
-                          fontFamily: 'Pretendard',
+                      fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w700,
-                        ),
-                      ),
                     ),
                   ),
-                  Positioned(
+                ),
+              ),
+              Positioned(
                     left: 0,
                     right: 0,
                     top: 159,
@@ -86,16 +86,16 @@ class ProfileScreen extends StatelessWidget {
                           color: const Color(0xFF777777),
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        child: Text(
+                  child: Text(
                           userProvider.familyRole ?? '역할 없음',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 17,
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
                     ),
                   ),
                 ],
@@ -179,7 +179,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            children: [
                 _ActionButton(
                   text: '로그아웃',
                   onTap: () {
@@ -219,7 +219,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+            children: [
           Text(
             label,
             style: const TextStyle(

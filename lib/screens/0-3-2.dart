@@ -8,7 +8,7 @@ import '../user_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import '../utils/routes.dart';
 class FamilyCodeInputScreen extends StatefulWidget {
   const FamilyCodeInputScreen({super.key});
 
@@ -90,7 +90,9 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
         );
 
         if (registerResponse.statusCode == 200) {
-          Navigator.pushNamed(context, '/home');
+          
+          Navigator.pushNamed(context, Routes.home);
+          
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('회원정보 저장 실패: \n${utf8.decode(registerResponse.bodyBytes)}')),

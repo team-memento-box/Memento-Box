@@ -14,6 +14,7 @@ class UserProvider with ChangeNotifier {
   String? familyRole;
   String? createdAt;
   bool? isGuardian;
+  String? accessToken;
 
   // 보호자/피보호자 선택
   void setIsGuardian(bool value) {
@@ -90,6 +91,12 @@ class UserProvider with ChangeNotifier {
     familyRole = null;
     createdAt = null;
     isGuardian = null;
+    notifyListeners();
+  }
+
+  // ✅ accessToken 저장 메서드 추가
+  void setAccessToken(String token) {
+    accessToken = token;
     notifyListeners();
   }
 }

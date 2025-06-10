@@ -15,10 +15,15 @@ import 'screens/mypage.dart';
 import 'screens/0-3-1.dart';
 import 'screens/0-3-1-1.dart';
 import 'screens/0-3-2.dart';
+import 'screens/Photo_detail_screen.dart';
 //우회용//
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'models/photo.dart';
 //우회용//
+
+//라우트 추가
+import 'utils/routes.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides(); //우회용//
@@ -40,7 +45,6 @@ Future<void> main() async {
     ),
   );
 }
-
 class MyCustomApp extends StatelessWidget {
   const MyCustomApp({super.key});
 
@@ -50,52 +54,43 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: '/signin', 
-      // ✅ [onGenerateRoute] 사용으로 변경
+      initialRoute: Routes.signin,
       onGenerateRoute: (settings) {
-        if (settings.name != null && settings.name!.startsWith('/intro')) {
-          return MaterialPageRoute(builder: (context) => const IntroScreen());
+        switch (settings.name) {
+          case Routes.intro:
+            return MaterialPageRoute(builder: (_) => const IntroScreen());
+          case Routes.home:
+            return MaterialPageRoute(builder: (_) => const HomeUpdateScreen());
+          case Routes.signin:
+            return MaterialPageRoute(builder: (_) => const SigninScreen());
+          case Routes.gallery:
+            return MaterialPageRoute(builder: (_) => const GalleryScreen());
+          case Routes.addPhoto:
+            return MaterialPageRoute(builder: (_) => const AddPhotoScreen());
+          case Routes.conversation:
+            return MaterialPageRoute(builder: (_) => const PhotoConversationScreen());
+          case Routes.kakaoSignin:
+            return MaterialPageRoute(builder: (_) => const KakaoSigninScreen());
+          case Routes.groupSelect:
+            return MaterialPageRoute(builder: (_) => const GroupSelectScreen());
+          case Routes.familyCodeInput:
+            return MaterialPageRoute(builder: (_) => const FamilyCodeInputScreen());
+          case Routes.groupCreate:
+            return MaterialPageRoute(builder: (_) => const GroupCreateScreen());
+          case Routes.profile:
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
+          case Routes.photoDetail:
+            final photo = settings.arguments as Photo;
+            return MaterialPageRoute(
+              builder: (_) => PhotoDetailScreen(photo: photo),
+            );
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(
+                body: Center(child: Text('❌ 존재하지 않는 경로입니다')),
+              ),
+            );
         }
-        if (settings.name == '/home') {
-          return MaterialPageRoute(builder: (context) => const HomeUpdateScreen());
-        }
-        
-        if (settings.name == '/signin') {
-          return MaterialPageRoute(builder: (context) => const SigninScreen());
-        }
-        //아직안함
-        if (settings.name == '/gallery') {
-          return MaterialPageRoute(builder: (context) => const GalleryScreen());
-        }
-        //아직안함
-        if (settings.name == '/addphoto') {
-          return MaterialPageRoute(builder: (context) => const AddPhotoScreen());
-        }
-        //아직안함
-        if (settings.name == '/conversation') {
-          return MaterialPageRoute(builder: (context) => const PhotoConversationScreen());
-        }
-        if (settings.name == '/kakao_signin') {
-          return MaterialPageRoute(builder: (context) => const KakaoSigninScreen());
-        }
-        if (settings.name == '/0-3-1') {
-          return MaterialPageRoute(builder: (context) => const GroupSelectScreen());
-        }
-        if (settings.name == '/0-3-2') {
-          return MaterialPageRoute(builder: (context) => const FamilyCodeInputScreen());
-        }
-        if (settings.name == '/group_create') {
-          return MaterialPageRoute(builder: (context) => const GroupCreateScreen());
-        }
-        if (settings.name == '/profile') {
-          return MaterialPageRoute(builder: (context) => const ProfileScreen());
-        }
-        // ✅ 잘못된 경로 대비 fallback
-        return MaterialPageRoute(
-          builder: (context) => const Scaffold(
-            body: Center(child: Text('❌ 존재하지 않는 경로입니다')),
-          ),
-        );
       },
     );
   }
