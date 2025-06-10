@@ -43,3 +43,7 @@ class PhotoInfo(PhotoBase):
     title: Optional[str] = None
     image_url: str
     uploaded_at: datetime 
+
+class PhotoResponse(PhotoBase):
+    uploaded_at: datetime
+    model_config = ConfigDict(from_attributes=True) 

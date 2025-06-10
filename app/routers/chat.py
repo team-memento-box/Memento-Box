@@ -3,16 +3,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from uuid import UUID
 from sqlalchemy.orm import Session
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import get_db
-from services.llm_system import OptimizedDementiaSystem
+from services.llm_system import OptimizedDementiaSystem, upload_audio_to_blob
 from db.models.user import User
 from db.models.turn import Turn
 from db.models.conversation import Conversation
 from schemas.turn import TurnRequest
+from schemas.chat import ConversationCreate, TurnCreate
 
 import uuid
 import os
@@ -30,51 +31,44 @@ system = OptimizedDementiaSystem()
 async def start_chat(image_id: str, db: Session = Depends(get_db)):
     TEMP_DIR = "./temp_images"
 
-    # def save_temp_image(image: UploadFile) -> str:
-    #     if not os.path.exists(TEMP_DIR):
-    #         os.makedirs(TEMP_DIR)
-
-    #     file_id = str(uuid.uuid4())
-    #     filename = f"{file_id}_{image.filename}"
-    #     path = os.path.join(TEMP_DIR, filename)
-
-    #     with open(path, "wb") as f:
-    #         contents = image.file.read()
-    #         f.write(contents)
-
-    #     return path
-
     # 나중엔 id로 연동되게 바꾸기
     # image_path = os.path.join(TEMP_DIR, imagepath)
-    image_path = os.path.join(TEMP_DIR, "48097797-a0c2-4c26-8e7b-e4220a51578c_스크린샷 2025-05-30 105216.png")
-    # 11111111-1111-1111-1111-111111111111
-    conversation_id, first_question = system.analyze_and_start_conversation(image_path)
-
-    # conv도 새로 생성됐으니 DB에 추가해주기
-    new_conversation = Conversation(
-        id = conversation_id,
-        photo_id = image_id, # 여기도 나중에 변경
-        created_at = datetime.now(),
-    )
-    db.add(new_conversation)
-    db.commit()
-
-    # 👉 첫 질문을 Turn으로 DB에 우선 저장 -> 다음 플로우에 사용
-    # new_turn = Turn(
-    #     conv_id=conversation_id,
-    #     question="",  # 아직 사용자의 첫 답변은 없으므로 공란
-    #     answer=first_question,
-    #     recorded_at=datetime.now(),
-    #     emotion="중립",              # 초기값 설정 (필요 시 추론)
-    #     answer_quality="normal",   # 초기값 설정
-    #     audio_file_path=""         # TTS 파일 경로 넣을 수 있음
+    image_path = os.path.join(TEMP_DIR, "48097797-a0c2-4c26-8e7b-e4220a51578c_스크린샷 2025-05-30 105216.png") # 11111111-1111-1111-1111-111111111111
+    
+    # [1] Conversation 데이터 생성 & 첫 질문 LLM 생성 및 
+    # conversation_data = ConversationCreate(
+    #     photo_id = image_id
     # )
+    try:
+        new_conversation = Conversation(
+            id=uuid4(),
+            photo_id=image_id,
+            # created_at은 자동으로 처리됨 -> 과연
+            created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
+        )
+        db.add(new_conversation)
+        await db.commit()
+        await db.refresh(new_conversation)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
+    
+    first_question, audio_path = system.analyze_and_start_conversation(image_path)
+    conversation_id = new_conversation.id
+    
+    # [2] audio Blob 저장
+    try:
+        blob_url = await upload_audio_to_blob(audio_path)
+    except:
+        blob_url = "블롭 스토리지 에러"
+    
+    # [3] turn 데이터 추가
     new_turn = Turn(
         id=uuid4(),
-        conv_id=new_conversation.id,
+        conv_id=conversation_id,
         turn={
             "q_text": first_question,
-            "q_voice": None,
+            "q_voice": blob_url,
             "a_text": None,
             "a_voice": None
         },
@@ -86,7 +80,8 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
     return JSONResponse(content={
         "status": "ok",
         "conversation_id": str(conversation_id),
-        "question": first_question
+        "question": first_question,
+        "audio_url": blob_url
     })
 
 # 답변 받고 Turn DB 업데이트
@@ -96,10 +91,6 @@ async def answer_chat(
     db: Session = Depends(get_db)
 ):
     # 1. 마지막 턴 가져오기
-    # last_turn: Turn = db.query(Turn)\
-    #     .filter(Turn.conv_id == conversation_id)\
-    #     .order_by(Turn.recorded_at.desc())\
-    #     .first()
     stmt = select(Turn).where(Turn.conv_id == conversation_id).order_by(Turn.recorded_at.desc())
     result = await db.execute(stmt)
     last_turn = result.scalars().first()
@@ -110,16 +101,26 @@ async def answer_chat(
     question = last_turn.turn.get("q_text")
     user_answer, audio_path, should_end = system._run_conversation(question, is_voice=True)
 
+    # [2] audio Blob 저장
+    try:
+        blob_url = await upload_audio_to_blob(audio_path)
+    except:
+        blob_url = "블롭 스토리지 에러"
+
     # 3. 기존 턴에 유저 응답 업데이트
     updated_turn = last_turn.turn.copy()
     updated_turn["a_text"] = user_answer
-    updated_turn["a_voice"] = audio_path
+    updated_turn["a_voice"] = blob_url
 
     last_turn.turn = updated_turn
     db.commit()
 
     
-    return {"answer": user_answer, "should_end": should_end}
+    return JSONResponse(content={
+        "answer": user_answer, 
+        "audio_url": blob_url, 
+        "should_end": should_end
+    })
 
 # # 대화 종료 및 분석/요약 생성
 # @router.post("/end")

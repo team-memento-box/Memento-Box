@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 from datetime import datetime
+from fastapi import HTTPException
+from azure.storage.blob import BlobServiceClient
+from uuid import uuid4
 
 from services.image_analyzer import ImageAnalyzer
 from services.chat_system import ChatSystem
@@ -36,8 +39,6 @@ class OptimizedDementiaSystem:
         if not os.path.exists(image_path):
             return None
         
-        # 1. conversation_id 생성
-        conversation_id = str(uuid.uuid4())
 
         # 이미지 분석
         analysis_result = self.image_analyzer.analyze_image(image_path)
@@ -49,8 +50,11 @@ class OptimizedDementiaSystem:
     
         # 첫 질문 생성
         initial_question = self.chat_system.generate_initial_question()
+
+        # 첫 질문 TTS
+        audio_path = self.voice_system.synthesize_speech(initial_question)
         
-        return conversation_id, initial_question
+        return initial_question, audio_path
     
     def generate_complete_analysis(self, image_path):
         """완전한 분석 생성"""
@@ -209,3 +213,76 @@ class OptimizedDementiaSystem:
     def text_conversation(self, image_path):
         """텍스트 대화 실행"""
         return self._run_conversation_loop(image_path, is_voice=False)
+
+
+async def upload_audio_to_blob(audio_path: str) -> str:
+    """
+    Uploads a wav audio file to Azure Blob Storage and returns the URL.
+    """
+    storage_key = os.getenv("AZURE_BLOBSTORAGE_KEY")
+    storage_account = os.getenv("AZURE_BLOBSTORAGE_ACCOUNT")
+    container_name = "talking-voice"
+    AZURE_STORAGE_CONNECTION_STRING=f"DefaultEndpointsProtocol=https;AccountName={storage_account};AccountKey={storage_key};EndpointSuffix=core.windows.net"
+
+    try:
+        # Replace this with your actual Azure Blob Storage connection string
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
+        original_filename = os.path.basename(audio_path)
+
+        # Container name
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=f"{uuid4()}_{original_filename}")
+
+        # Upload the file
+        with open(audio_path, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
+
+        return blob_client.url
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Azure Blob upload failed: {str(e)}")
+
+
+# async def upload_audio_to_blob(file_path: str, original_filename: str, blob_service_client) -> str:
+#     """
+#     Azure Blob Storage에 wav 오디오 파일을 업로드하고 주소를 반환합니다.
+#     """
+#     blob_name = f"{uuid.uuid4()}_{original_filename}"
+#     try:
+#         # BlobStorageService 인스턴스일 경우
+#         if hasattr(blob_service_client, 'container_client'):
+#             blob_client = blob_service_client.container_client.get_blob_client(blob_name)
+#             with open(file_path, "rb") as data:
+#                 blob_client.upload_blob(data, overwrite=True)
+#                 return blob_client.url
+#         else:
+#             # (기존 비동기 BlobServiceClient 사용 케이스가 있다면 여기에 추가)
+#             raise Exception('지원하지 않는 blob_service_client 타입입니다.')
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Blob Storage 업로드 실패: {str(e)}")
+
+# async def save_audio_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
+#     """
+#     사진 메타데이터를 데이터베이스에 저장합니다.
+#     """
+#     try:
+#         photo = Photo(
+#             name=photo_data.name,
+#             url=photo_data.url,
+#             year=photo_data.year,
+#             season=photo_data.season,
+#             description=photo_data.description,
+#             summary_text=photo_data.summary_text,
+#             summary_voice=photo_data.summary_voice,
+#             family_id=photo_data.family_id,
+#             uploaded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
+#         )
+        
+#         db.add(photo)
+#         await db.commit()
+#         await db.refresh(photo)
+#         return photo
+#     except Exception as e:
+#         await db.rollback()
+#         raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
