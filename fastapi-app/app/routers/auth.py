@@ -180,4 +180,17 @@ async def login_for_access_token(
     return {
         "access_token": access_token,
         "token_type": "bearer"
-    } 
+    }
+
+@router.delete("/delete_by_kakao_id/{kakao_id}")
+async def delete_user_by_kakao_id(
+    kakao_id: str,
+):
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.kakao_id == kakao_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="해당 kakao_id의 사용자를 찾을 수 없습니다.")
+        await session.delete(user)
+        await session.commit()
+        return {"message": f"{kakao_id} 사용자가 삭제되었습니다."} 
