@@ -39,6 +39,7 @@ class VoiceConversionService:
                 .order_by(desc(Conversation.created_at))
                 .limit(1)
             )
+
             latest_conversation = result.scalar_one_or_none()
             
             if not latest_conversation:
@@ -106,6 +107,7 @@ class VoiceConversionService:
             await self.db.rollback()
             raise HTTPException(status_code=500, detail=str(e))
 
+
 # """
 # 로컬환경 테스트
 # """
@@ -153,7 +155,6 @@ class VoiceConversionService:
 #     print("[5] 업로드 성공")
 #     print(" - URL:", voice_url)
 #     print(" - Blob Name:", blob_name)
-
 
 # if __name__ == "__main__":
 #     asyncio.run(test_voice_conversion())
