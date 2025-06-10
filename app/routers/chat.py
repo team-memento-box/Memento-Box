@@ -220,51 +220,6 @@ async def end_chat(conversation_id: UUID = Form(...), db: Session = Depends(get_
     results = system.generate_complete_analysis_from_turns(turns, conversation_id)
     return results
 
-
-
-# # 음성 → 텍스트 변환	
-# @router.post("/audio/stt")
-# async def speech_to_text(audio: UploadFile):
-#     path = system.save_temp_audio(audio)
-#     try:
-#         transcription = system.voice_system.transcribe_speech(path)
-#         return JSONResponse(content={
-#                 "status": "ok",
-#                 "transcription": transcription
-#             })
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# # 텍스트 → 음성 변환
-# @router.post("/audio/tts")
-# async def text_to_speech(text: str = Form(...)):
-#     try:
-#         audio_bytes = system.voice_system.synthesize_speech(text)
-
-#         if not audio_bytes:
-#                 raise HTTPException(status_code=500, detail="TTS 변환 실패")
-#         return Response(content=audio_bytes, media_type="audio/mpeg")  # ✔ 바로 mp3 스트리밍
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# # 질답 1쌍 저장 (선택)
-# @router.post("/save-turn")
-# async def save_turn(turn_data: TurnRequest, db: Session = Depends(get_db)):
-#     try:
-#         new_turn = Turn(
-#             id=uuid4(),
-#             conv_id=turn_data.conv_id,
-#             turn=turn_data.turn,
-#             recorded_at=turn_data.recorded_at
-#         )
-#         db.add(new_turn)
-#         db.commit()
-#         return {"status": "success", "message": "Turn saved"}
-#     except Exception as e:
-#         db.rollback()
-#         raise HTTPException(status_code=500, detail=str(e))
-
 # 🧪 테스트용 엔드포인트들
 @router.post("/test/upload-image")
 async def upload_test_image(image: UploadFile = File(...)):
