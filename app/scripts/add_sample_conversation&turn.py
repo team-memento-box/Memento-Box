@@ -25,7 +25,7 @@ def add_fake_conversation():
         conversation = Conversation(
             id=conversation_id,
             photo_id=photo_id,
-            created_at=datetime.now(timezone(timedelta(hours=9)))
+            created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         db.add(conversation)
         db.commit()
@@ -40,7 +40,7 @@ def add_fake_conversation():
                 "q_voice": None,
                 "a_voice": None
             },
-            recorded_at=datetime.now(timezone(timedelta(hours=9)))
+            recorded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         turn2 = Turn(
             id=uuid4(),
@@ -51,7 +51,7 @@ def add_fake_conversation():
                 "q_voice": None,
                 "a_voice": None
             },
-            recorded_at=datetime.now(timezone(timedelta(hours=9)))
+            recorded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         db.add_all([turn1, turn2])
         db.commit()
