@@ -9,14 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import get_db
 from services.llm_system import OptimizedDementiaSystem, upload_audio_to_blob
+from services.blob_storage import get_blob_service_client, download_file_from_url
 from db.models.user import User
 from db.models.turn import Turn
 from db.models.conversation import Conversation
+from db.models.photo import Photo
 from schemas.turn import TurnRequest
 from schemas.chat import ConversationCreate, TurnCreate
 
 import uuid
 import os
+import tempfile
 from fastapi import UploadFile
 
 
@@ -30,19 +33,46 @@ system = OptimizedDementiaSystem()
 @router.post("/start")
 async def start_chat(image_id: str, db: Session = Depends(get_db)):
     TEMP_DIR = "./temp_images"
-
-    # 나중엔 id로 연동되게 바꾸기
-    # image_path = os.path.join(TEMP_DIR, imagepath)
-    image_path = os.path.join(TEMP_DIR, "48097797-a0c2-4c26-8e7b-e4220a51578c_스크린샷 2025-05-30 105216.png") # 11111111-1111-1111-1111-111111111111
+    
+    # [0] DB에서 photo 정보 조회
+    try:
+        # image_id를 UUID로 변환하여 DB에서 조회
+        photo_uuid = UUID(image_id)
+        stmt = select(Photo).where(Photo.id == photo_uuid)
+        result = await db.execute(stmt)
+        photo = result.scalar_one_or_none()
+        
+        if not photo:
+            raise HTTPException(status_code=404, detail=f"Photo not found with id: {image_id}")
+        
+        # Azure Blob Storage에서 이미지 다운로드 (URL에서 직접)
+        print(f"📥 이미지 다운로드 시작: {photo.url}")
+        image_bytes = await download_file_from_url(photo.url)
+        
+        # 임시 디렉토리 생성
+        if not os.path.exists(TEMP_DIR):
+            os.makedirs(TEMP_DIR)
+        
+        # 임시 파일로 저장
+        file_extension = os.path.splitext(photo.url)[-1] or '.jpg'
+        temp_filename = f"{image_id}{file_extension}"
+        image_path = os.path.join(TEMP_DIR, temp_filename)
+        
+        with open(image_path, 'wb') as f:
+            f.write(image_bytes)
+            
+        print(f"✅ 이미지 다운로드 완료: {image_path}")
+        
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format for image_id")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"이미지 다운로드 실패: {str(e)}")
     
     # [1] Conversation 데이터 생성 & 첫 질문 LLM 생성 및 
-    # conversation_data = ConversationCreate(
-    #     photo_id = image_id
-    # )
     try:
         new_conversation = Conversation(
             id=uuid4(),
-            photo_id=image_id,
+            photo_id=photo_uuid,
             # created_at은 자동으로 처리됨 -> 과연
             created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
@@ -77,12 +107,28 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
     db.add(new_turn)
     db.commit()
 
-    return JSONResponse(content={
+    # [4] 응답 생성
+    response_data = {
         "status": "ok",
         "conversation_id": str(conversation_id),
         "question": first_question,
-        "audio_url": blob_url
-    })
+        "audio_url": blob_url,
+        "photo_info": {
+            "id": str(photo.id),
+            "name": photo.name,
+            "url": photo.url
+        }
+    }
+    
+    # [5] 임시 파일 정리
+    try:
+        if os.path.exists(image_path):
+            os.remove(image_path)
+            print(f"🗑️ 임시 파일 삭제: {image_path}")
+    except Exception as e:
+        print(f"⚠️ 임시 파일 삭제 실패: {str(e)}")
+    
+    return JSONResponse(content=response_data)
 
 # 답변 받고 Turn DB 업데이트
 @router.post("/user_answer")
