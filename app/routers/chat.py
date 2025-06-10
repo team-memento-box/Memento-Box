@@ -189,7 +189,7 @@ async def answer_chat(
     
     question = last_turn.turn.get("q_text")
     user_answer, audio_path, should_end = system._run_conversation(question, is_voice=True)
-
+    
     # [2] audio Blob 저장
     try:
         # Blob Storage에 업로드
@@ -200,7 +200,6 @@ async def answer_chat(
         blob_url = "블롭 스토리지 에러"
 
     # 3. 기존 턴에 유저 응답 업데이트
-    user_answer = "모르겠어" #!
     updated_turn = last_turn.turn.copy()
     updated_turn["a_text"] = user_answer
     updated_turn["a_voice"] = blob_url
