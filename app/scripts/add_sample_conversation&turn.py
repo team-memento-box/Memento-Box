@@ -4,9 +4,10 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, desc
 from db.models.conversation import Conversation
 from db.models.turn import Turn
+from db.models.photo import Photo
 from core.config import settings
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
@@ -17,14 +18,36 @@ def add_fake_conversation():
     SessionLocal = sessionmaker(bind=engine)
     db: Session = SessionLocal()
     try:
-        # 가상 photo_id
-        photo_id = "4958d511-e135-4754-94c4-b569a528b2a0"
+        # 가장 최근에 업로드된 사진 조회
+        result = db.execute(
+            select(Photo)
+            .order_by(desc(Photo.uploaded_at))
+            .limit(1)
+        )
+        photo = result.scalar_one_or_none()
+        
+        if not photo:
+            print("사용 가능한 사진이 없습니다. 먼저 사진을 업로드해주세요.")
+            return
+            
+        # 이미 해당 사진에 대한 대화가 있는지 확인
+        existing_conversation = db.execute(
+            select(Conversation)
+            .where(Conversation.photo_id == photo.id)
+        ).scalar_one_or_none()
+        
+        if existing_conversation:
+            print(f"이미 해당 사진(ID: {photo.id})에 대한 대화가 존재합니다.")
+            print(f"conversation_id: {existing_conversation.id}")
+            return
+            
         # 가상 conversation_id
         conversation_id = uuid4()
+        
         # Conversation 생성
         conversation = Conversation(
             id=conversation_id,
-            photo_id=photo_id,
+            photo_id=photo.id,
             created_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         db.add(conversation)
@@ -36,7 +59,7 @@ def add_fake_conversation():
             conv_id=conversation_id,
             turn={
                 "q_text": "이 사진은 언제 찍은 거야?",
-                "a_text": "2025년 봄에 찍었어!",
+                "a_text": f"{photo.year}년 {photo.season}에 찍었어!",
                 "q_voice": None,
                 "a_voice": None
             },
@@ -46,8 +69,8 @@ def add_fake_conversation():
             id=uuid4(),
             conv_id=conversation_id,
             turn={
-                "q_text": "누가 찍었어?",
-                "a_text": "아빠가 찍어줬지!",
+                "q_text": "이 사진에 대해 설명해줄래?",
+                "a_text": f"{photo.description if photo.description else '특별한 순간을 담은 사진이야!'}",
                 "q_voice": None,
                 "a_voice": None
             },
@@ -55,7 +78,13 @@ def add_fake_conversation():
         )
         db.add_all([turn1, turn2])
         db.commit()
-        print(f"가상 Conversation 및 Turn 데이터가 추가되었습니다. conversation_id: {conversation_id}")
+        print(f"가장 최근 업로드된 사진에 대한 대화 데이터가 추가되었습니다.")
+        print(f"photo_id: {photo.id}")
+        print(f"photo_name: {photo.name}")
+        print(f"conversation_id: {conversation_id}")
+    except Exception as e:
+        db.rollback()
+        print(f"데이터 추가 중 오류가 발생했습니다: {str(e)}")
     finally:
         db.close()
 
