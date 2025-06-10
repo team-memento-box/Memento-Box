@@ -271,57 +271,6 @@ class OptimizedDementiaSystem:
             print(f"❌ 다음 질문 생성 중 오류: {str(e)}")
             return "계속해서 이야기를 나눠볼까요?"
 
-    def one_chat_about_image(self, user_query, with_audio=False):
-        """대화 처리"""
-        user_tokens = len(self.tokenizer.encode(user_query))
-        
-        # 음성 녹음 시작 (if requested)
-        audio_file = None
-        if with_audio:
-            self.start_recording()
-        
-        # 대화 턴 저장
-        if self.last_question:
-            # 음성 녹음 중지 및 파일 저장 (if recording)
-            if with_audio:
-                audio_file = self.stop_recording()
-            
-            # conversation_turn = ConversationTurn(
-            #     question=self.last_question,
-            #     answer=user_query,
-            #     timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            #     answer_length=len(user_query.strip()),
-            #     audio_file=audio_file if audio_file else ""
-            # )
-            # self.conversation_turns.append(conversation_turn)
-            
-        
-        self.conversation_history.append({"role": "user", "content": user_query})
-        self.token_count += user_tokens
-        
-        # 토큰 제한 확인
-        if self.token_count > self.max_tokens:
-            answer = "대화 시간이 다 되었어요. 수고하셨습니다."
-            self.conversation_history.append({"role": "assistant", "content": answer})
-            return answer, True
-        
-        # AI 응답 생성
-        response = self.client.chat.completions.create(
-            model=self.deployment,
-            messages=self.conversation_history,
-            max_tokens=1024,
-            temperature=0.7
-        )
-        answer = response.choices[0].message.content
-        
-        self.conversation_history.append({"role": "assistant", "content": answer})
-        self.token_count += len(self.tokenizer.encode(answer))
-        self.last_question = answer
-        
-        if self.token_count > self.max_tokens:
-            return answer, True
-        
-        return answer, False
     
     def voice_conversation(self, image_path):
         """음성 대화 실행"""
@@ -334,74 +283,20 @@ class OptimizedDementiaSystem:
         return self._run_conversation_loop(image_path, is_voice=False)
 
 
-async def upload_audio_to_blob(audio_path: str) -> str:
+async def upload_audio_to_blob(file_path: str, original_filename: str, blob_service_client) -> str:
     """
-    Uploads a wav audio file to Azure Blob Storage and returns the URL.
+    Azure Blob Storage에 wav 오디오 파일을 업로드하고 주소를 반환합니다.
     """
-    storage_key = os.getenv("AZURE_BLOBSTORAGE_KEY")
-    storage_account = os.getenv("AZURE_BLOBSTORAGE_ACCOUNT")
-    container_name = "talking-voice"
-    AZURE_STORAGE_CONNECTION_STRING=f"DefaultEndpointsProtocol=https;AccountName={storage_account};AccountKey={storage_key};EndpointSuffix=core.windows.net"
-
+    blob_name = f"{uuid.uuid4()}_{original_filename}"
     try:
-        # Replace this with your actual Azure Blob Storage connection string
-        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-
-        original_filename = os.path.basename(audio_path)
-
-        # Container name
-        blob_client = blob_service_client.get_blob_client(container=container_name, blob=f"{uuid4()}_{original_filename}")
-
-        # Upload the file
-        with open(audio_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
-
-        return blob_client.url
-
+        # BlobStorageService 인스턴스일 경우
+        if hasattr(blob_service_client, 'container_client'):
+            blob_client = blob_service_client.container_client.get_blob_client(blob_name)
+            with open(file_path, "rb") as data:
+                blob_client.upload_blob(data, overwrite=True)
+                return blob_client.url
+        else:
+            # (기존 비동기 BlobServiceClient 사용 케이스가 있다면 여기에 추가)
+            raise Exception('지원하지 않는 blob_service_client 타입입니다.')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Azure Blob upload failed: {str(e)}")
-
-
-# async def upload_audio_to_blob(file_path: str, original_filename: str, blob_service_client) -> str:
-#     """
-#     Azure Blob Storage에 wav 오디오 파일을 업로드하고 주소를 반환합니다.
-#     """
-#     blob_name = f"{uuid.uuid4()}_{original_filename}"
-#     try:
-#         # BlobStorageService 인스턴스일 경우
-#         if hasattr(blob_service_client, 'container_client'):
-#             blob_client = blob_service_client.container_client.get_blob_client(blob_name)
-#             with open(file_path, "rb") as data:
-#                 blob_client.upload_blob(data, overwrite=True)
-#                 return blob_client.url
-#         else:
-#             # (기존 비동기 BlobServiceClient 사용 케이스가 있다면 여기에 추가)
-#             raise Exception('지원하지 않는 blob_service_client 타입입니다.')
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Blob Storage 업로드 실패: {str(e)}")
-
-# async def save_audio_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
-#     """
-#     사진 메타데이터를 데이터베이스에 저장합니다.
-#     """
-#     try:
-#         photo = Photo(
-#             name=photo_data.name,
-#             url=photo_data.url,
-#             year=photo_data.year,
-#             season=photo_data.season,
-#             description=photo_data.description,
-#             summary_text=photo_data.summary_text,
-#             summary_voice=photo_data.summary_voice,
-#             family_id=photo_data.family_id,
-#             uploaded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
-#         )
-        
-#         db.add(photo)
-#         await db.commit()
-#         await db.refresh(photo)
-#         return photo
-#     except Exception as e:
-#         await db.rollback()
-#         raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Blob Storage 업로드 실패: {str(e)}")

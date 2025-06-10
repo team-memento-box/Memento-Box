@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from services.blob_storage import BlobStorageService, get_blob_service_client
 from db.database import get_db
 from services.llm_system import OptimizedDementiaSystem, upload_audio_to_blob
 from db.models.user import User
@@ -21,7 +22,7 @@ from fastapi import UploadFile
 
 
 router = APIRouter(
-    prefix="/api/chat",
+    prefix="/chat",
     tags=["llm"]
 )
 system = OptimizedDementiaSystem()
@@ -58,7 +59,9 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
     
     # [2] audio Blob 저장
     try:
-        blob_url = await upload_audio_to_blob(audio_path)
+        blob_service_client = get_blob_service_client("talking-voice")
+        original_filename = os.path.basename(audio_path)
+        blob_url = await upload_audio_to_blob(audio_path, original_filename, blob_service_client)
     except:
         blob_url = "블롭 스토리지 에러"
     
@@ -87,40 +90,43 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
 # 답변 받고 Turn DB 업데이트
 @router.post("/user_answer")
 async def answer_chat(
-    conversation_id: UUID = Form(...),
-    current_question: str = Form(...),  # 현재 질문
-    user_answer: str = Form(...),  # 사용자 답변
-    audio_path: str = Form(None),  # 음성 파일 경로 (선택적)
+    conversation_id: UUID = Form(...), 
     db: Session = Depends(get_db)
 ):
-    # 1. 종료 키워드 체크
-    should_end = system.check_end_keywords(user_answer)
+    # 1. 마지막 턴 가져오기
+    stmt = select(Turn).where(Turn.conv_id == conversation_id).order_by(Turn.recorded_at.desc())
+    result = await db.execute(stmt)
+    last_turn = result.scalars().first()
+
+    if not last_turn or not last_turn.turn:
+        raise HTTPException(status_code=404, detail="No previous turn found")
     
-    # 2. 질의응답 쌍을 하나의 Turn으로 저장
-    qa_turn = Turn(
-        id=uuid4(),
-        conv_id=conversation_id,
-        turn={
-            "q_text": current_question,
-            "q_voice": None,  # 추후 TTS 파일 경로
-            "a_text": user_answer,
-            "a_voice": audio_path
-        },
-        recorded_at=datetime.now()
-    )
-    db.add(qa_turn)
+    question = last_turn.turn.get("q_text")
+    user_answer, audio_path, should_end = system._run_conversation(question, is_voice=True)
+
+    # [2] audio Blob 저장
+    try:
+        # Blob Storage에 업로드
+        blob_service_client = get_blob_service_client("talking-voice")
+        original_filename = os.path.basename(audio_path)
+        blob_url = await upload_audio_to_blob(audio_path, original_filename, blob_service_client)
+    except:
+        blob_url = "블롭 스토리지 에러"
+
+    # 3. 기존 턴에 유저 응답 업데이트
+    updated_turn = last_turn.turn.copy()
+    updated_turn["a_text"] = user_answer
+    updated_turn["a_voice"] = blob_url
+
+    last_turn.turn = updated_turn
     db.commit()
 
-    # 3. 종료가 아닌 경우 다음 질문 생성
-    next_question = None
-    if not should_end:
-        next_question = system.generate_next_question(current_question, user_answer)
-
-    return {
-        "user_answer": user_answer, 
-        "should_end": should_end,
-        "next_question": next_question if not should_end else None
-    }
+    
+    return JSONResponse(content={
+        "answer": user_answer, 
+        "audio_url": blob_url, 
+        "should_end": should_end
+    })
 
 # 강제 대화 종료 (프런트에서 종료 버튼 클릭 시)
 @router.post("/force-end")
