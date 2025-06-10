@@ -1,4 +1,9 @@
 import os
+
+# 루트경로 설정 후 삭제
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from azure.storage.blob import BlobServiceClient
 from datetime import datetime
 from typing import Optional, Literal
