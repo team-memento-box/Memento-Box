@@ -1,17 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# from routers import photo, user_create, conv_tts, conv_stt, photo_router
+
 from datetime import timezone, timedelta
 import pytz
-from routers import auth, photo
-
-from routers import photo, user_create, conv_tts, conv_stt, photo_router
-
-# from routers import photo, user_create, conv_tts, conv_stt, photo_router
-from datetime import timezone, timedelta
-import pytz
-# from routers import photo, user, family, conversation, turn, anomaly_report
+from routers import auth
 from routers import chat
 
 app = FastAPI(
@@ -36,7 +29,7 @@ app.state.timezone = KST
 # 라우터 등록
 app.include_router(auth.router, prefix="/api", tags=["auth"])  # auth 라우터 추가
 app.include_router(chat.router, prefix="/api", tags=["llm"])
-app.include_router(photo.router, prefix="/api", tags=["photo"])
+# app.include_router(photo.router, prefix="/api", tags=["photo"])
 # app.include_router(user_create.router)
 # app.include_router(conv_tts.router)
 # app.include_router(conv_stt.router)
