@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // ← Provider import 추가
 import '../utils/routes.dart';
 import '../utils/styles.dart';
+import '../user_provider.dart'; // ← UserProvider import 추가
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -9,6 +11,7 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGuardian = Provider.of<UserProvider>(context).isGuardian;
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
@@ -25,7 +28,12 @@ class CustomBottomNavBar extends StatelessWidget {
             Navigator.pushReplacementNamed(context, Routes.gallery);
             break;
           case 2:
-            Navigator.pushReplacementNamed(context, Routes.addPhoto);
+            final isGuardian = Provider.of<UserProvider>(context, listen: false).isGuardian;
+            if (isGuardian == true) {
+              Navigator.pushReplacementNamed(context, Routes.addPhoto);
+            } else {
+              Navigator.pushReplacementNamed(context, Routes.conversation);
+            }
             break;
           case 3:
             Navigator.pushReplacementNamed(context, Routes.report);
@@ -55,13 +63,22 @@ class CustomBottomNavBar extends StatelessWidget {
           label: '사진첩',
         ),
         BottomNavigationBarItem(
-          icon: Image.asset('assets/icons/Add.png'),
-          activeIcon: Image.asset(
-            'assets/icons/Add_fill.png',
-            color: const Color(0xFF00C8B8),
-            colorBlendMode: BlendMode.srcIn,
-          ),
-          label: '사진 추가',
+          
+          icon: isGuardian == true
+              ? Image.asset('assets/icons/Add.png')
+              : Image.asset('assets/icons/Comment-plus.png'),
+          activeIcon: isGuardian == true
+              ? Image.asset(
+                  'assets/icons/Add_fill.png',
+                  color: const Color(0xFF00C8B8),
+                  colorBlendMode: BlendMode.srcIn,
+                )
+              : Image.asset(
+                  'assets/icons/Comment-plus_fill.png',
+                  color: const Color(0xFF00C8B8),
+                  colorBlendMode: BlendMode.srcIn,
+                ),
+          label: isGuardian == true ? '사진 추가' : '대화하기',
         ),
         BottomNavigationBarItem(
           icon: Image.asset('assets/icons/Invoice.png'),

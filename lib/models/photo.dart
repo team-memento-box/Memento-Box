@@ -10,6 +10,8 @@ class Photo {
   final String familyId;
   final String uploadedAt;
   final String? sasUrl;
+  final String? role; // ← role 필드 추가
+
   Photo({
     required this.id,
     this.name,
@@ -21,7 +23,8 @@ class Photo {
     this.summaryVoice,
     required this.familyId,
     required this.uploadedAt,
-    this.sasUrl, // ← 추가
+    this.sasUrl,
+    this.role, // ← 생성자에도 추가
   });
 
   factory Photo.fromJson(Map<String, dynamic> json) {
@@ -36,7 +39,8 @@ class Photo {
       summaryVoice: json['summary_voice'],
       familyId: json['family_id'],
       uploadedAt: json['uploaded_at'],
-      sasUrl: json['sas_url'], // ← 추가
+      sasUrl: json['sas_url'],
+      role: json['role'], // ← fromJson에도 추가
     );
   }
 }

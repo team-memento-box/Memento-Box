@@ -22,33 +22,27 @@ class GroupSelectScreen extends StatelessWidget {
         child: Column(
           children: [
             // 상단 시계/상태바 영역 (간단히 텍스트로 대체)
-            Padding(
-              padding: const EdgeInsets.only(top: 24.0, bottom: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '9:41',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 17,
-                      fontFamily: 'SF Pro',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+            
+            const SizedBox(height: 200),
             // 안내 문구
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center, // 가운데 정렬
                 children: [
+                  // 1. 이미지 추가
+                  Image.asset(
+                    'assets/images/mori.png',
+                    width: 200, // 원하는 크기로 조절
+                    height: 200,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 16), // 이미지와 텍스트 사이 간격
+                  // 2. 안내 문구
                   Consumer<UserProvider>(
                     builder: (context, userProvider, child) => Text(
                       '안녕하세요 ${userProvider.name}님,',
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 21,
@@ -58,10 +52,11 @@ class GroupSelectScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    '메멘토 박스가 처음이신가요?',
-                    style: TextStyle(
+                    '저와 함께 기억여행을 시작해볼까요?',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       color: Colors.black,
                       fontSize: 19,
                       fontFamily: 'Pretendard',
@@ -93,7 +88,7 @@ class GroupSelectScreen extends StatelessWidget {
 
                   },
                   child: const Text(
-                    '가족 그룹 생성하기',
+                    '기억여행 시작하기',
                     style: TextStyle(
                       color: Color(0xFF00C8B8),
                       fontSize: 20,
@@ -104,71 +99,9 @@ class GroupSelectScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // 가족 코드 입력 버튼
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00C8B8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, Routes.familyCodeInput);
-                  },
-                  child: const Text(
-                    '가족 코드 입력',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            // 하단 안내
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(
-                  '이미 가족 그룹이 있으시다면?',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 19,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
-                    height: 1.42,
-                    letterSpacing: -1,
-                  ),
-                  textAlign: TextAlign.left,
-                ),
-              ),
-            ),
-            const Spacer(),
+            
             // 하단 홈 인디케이터
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Center(
-                child: Container(
-                  width: 139,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ),
-            ),
+            
           ],
         ),
       ),

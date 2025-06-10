@@ -152,7 +152,7 @@ class KakaoSigninScreen extends StatelessWidget {
 
   Widget _buildWelcomeText() {
     return const Positioned(
-      top: 100,
+      top: 300,
       left: 30,
       right: 30,
       child: Text(
@@ -165,7 +165,7 @@ class KakaoSigninScreen extends StatelessWidget {
 
   Widget _buildButtons(BuildContext context) {
     return Positioned(
-      top: 200,
+      top: 400,
       left: 30,
       right: 30,
       child: Column(

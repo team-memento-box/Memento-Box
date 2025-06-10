@@ -13,48 +13,8 @@ import '../utils/styles.dart';
 import '../user_provider.dart';
 import '../utils/routes.dart';
 import '../models/photo.dart';
+import 'intro_screen.dart';
 
-//photo.dart 파일 생성했음
-// class Photo {
-//   final String id;
-//   final String? name;
-//   final String url;
-//   final int year;
-//   final String season;
-//   final String? description;
-//   final dynamic summaryText;
-//   final dynamic summaryVoice;
-//   final String familyId;
-//   final String uploadedAt;
-
-//   Photo({
-//     required this.id,
-//     this.name,
-//     required this.url,
-//     required this.year,
-//     required this.season,
-//     this.description,
-//     this.summaryText,
-//     this.summaryVoice,
-//     required this.familyId,
-//     required this.uploadedAt,
-//   });
-
-//   factory Photo.fromJson(Map<String, dynamic> json) {
-//     return Photo(
-//       id: json['id'],
-//       name: json['name'],
-//       url: json['url'],
-//       year: json['year'],
-//       season: json['season'],
-//       description: json['description'],
-//       summaryText: json['summary_text'],
-//       summaryVoice: json['summary_voice'],
-//       familyId: json['family_id'],
-//       uploadedAt: json['uploaded_at'],
-//     );
-//   }
-// }
 
 Future<List<Photo>> fetchPhotos(BuildContext context) async {
   final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -112,11 +72,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('에러: \\${snapshot.error}'));
+            return const IntroScreen();
           }
           final photos = snapshot.data ?? [];
           if (photos.isEmpty) {
-            return const Center(child: Text('사진이 없습니다.'));
+            return const IntroScreen();
           }
           // 연도, 계절별로 그룹화
           final grouped = <String, List<Photo>>{};

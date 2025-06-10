@@ -346,6 +346,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center, // ← 이 줄 추가/수정!
         children: [
           const Text(
             '발급된 가족 코드',

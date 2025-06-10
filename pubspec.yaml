@@ -73,6 +73,7 @@ flutter:
     - assets/images/temp_logo.png
     - assets/images/chatbot_profile.png
     - assets/photos/
+    - assets/analysis/
     - assets/images/
     - assets/icons/
     - assets/photos/

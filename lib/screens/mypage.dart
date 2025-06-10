@@ -1,10 +1,19 @@
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
 import '../widgets/tap_widget.dart';
-class ProfileScreen extends StatelessWidget {
+import '../utils/routes.dart';
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -40,9 +49,9 @@ class ProfileScreen extends StatelessWidget {
                   )
                 ],
               ),
-          child: Stack(
-            children: [
-              Positioned(
+              child: Stack(
+                children: [
+                  Positioned(
                     left: 0,
                     right: 0,
                     top: 18,
@@ -56,26 +65,26 @@ class ProfileScreen extends StatelessWidget {
                         child: (userProvider.profileImg == null || userProvider.profileImg!.isEmpty)
                             ? const Icon(Icons.person, size: 50, color: Colors.white)
                             : null,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
+                  Positioned(
                     left: 0,
                     right: 0,
-                    top: 130,
+                    top: 120,
                     child: Center(
-                  child: Text(
+                      child: Text(
                         userProvider.name ?? '이름 없음',
                         style: const TextStyle(
                           color: Color(0xFF111111),
                           fontSize: 22,
-                      fontFamily: 'Pretendard',
+                          fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Positioned(
+                  Positioned(
                     left: 0,
                     right: 0,
                     top: 159,
@@ -86,16 +95,16 @@ class ProfileScreen extends StatelessWidget {
                           color: const Color(0xFF777777),
                           borderRadius: BorderRadius.circular(30),
                         ),
-                  child: Text(
+                        child: Text(
                           userProvider.familyRole ?? '역할 없음',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 17,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -179,18 +188,53 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+              children: [
                 _ActionButton(
-                  text: '로그아웃',
-                  onTap: () {
-                    // TODO: 로그아웃 처리
-                  },
-                ),
-                const SizedBox(width: 20),
-                _ActionButton(
-                  text: '정보 수정',
-                  onTap: () {
-                    // TODO: 정보 수정 페이지로 이동
+                  text: '회원 탈퇴',
+                  onTap: () async {
+                    final userProvider = Provider.of<UserProvider>(context, listen: false);
+                    final kakaoId = userProvider.kakaoId;
+                    
+                    if (kakaoId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('카카오 ID를 찾을 수 없습니다.')),
+                      );
+                      return;
+                    }
+
+                    try {
+                      final response = await http.delete(
+                        Uri.parse('${dotenv.env['BASE_URL']}/auth/delete_by_kakao_id/$kakaoId'),
+                        headers: {
+                          'Authorization': 'Bearer ${userProvider.accessToken}',
+                          'Accept': 'application/json',
+                        },
+                      );
+
+                      if (response.statusCode == 200) {
+                        // 회원 탈퇴 성공
+                        userProvider.clearUser(); // UserProvider 데이터 초기화
+                        if (mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            Routes.signin,
+                            (route) => false, // 모든 이전 화면 제거
+                          );
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('회원 탈퇴에 실패했습니다.')),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('서버와 통신 중 오류가 발생했습니다.')),
+                        );
+                      }
+                    }
                   },
                 ),
               ],

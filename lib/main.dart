@@ -8,18 +8,22 @@ import 'screens/home_screen.dart';
 import 'screens/gallery_screen.dart';
 import 'screens/add_photo_screen.dart';
 import 'screens/conversation_screen.dart'; // ✅ 새ka로 만든 대화 스크린 import
-import 'screens/intro_screen.dart'; // ✅ 새로 만든 인트로 스크린 import
+import 'screens/report_list_screen.dart';
+import 'screens/report_detail_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // --홍원 추가--
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'; // ✅ 카카오 SDK import
 import 'screens/mypage.dart';
 import 'screens/0-3-1.dart';
 import 'screens/0-3-1-1.dart';
 import 'screens/0-3-2.dart';
-import 'screens/Photo_detail_screen.dart';
+import 'screens/intro_screen.dart';
+
+import 'screens/photo_detail_screen.dart';
 //우회용//
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'models/photo.dart';
+
 //우회용//
 
 //라우트 추가
@@ -55,6 +59,7 @@ class MyCustomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
       initialRoute: Routes.signin,
+      //initialRoute: Routes.photoDetail,
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case Routes.intro:
@@ -79,11 +84,19 @@ class MyCustomApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const GroupCreateScreen());
           case Routes.profile:
             return MaterialPageRoute(builder: (_) => const ProfileScreen());
+          case Routes.report:
+            return MaterialPageRoute(builder: (_) => const ReportListScreen());
+          case Routes.reportDetail:
+            return MaterialPageRoute(builder: (_) => const ReportDetailScreen());
+          // case Routes.photoDetail:
+          //   return MaterialPageRoute(builder: (_) => const PhotoDetailScreen());
           case Routes.photoDetail:
-            final photo = settings.arguments as Photo;
+            final Photo photo = settings.arguments as Photo; // ← Photo 객체 받기
             return MaterialPageRoute(
-              builder: (_) => PhotoDetailScreen(photo: photo),
+              builder: (_) => PhotoDetailScreen(photo: photo), // ← Photo 객체 전달
             );
+          
+
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(
