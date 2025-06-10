@@ -98,6 +98,7 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
             
             if not is_session_completed:
                 # 이전 대화가 있고 세션이 완료되지 않은 경우에만 이어서 대화 생성
+                conversation_id = latest_conversation.id
                 previous_question = latest_turn.turn.get("q_text")
                 previous_answer = latest_turn.turn.get("a_text")
                 
@@ -158,7 +159,8 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
             "id": str(photo.id),
             "name": photo.name,
             "url": photo.url
-        }
+        },
+        "is_continuation": is_continuation
     }
     
     # [5] 임시 파일 정리
@@ -198,6 +200,7 @@ async def answer_chat(
         blob_url = "블롭 스토리지 에러"
 
     # 3. 기존 턴에 유저 응답 업데이트
+    user_answer = "모르겠어" #!
     updated_turn = last_turn.turn.copy()
     updated_turn["a_text"] = user_answer
     updated_turn["a_voice"] = blob_url
