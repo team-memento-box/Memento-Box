@@ -43,4 +43,6 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Family ↔ User
     family = relationship("Family", back_populates="users")
+    # User ↔ Photo
+    photos = relationship("Photo", back_populates="user", cascade="all, delete-orphan")
     
