@@ -22,17 +22,17 @@ class Photo(Base):
     # 계절
     season = Column(String)
     # 설명
-    description = Column(Text, nullable = True)
-    # 요약 텍스트
-    summary_text = Column(JSON, nullable=True)
-    # 요약 음성
-    summary_voice = Column(JSON, nullable=True)
+    description = Column(Text, nullable=True)
+    # 관계 사용자 id
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'))
     # 관계 가족 id
     family_id = Column(UUID(as_uuid=True), ForeignKey('families.id'))
     # 업로드 일자
     uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     # Family ↔ Photo 
     family = relationship("Family", back_populates="photos")
+    # User ↔ Photo
+    user = relationship("User", back_populates="photos")
     # Photo ↔ Conversation 
     conversations = relationship("Conversation", back_populates="photo", cascade="all, delete-orphan")
     

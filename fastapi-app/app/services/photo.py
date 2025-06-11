@@ -24,7 +24,8 @@ class PhotoService:
         current_user: User,
         year: int,
         season: str,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        user_id: UUID = None
     ) -> Photo:
         """
         사진을 업로드하고 메타데이터를 저장합니다.
@@ -35,6 +36,7 @@ class PhotoService:
             year: 사진 연도
             season: 사진 계절 (spring, summer, autumn, winter)
             description: 사진 설명 (텍스트)
+            user_id: 업로더 ID
         """
         temp_file_path = None
         try:
@@ -57,7 +59,8 @@ class PhotoService:
                 url=photo_url,
                 year=year,
                 season=season,
-                description=description
+                description=description,
+                user_id=user_id or current_user.id  # user_id가 없으면 current_user.id 사용
             )
             
             return await save_photo_to_db(photo_data, self.db)
@@ -121,9 +124,8 @@ async def save_photo_to_db(photo_data: PhotoCreate, db: AsyncSession) -> Photo:
             year=photo_data.year,
             season=photo_data.season,
             description=photo_data.description,
-            summary_text=photo_data.summary_text,
-            summary_voice=photo_data.summary_voice,
             family_id=photo_data.family_id,
+            user_id=photo_data.user_id,  # user_id 추가
             uploaded_at=datetime.now(timezone(timedelta(hours=9))).replace(tzinfo=None)
         )
         

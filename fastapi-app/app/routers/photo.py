@@ -12,10 +12,19 @@ from core.auth import get_current_user
 from db.database import get_db
 from db.models.photo import Photo
 from db.models.user import User
-from schemas.photo import PhotoCreate, PhotoResponse
+from schemas.photo import PhotoCreate, PhotoResponse,PhotoBase
 from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db, get_photos_by_family
 from services.blob_storage import get_blob_service_client
+from schemas.user import UserResponse  # 유저 응답 스키마 import
+from pydantic import ConfigDict
+from sqlalchemy.orm import selectinload
+from schemas.user import UserResponse
 
+class PhotoResponse(PhotoBase):
+    uploaded_at: datetime
+    sas_url: Optional[str] = None
+    user: Optional[UserResponse] = None  # ← 유저 정보 추가!
+    model_config = ConfigDict(from_attributes=True)
 router = APIRouter(
     prefix="/api/photos",
     tags=["photos"]
@@ -62,9 +71,15 @@ async def upload_photo(
             current_user=current_user,
             year=year,
             season=season,
-            description=description
+            description=description,
+            user_id=current_user.id
         )
-        return PhotoResponse.from_orm(photo)
+        # user 변환 추가!
+        user = photo.user
+        photo_dict = photo.__dict__.copy()
+        photo_dict["user"] = UserResponse.model_validate(user, from_attributes=True)
+        print(f"[DEBUG] photo_dict: {photo_dict}")
+        return PhotoResponse(**photo_dict)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -91,28 +106,50 @@ async def list_photos(
         # url에서 파일명만 추출
         blob_name = photo.url.split('/')[-1]
         sas_url = generate_sas_url(blob_name=blob_name, container_name="photo")
-        print(f"[DEBUG] blob_name: {blob_name}")
-        print(f"[DEBUG] sas_url: {sas_url}")
         photo_dict = photo.__dict__.copy()
         photo_dict["sas_url"] = sas_url
+        # user 정보 추가!
+        user = photo.user
+        photo_dict["user"] = UserResponse.model_validate(user, from_attributes=True).dict() if user else None
+        # SQLAlchemy 내부 속성 제거 (선택)
+        photo_dict.pop('_sa_instance_state', None)
         response.append(PhotoResponse(**photo_dict))
     return response
+
+# @router.get("/{photo_id}", response_model=PhotoResponse)
+# async def get_photo(
+#     photo_id: uuid.UUID,
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     """
+#     특정 사진의 상세 정보를 조회합니다.
+#     """
+#     result = await db.execute(
+#         select(Photo).where(Photo.id == photo_id)
+#     )
+#     photo = result.scalar_one_or_none()
+#     if not photo:
+#         raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
+#     return photo
+
+
 
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(
     photo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    특정 사진의 상세 정보를 조회합니다.
-    """
+    from sqlalchemy.orm import selectinload
     result = await db.execute(
-        select(Photo).where(Photo.id == photo_id)
+        select(Photo).options(selectinload(Photo.user)).where(Photo.id == photo_id)
     )
     photo = result.scalar_one_or_none()
     if not photo:
         raise HTTPException(status_code=404, detail="사진을 찾을 수 없습니다.")
-    return photo
+    user = photo.user
+    photo_dict = photo.__dict__.copy()
+    photo_dict["user"] = UserResponse.model_validate(user, from_attributes=True).dict() if user else None
+    return PhotoResponse(**photo_dict)
 
 @router.delete("/{photo_id}")
 async def delete_photo(

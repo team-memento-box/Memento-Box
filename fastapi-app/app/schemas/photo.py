@@ -10,9 +10,9 @@ class PhotoBase(BaseModel):
     year: int
     season: Literal["spring", "summer", "autumn", "winter"]
     description: Optional[str] = None
-    summary_text: Optional[Dict[str, Any]] = None
-    summary_voice: Optional[Dict[str, Any]] = None
+
     family_id: UUID
+    user_id: UUID
 
 # PhotoCreate가 PhotoBase를 상속받지 않는 이유:
 # 1. id는 DB에서 자동 생성되는 필드이므로 생성 시에는 필요하지 않음
@@ -24,9 +24,9 @@ class PhotoCreate(BaseModel):
     year: int
     season: Literal["spring", "summer", "autumn", "winter"]
     description: Optional[str] = None
-    summary_text: Optional[Dict[str, Any]] = None
-    summary_voice: Optional[Dict[str, Any]] = None
+
     family_id: UUID
+    user_id: UUID
 
 class PhotoResponse(PhotoBase):
     uploaded_at: datetime

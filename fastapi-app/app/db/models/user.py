@@ -43,6 +43,7 @@ class User(Base):
     # 계정 생성일자
     #created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=9))))
     created_at = Column(DateTime, default=lambda: datetime.now().replace(tzinfo=None))
-
     # Family ↔ User
     family = relationship("Family", back_populates="users")
+    # User ↔ Photo
+    photos = relationship("Photo", back_populates="user", cascade="all, delete-orphan")
