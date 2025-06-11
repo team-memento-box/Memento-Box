@@ -15,6 +15,9 @@ import '../widgets/audio_player_widget.dart';
 import '../models/photo.dart'; // ← Photo 모델 import 추가
 import 'package:provider/provider.dart'; // ✅ Provider import
 import '../user_provider.dart'; // ✅ 사용자 Provider import
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PhotoDetailScreen extends StatefulWidget {
   final Photo photo; // ← Photo 객체 추가
@@ -33,7 +36,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
   void initState() {
     super.initState();
     _audioService = AudioService(); // ✅ 화면 동안만 유지
-     // 디버깅용 Photo 객체 출력
+    // 디버깅용 Photo 객체 출력
     print('=== Photo 객체 디버깅 ===');
     print('id: ${widget.photo.id}');
     print('name: ${widget.photo.name}');
@@ -61,7 +64,8 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final familyName = Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
+    final familyName =
+        Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
     final isGuardian = Provider.of<UserProvider>(context).isGuardian ?? true;
 
     return Scaffold(
@@ -86,12 +90,16 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.person, color: Colors.white),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: 50,
+                                height: 50,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                ),
+                              ),
                         )
                       : Container(
                           width: 50,
@@ -128,7 +136,8 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              widget.photo.user?['family_role'] ?? '', // ← Photo 객체의 user에서 family_role 사용
+                              widget.photo.user?['family_role'] ??
+                                  '', // ← Photo 객체의 user에서 family_role 사용
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Pretendard',
@@ -223,7 +232,9 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00C8B8),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -239,11 +250,26 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                             )
                           : ElevatedButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, Routes.conversation);
+                                print(
+                                  "A 데이터: ${widget.photo.id}, ${widget.photo.url}",
+                                );
+                                Navigator.pushNamed(
+                                  context,
+                                  Routes.conversation,
+                                  arguments: {
+                                    'photoId':
+                                        widget.photo.id, // 실제 photoId 변수로 바꾸기
+                                    'photoUrl': widget
+                                        .photo
+                                        .url, // 필요하면 photoUrl도 같이 넘기기
+                                  },
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00C8B8),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),

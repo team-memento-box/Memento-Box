@@ -2,81 +2,225 @@
 // 사용자 챗봇 화면
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/assistant_bubble.dart'; // 챗봇 말풍선 위젯
 import '../widgets/photo_box.dart'; // 고정된 사진 영역 위젯
 import '../widgets/user_speech_bubble.dart'; // 사용자 음성 말풍선 위젯
 import '../data/user_data.dart'; // 질문/응답/사진 정보가 담긴 데이터 파일
+import '../user_provider.dart';
 import '../utils/routes.dart';
 import '../utils/styles.dart';
-
-Future<String> startConversation(String imageId, String accessToken) async {
-  final baseUrl = 'http://YOUR_BASE_URL'; // .env 또는 상수로 관리하세요
-  final url = Uri.parse('$baseUrl/api/start');
-
-  final response = await http.post(
-    url,
-    headers: {
-      'Authorization': 'Bearer $accessToken',
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: jsonEncode({'image_id': imageId}),
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(utf8.decode(response.bodyBytes));
-    return data['question'] ?? '질문이 없습니다.';
-  } else {
-    throw Exception('대화 시작 실패: ${response.statusCode}');
-  }
-}
+import '../models/photo.dart';
+import '../models/question.dart';
 
 class PhotoConversationScreen extends StatefulWidget {
-  const PhotoConversationScreen({super.key});
+  final String photoId;
+  final String photoUrl;
+
+  const PhotoConversationScreen({
+    Key? key,
+    required this.photoId,
+    required this.photoUrl,
+  }) : super(key: key);
 
   @override
   State<PhotoConversationScreen> createState() =>
       _PhotoConversationScreenState();
 }
 
+// TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
+bool isTTSActive = false;
+bool isSTTActive = false;
+
 class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
-  // TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
-  bool isTTSActive = false;
-  bool isSTTActive = false;
+  late String photoId;
+  late String photoUrl;
 
-  // 대화 관련 변수들: 질문, 응답, 사진 경로
-  String assistantText = '';
-  String userSpeechText = '';
-  String photoPath = '';
-  bool isLoading = true; // 로딩 상태 추가
+  String apiResult = 'Loading...';
 
-  final String photoId = '받아온_사진_ID'; // 실제 사진 ID로 교체 필요
-  final String accessToken = '유저_액세스토큰'; // Provider 또는 다른 방식으로 받아오세요
+  String assistantText = '초기 텍스트';
+  String photoPath = '초기 url';
 
   @override
   void initState() {
     super.initState();
-    _initConversation();
+    photoId = widget.photoId;
+    photoUrl = widget.photoUrl;
+    print('photoId: $photoId');
+    print('photoUrl: $photoUrl');
 
-    // // 예시: 첫 번째 회상 대화 데이터를 불러옴
-    // final convo = photoConversations[0];
-
-    // assistantText = convo.assistantText;
-    // userSpeechText = convo.userSpeechText;
-    // photoPath = convo.photoPath;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startConversation();
+    });
   }
 
-  Future<void> _initConversation() async {
+  Future<void> _startConversation() async {
     try {
-      // API 호출해서 질문 받아오기
-      final question = await startConversation(photoId, accessToken);
+      final jsonData = await startConversation(photoId);
+      final conversation = ConversationResponse.fromJson(jsonData);
+
+      assistantText = conversation.question;
+      photoPath = conversation.photoInfo.url;
+      // print('Question: ${conversation.question}');
+      // print('Photo URL: ${conversation.photoInfo.url}');
 
       setState(() {
-        assistantText = question;
+        apiResult = conversation.question; // 또는 원하는 값을 화면에 보여주기 위해 저장
+      });
+    } catch (e) {
+      print('❌ API error: $e');
+      setState(() {
+        apiResult = 'API failed: $e';
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> startConversation(String imageId) async {
+    final baseUrl = dotenv.env['BASE_URL']!;
+    print("**********");
+    print(imageId);
+    print("**********");
+    final url = Uri.parse('$baseUrl/api/chat/start?image_id=$imageId');
+
+    final response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      // 여기서 응답 바디를 UTF8로 디코딩
+      final decoded = utf8.decode(response.bodyBytes);
+      final Map<String, dynamic> jsonData = jsonDecode(decoded);
+      return jsonData;
+    } else {
+      throw Exception('대화 시작 실패: ${response.statusCode}, ${response.body}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
+
+      // 기존 AppBar 대신 커스텀 앱바 적용
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(114),
+        child: _buildCustomAppBar(context),
+      ),
+
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // const SizedBox(height: 30),
+
+              // // 기존에 표시하던 photoId 텍스트
+              // Text(
+              //   'Photo ID: $photoId',
+              //   style: const TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
+
+              // const SizedBox(height: 10),
+
+              // // 기존에 있던 photoUrl 이미지 (있는 경우만)
+              // if (photoUrl.isNotEmpty)
+              //   Center(
+              //     child: Image.network(
+              //       photoUrl,
+              //       width: 200,
+              //       height: 200,
+              //       fit: BoxFit.cover,
+              //     ),
+              //   ),
+
+              // const SizedBox(height: 20),
+
+              // // 기존에 표시하던 API 결과 텍스트
+              // Text(
+              //   'API result:\n$apiResult',
+              //   style: const TextStyle(fontSize: 16),
+              // ),
+              const SizedBox(height: 20),
+
+              // 챗봇 질문 말풍선 (기존 디자인 반영)
+              AssistantBubble(text: assistantText, isActive: isTTSActive),
+
+              // const SizedBox(height: 10),
+
+              // 사진 영역 (375x375) - 기존 PhotoBox 사용
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: PhotoBox(photoPath: photoPath, isNetwork: true),
+                ),
+              ),
+
+              const SizedBox(height: 80),
+
+              // // 사용자 음성 응답 말풍선
+              // UserSpeechBubble(text: userSpeechText, isActive: isSTTActive),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: AppBar(title: const Text('대화 시작')),
+  //     body: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Text('Photo ID: ${widget.photoId}'),
+  //         Image.network(widget.photoUrl),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  /*
+  @override
+  void initState() {
+    super.initState();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _initConversation(context);
+    // });
+  }
+
+  Future<void> _initConversation(BuildContext context) async {
+    try {
+      // API 호출해서 질문 받아오기
+      final jsonString = await startConversation(photoId);
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+      final questionData = QuestionData.fromJson(jsonMap);
+
+      final questionTxt = questionData.question; // 질문 텍스트
+      final audioUrl = questionData.audioUrl;
+      final conversationId = questionData.conversationId;
+      final isContinuation = questionData.isContinuation;
+
+      final photoData = PhotoInfo.fromJson(questionData.photoInfo);
+      final objPhotoUrl = photoData.url;
+      final objPhotoName = photoData.name;
+      final objPhotoId = photoData.id;
+
+      print('=== 대화 객체 디버깅 ===');
+      print('questionTxt: ${questionTxt}');
+      print('audioUrl: ${audioUrl}');
+      print('conversationId: ${conversationId}');
+      print('isContinuation: ${isContinuation}');
+
+      setState(() {
+        assistantText = questionTxt;
         // 기존 더미 userSpeechText, photoPath 등도 같이 초기화 가능
-        photoPath = '사진_경로'; // 필요에 따라 세팅
+        audioPath = audioUrl; // 필요에 따라 세팅
+        photoPath = objPhotoUrl;
         isLoading = false;
       });
     } catch (e) {
@@ -123,7 +267,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       ),
     );
   }
-
+*/
   /// 사용자 정의 상단 타이틀 바
   Widget _buildCustomAppBar(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;

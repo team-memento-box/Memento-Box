@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 
 class PhotoBox extends StatelessWidget {
   final String photoPath;
+  final bool isNetwork;
 
-  const PhotoBox({required this.photoPath, super.key});
+  const PhotoBox({required this.photoPath, this.isNetwork = false, super.key});
 
   @override
   Widget build(BuildContext context) {
+    final imageProvider = isNetwork
+        ? NetworkImage(photoPath)
+        : AssetImage(photoPath) as ImageProvider;
     return Center(
       child: GestureDetector(
         onTap: () {
@@ -23,7 +27,10 @@ class PhotoBox extends StatelessWidget {
                         // 줌, 드래그 허용
                         child: AspectRatio(
                           aspectRatio: 1, // 정사각형 비율 유지
-                          child: Image.asset(photoPath, fit: BoxFit.contain),
+                          child: Image(
+                            image: imageProvider,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
@@ -57,10 +64,7 @@ class PhotoBox extends StatelessWidget {
                 offset: const Offset(0, 4),
               ),
             ],
-            image: DecorationImage(
-              image: AssetImage(photoPath),
-              fit: BoxFit.cover,
-            ),
+            image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
           ),
         ),
       ),
