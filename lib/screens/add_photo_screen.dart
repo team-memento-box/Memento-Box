@@ -209,14 +209,14 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     );
     request.fields['year'] = year.toString();
     request.fields['season'] = season;
-    request.fields['description'] = jsonEncode({"desc": description});
-
+    request.fields['description'] = description;
     // Request 내용 출력
     print('📤 Upload Request:');
     print('URL: \\${request.url}');
     print('Headers: \\${request.headers}');
     print('Fields: \\${request.fields}');
     print('Files: \\${request.files.map((f) => f.filename).toList()}');
+    print('Description: \\${request.fields['description']}');
 
     var response = await request.send();
     print('📤 Upload Response:');
@@ -224,7 +224,9 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     print('Body: \\${await response.stream.bytesToString()}');
     
     if (response.statusCode == 200) {
+      
       if (!mounted) return;
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('사진 업로드 성공!')),
       );

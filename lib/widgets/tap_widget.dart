@@ -25,10 +25,13 @@ class CustomBottomNavBar extends StatelessWidget {
             Navigator.pushReplacementNamed(context, Routes.home);
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, Routes.gallery);
+            if (isGuardian == true) {
+              Navigator.pushReplacementNamed(context, Routes.gallery);
+            } else {
+              Navigator.pushReplacementNamed(context, Routes.request);
+            }
             break;
           case 2:
-            final isGuardian = Provider.of<UserProvider>(context, listen: false).isGuardian;
             if (isGuardian == true) {
               Navigator.pushReplacementNamed(context, Routes.addPhoto);
             } else {
@@ -63,7 +66,6 @@ class CustomBottomNavBar extends StatelessWidget {
           label: '사진첩',
         ),
         BottomNavigationBarItem(
-          
           icon: isGuardian == true
               ? Image.asset('assets/icons/Add.png')
               : Image.asset('assets/icons/Comment-plus.png'),

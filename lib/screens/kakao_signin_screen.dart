@@ -20,11 +20,7 @@ class KakaoSigninScreen extends StatelessWidget {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: {
-        'username': kakaoId,
-        'password': 'test1234',
-        'grant_type': 'password',
-      },
+      body: 'username=$kakaoId&password=test1234&grant_type=password',
     );
     print('🔑 [Token Request] status: ${response.statusCode}');
     print('🔑 [Token Request] body: ${response.body}');

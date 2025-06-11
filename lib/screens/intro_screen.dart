@@ -10,7 +10,6 @@ class IntroScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF7F7F7),
       body: Column(
         children: [
-          
           const SizedBox(height: 20),
           Expanded(
             child: Padding(

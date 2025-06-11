@@ -3,11 +3,47 @@ import '../widgets/image_card_widget.dart';
 import '../widgets/tap_widget.dart';
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../models/photo.dart';
 
+// gallery_screen.dart의 fetchPhotos 함수 복사
+Future<List<Photo>> fetchPhotos(BuildContext context) async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final accessToken = userProvider.accessToken;
+  final baseUrl = dotenv.env['BASE_URL']!;
+  final url = Uri.parse('$baseUrl/api/photos/');
+  final response = await http.get(
+    url,
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+      'Accept': 'application/json',
+    },
+  );
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+    return data.map((json) => Photo.fromJson(json)).toList();
+  } else {
+    throw Exception('사진 목록 불러오기 실패: \\${response.statusCode}');
+  }
+}
 
-
-class HomeUpdateScreen extends StatelessWidget {
+class HomeUpdateScreen extends StatefulWidget {
   const HomeUpdateScreen({super.key});
+
+  @override
+  State<HomeUpdateScreen> createState() => _HomeUpdateScreenState();
+}
+
+class _HomeUpdateScreenState extends State<HomeUpdateScreen> {
+  late Future<List<Photo>> _photosFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _photosFuture = fetchPhotos(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,20 +80,31 @@ class HomeUpdateScreen extends StatelessWidget {
             const SizedBox(height: 20),
             const SectionTitle(title: '최근 소식'),
             const SizedBox(height: 10),
-            NewsCard(
-              name: '김땡땡',
-              role: '딸',
-              content: '새로운 사진 추가',
-              assetImagePath: 'assets/photos/2.png',
-              date: '2025년 5월 25일',
-            ),
-            const SizedBox(height: 15),
-            NewsCard(
-              name: '서봉봉',
-              role: '엄마',
-              content: '새로운 대화 생성',
-              assetImagePath: 'assets/photos/3.png',
-              date: '2025년 5월 16일',
+            // 사진 데이터로 NewsCard 리스트 표시
+            FutureBuilder<List<Photo>>(
+              future: _photosFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Text('사진 불러오기 실패');
+                }
+                final photos = snapshot.data ?? [];
+                if (photos.isEmpty) {
+                  return const Text('최근 소식이 없습니다.');
+                }
+                return Column(
+                  children: photos.take(5).map<Widget>((photo) => NewsCard(
+                    name: photo.user?['name'] ?? '이름 없음',
+                    role: photo.user?['family_role'] ?? '역할 없음',
+                    content: photo.description ?? '',
+                    assetImagePath: photo.sasUrl ?? photo.url,
+                    date: photo.uploadedAt,
+                    profileImgUrl: photo.user?['profile_img'] ?? '',
+                  )).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -79,6 +126,11 @@ class ProfileHeader extends StatelessWidget {
     print('username: ${userProvider.name}');
     print('profileImg: ${userProvider.profileImg}');
     print('gender: ${userProvider.gender}');
+    print('isGuardian: ${userProvider.isGuardian}');
+    print('familyName: ${userProvider.familyName}');
+    print('familyRole: ${userProvider.familyRole}');
+    print('familyId: ${userProvider.familyId}');
+    
 
     return Column(
       children: [

@@ -17,7 +17,7 @@ import 'screens/0-3-1.dart';
 import 'screens/0-3-1-1.dart';
 import 'screens/0-3-2.dart';
 import 'screens/intro_screen.dart';
-
+import 'screens/add_photo_request.dart';
 import 'screens/photo_detail_screen.dart';
 //우회용//
 import 'dart:io';
@@ -64,6 +64,8 @@ class MyCustomApp extends StatelessWidget {
         switch (settings.name) {
           case Routes.intro:
             return MaterialPageRoute(builder: (_) => const IntroScreen());
+          case Routes.request:
+            return MaterialPageRoute(builder: (_) => const AddPhotoRequestScreen());
           case Routes.home:
             return MaterialPageRoute(builder: (_) => const HomeUpdateScreen());
           case Routes.signin:

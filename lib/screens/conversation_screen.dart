@@ -160,7 +160,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 '정말로 지금 대화를 종료하시겠어요?',
                 style: TextStyle(
                   color: Color(0xFF333333),
-                  fontSize: 21,
+                  fontSize: 20,
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w700,
                 ),

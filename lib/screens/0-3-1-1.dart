@@ -25,6 +25,30 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   bool showRelationDropdown = false;
   bool isCreating = true; // true: 생성 모드, false: 가입 모드
 
+
+  Future<String?> _fetchAccessToken(String kakaoId) async {
+    final baseUrl = dotenv.env['BASE_URL']!;
+    final url = Uri.parse('$baseUrl/auth/token');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'username=$kakaoId&password=test1234&grant_type=password',
+    );
+    print('🔑 [Token Request] status: ${response.statusCode}');
+    print('🔑 [Token Request] body: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('🔑 [Token Request] access_token: ${data['access_token']}');
+      return data['access_token'];
+    } else {
+      print('❌ [Token Request] Failed to get token');
+      return null;
+    }
+  }
+
+
   Future<void> _generateCode() async {
     if (isCreating && familyNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,6 +163,12 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
           body: jsonEncode(userData),
         );
         if (response.statusCode == 200) {
+          // ✅ accessToken 발급 및 저장
+          final kakaoId = userProvider.kakaoId ?? '';
+          final accessToken = await _fetchAccessToken(kakaoId);
+          if (accessToken != null) {
+            userProvider.setAccessToken(accessToken);
+          }
           Navigator.pushNamed(context, Routes.home);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

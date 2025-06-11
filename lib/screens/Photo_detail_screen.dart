@@ -13,6 +13,8 @@ import '../utils/audio_service.dart';
 import '../utils/styles.dart';
 import '../widgets/audio_player_widget.dart';
 import '../models/photo.dart'; // ← Photo 모델 import 추가
+import 'package:provider/provider.dart'; // ✅ Provider import
+import '../user_provider.dart'; // ✅ 사용자 Provider import
 
 class PhotoDetailScreen extends StatefulWidget {
   final Photo photo; // ← Photo 객체 추가
@@ -39,11 +41,15 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
     print('year: ${widget.photo.year}');
     print('season: ${widget.photo.season}');
     print('description: ${widget.photo.description}');
-    print('summaryText: ${widget.photo.summaryText}');
-    print('summaryVoice: ${widget.photo.summaryVoice}');
     print('familyId: ${widget.photo.familyId}');
     print('uploadedAt: ${widget.photo.uploadedAt}');
     print('sasUrl: ${widget.photo.sasUrl}');
+    print('user: ${widget.photo.user}'); // user 전체 Map 출력
+    if (widget.photo.user != null) {
+      widget.photo.user!.forEach((key, value) {
+        print('user[$key]: $value');
+      });
+    }
     print('=====================');
   }
 
@@ -55,9 +61,11 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final familyName = Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: GroupBar(title: widget.photo.name ?? '사진 상세'), // ← Photo 객체 사용
+      appBar: GroupBar(title: familyName), // ← familyName 사용
       body: Column(
         children: [
           // 프로필 섹션
@@ -69,15 +77,27 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
             child: Row(
               children: [
                 // 프로필 이미지
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFC9B3), Color(0xFFFFD2C2)],
-                    ),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: widget.photo.user?['profile_img'] != null
+                      ? Image.network(
+                          widget.photo.user!['profile_img'],
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 50,
+                            height: 50,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.person, color: Colors.white),
+                          ),
+                        )
+                      : Container(
+                          width: 50,
+                          height: 50,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.person, color: Colors.white),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 // 정보
@@ -89,7 +109,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            widget.photo.name ?? '', // ← Photo 객체 사용
+                            widget.photo.user?['name'] ?? '', // ← Photo 객체 사용
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -107,7 +127,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              widget.photo.role ?? '', // ← Photo 객체 사용
+                              widget.photo.user?['family_role'] ?? '', // ← Photo 객체의 user에서 family_role 사용
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Pretendard',
@@ -120,7 +140,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.photo.uploadedAt ?? '', // ← Photo 객체 사용
+                        widget.photo.uploadedAt, // ← Photo 객체 사용
                         style: const TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 15,

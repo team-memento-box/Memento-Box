@@ -30,5 +30,5 @@ class Routes {
 
 
   static const intro = '/intro'; // 소개 화면 (아직 안씀) //
-  
+  static const request = '/request';
 }

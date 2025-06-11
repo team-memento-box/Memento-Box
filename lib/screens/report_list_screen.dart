@@ -6,6 +6,8 @@ import '../utils/styles.dart';
 import '../widgets/tap_widget.dart';
 import '../widgets/group_bar_widget.dart';
 import 'report_detail_screen.dart'; // ReportDetailScreen import 추가
+import 'package:provider/provider.dart';
+import '../user_provider.dart';
 
 class ReportListScreen extends StatefulWidget {
   const ReportListScreen({Key? key}) : super(key: key);
@@ -129,9 +131,10 @@ class _ReportListScreenState extends State<ReportListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final familyName = Provider.of<UserProvider>(context).familyName ?? '우리 가족';
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const GroupBar(title: user_title),
+      appBar: GroupBar(title: familyName),
       body: Column(
         children: [
           // Content Area
@@ -164,7 +167,7 @@ class _ReportListScreenState extends State<ReportListScreen> {
 // 예시: appConfig = await fetchAppConfig();
 class AppConstants {
   // TODO: 실제 앱 제목은 API에서 받아올 예정
-  static const String appTitle = '화목한 우리 가족^~^';
+  static const String appTitle = '시발^~^';
 
   // TODO: 실제 보고서 관련 텍스트는 API에서 받아올 예정
   static const String reportTitle = '2025-05-26 13:56 서봉봉님 대화 분석 보고서';

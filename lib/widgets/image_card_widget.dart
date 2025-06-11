@@ -6,7 +6,7 @@ class NewsCard extends StatelessWidget {
   final String content;
   final String assetImagePath;
   final String date;
-
+  final String profileImgUrl; // 추가
   const NewsCard({
     super.key,
     required this.name,
@@ -14,6 +14,7 @@ class NewsCard extends StatelessWidget {
     required this.content,
     required this.assetImagePath,
     required this.date,
+    required this.profileImgUrl,
   });
 
   @override
@@ -43,10 +44,15 @@ class NewsCard extends StatelessWidget {
           child: Column(
             children: [
               ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: const Color(0xFFFFC9B3),
-                  child: Icon(Icons.person, color: Colors.white),
-                ),
+                leading: (profileImgUrl.isNotEmpty && profileImgUrl.startsWith('http'))
+                    ? CircleAvatar(
+                        backgroundColor: const Color(0xFFFFC9B3),
+                        backgroundImage: NetworkImage(profileImgUrl),
+                      )
+                    : CircleAvatar(
+                        backgroundColor: const Color(0xFFFFC9B3),
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
                 title: Text(
                   '$name',
                   style: TextStyle(
@@ -88,12 +94,24 @@ class NewsCard extends StatelessWidget {
                   bottomLeft: Radius.circular(15),
                   bottomRight: Radius.circular(15),
                 ),
-                child: Image.asset(
-                  assetImagePath,
-                  width: double.infinity,
-                  height: 150,
-                  fit: BoxFit.cover,
-                ),
+                child: assetImagePath.startsWith('http')
+                ? Image.network(
+                    assetImagePath,
+                    width: double.infinity,
+                    height: 150,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[300],
+                      height: 150,
+                      child: const Icon(Icons.broken_image, size: 50),
+                    ),
+                  )
+                : Image.asset(
+                    assetImagePath,
+                    width: double.infinity,
+                    height: 150,
+                    fit: BoxFit.cover,
+                  ),
               ),
             ],
           ),

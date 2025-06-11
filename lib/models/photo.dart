@@ -5,12 +5,10 @@ class Photo {
   final int year;
   final String season;
   final String? description;
-  final dynamic summaryText;
-  final dynamic summaryVoice;
   final String familyId;
   final String uploadedAt;
   final String? sasUrl;
-  final String? role; // ← role 필드 추가
+  final Map<String, dynamic>? user;
 
   Photo({
     required this.id,
@@ -19,12 +17,10 @@ class Photo {
     required this.year,
     required this.season,
     this.description,
-    this.summaryText,
-    this.summaryVoice,
     required this.familyId,
     required this.uploadedAt,
     this.sasUrl,
-    this.role, // ← 생성자에도 추가
+    this.user,
   });
 
   factory Photo.fromJson(Map<String, dynamic> json) {
@@ -35,12 +31,10 @@ class Photo {
       year: json['year'],
       season: json['season'],
       description: json['description'],
-      summaryText: json['summary_text'],
-      summaryVoice: json['summary_voice'],
       familyId: json['family_id'],
       uploadedAt: json['uploaded_at'],
       sasUrl: json['sas_url'],
-      role: json['role'], // ← fromJson에도 추가
+      user: json['user'],
     );
   }
 }

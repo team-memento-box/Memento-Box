@@ -30,6 +30,28 @@ Future<List<Photo>> fetchPhotos(BuildContext context) async {
   );
   if (response.statusCode == 200) {
     final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+    final photos = data.map((json) => Photo.fromJson(json)).toList();
+
+    // 디버깅용 출력
+    for (var photo in photos) {
+      print('=== Photo 객체 디버깅 ===');
+      print('id: ${photo.id}');
+      print('name: ${photo.name}');
+      print('url: ${photo.url}');
+      print('year: ${photo.year}');
+      print('season: ${photo.season}');
+      print('description: ${photo.description}');
+      print('familyId: ${photo.familyId}');
+      print('uploadedAt: ${photo.uploadedAt}');
+      print('sasUrl: ${photo.sasUrl}');
+      print('user: ${photo.user}');
+      if (photo.user != null) {
+        photo.user!.forEach((key, value) {
+          print('user[$key]: $value');
+        });
+      }
+      print('=====================');
+    }
     return data.map((json) => Photo.fromJson(json)).toList();
   } else {
     throw Exception('사진 목록 불러오기 실패: \\${response.statusCode}');
