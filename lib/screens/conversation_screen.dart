@@ -1,10 +1,15 @@
 // 0603 고권아 작업
 // 사용자 챗봇 화면
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../widgets/assistant_bubble.dart'; // 챗봇 말풍선 위젯
 import '../widgets/photo_box.dart'; // 고정된 사진 영역 위젯
 import '../widgets/user_speech_bubble.dart'; // 사용자 음성 말풍선 위젯
@@ -30,18 +35,30 @@ class PhotoConversationScreen extends StatefulWidget {
       _PhotoConversationScreenState();
 }
 
-// TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
-bool isTTSActive = false;
-bool isSTTActive = false;
-
 class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   late String photoId;
   late String photoUrl;
 
   String apiResult = 'Loading...';
-
-  String assistantText = '초기 텍스트';
+  // String assistantText = '초기 텍스트';
   String photoPath = '초기 url';
+  // String userSpeechText = '초기 대답';
+  String? _conversationId;
+
+  // TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
+  bool isTTSActive = false;
+  bool isSTTActive = false;
+
+  // 음성 인식 관련 변수들
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _isRecording = false;
+  String _recognizedText = '초기 대답';
+  String? _recordingPath;
+  Timer? _silenceTimer;
+  StreamSubscription<Amplitude>? _amplitudeSubscription;
+  // 무음 감지 설정
+  final double _silenceThreshold = -15.0; // dB 단위
+  final int _silenceDuration = 7000; // 밀리초 단위 (7초)
 
   @override
   void initState() {
@@ -51,8 +68,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     print('photoId: $photoId');
     print('photoUrl: $photoUrl');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startConversation();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _startConversation();
+      _startRecording();
     });
   }
 
@@ -61,8 +79,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       final jsonData = await startConversation(photoId);
       final conversation = ConversationResponse.fromJson(jsonData);
 
-      assistantText = conversation.question;
+      apiResult = conversation.question;
       photoPath = conversation.photoInfo.url;
+      _conversationId = conversation.conversationId;
       // print('Question: ${conversation.question}');
       // print('Photo URL: ${conversation.photoInfo.url}');
 
@@ -96,6 +115,157 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     }
   }
 
+  Future<bool> _requestPermissions() async {
+    // 현재 권한 상태 확인
+    final micStatus = await Permission.microphone.status;
+
+    if (micStatus.isGranted) {
+      return true;
+    }
+
+    // 권한이 없는 경우 요청
+    final result = await Permission.microphone.request();
+
+    if (result.isGranted) {
+      return true;
+    }
+
+    if (result.isPermanentlyDenied) {
+      // 영구적으로 거부된 경우 설정으로 이동
+      await openAppSettings();
+    }
+
+    return false;
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      final hasPermission = await _requestPermissions();
+
+      if (hasPermission) {
+        final directory = await getTemporaryDirectory();
+        _recordingPath =
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+        await _audioRecorder.start(
+          RecordConfig(
+            encoder: AudioEncoder.wav,
+            sampleRate: 16000,
+            numChannels: 1,
+          ),
+          path: _recordingPath!,
+        );
+
+        setState(() {
+          _isRecording = true;
+          _recognizedText = '';
+        });
+
+        _startAmplitudeMonitoring();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('마이크 권한이 필요합니다. 설정에서 권한을 허용해주세요.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('녹음 시작 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('녹음 시작 중 오류가 발생했습니다: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _startAmplitudeMonitoring() {
+    _amplitudeSubscription?.cancel();
+
+    _amplitudeSubscription = _audioRecorder
+        .onAmplitudeChanged(const Duration(milliseconds: 300))
+        .listen((amplitude) {
+          print('현재 dB: ${amplitude.current}'); // dB값 로그
+          if (amplitude.current < _silenceThreshold) {
+            if (_silenceTimer == null || !_silenceTimer!.isActive) {
+              print('무음 타이머 시작');
+              _silenceTimer = Timer(
+                Duration(milliseconds: _silenceDuration),
+                () {
+                  if (_isRecording) {
+                    print('무음 지속 ${_silenceDuration}ms, 녹음 중지 시도');
+                    _stopRecording();
+                  }
+                },
+              );
+            }
+          } else {
+            if (_silenceTimer != null) print('소리 감지, 타이머 취소');
+            _silenceTimer?.cancel();
+            _silenceTimer = null;
+          }
+        });
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      print('녹음 중지 시도');
+      _silenceTimer?.cancel();
+      await _amplitudeSubscription?.cancel();
+
+      await _audioRecorder.stop();
+      setState(() {
+        _isRecording = false;
+      });
+
+      if (_recordingPath != null) {
+        print('녹음 파일 경로: $_recordingPath');
+        await _sendAudioToBackend();
+      }
+    } catch (e) {
+      print('녹음 중지 오류: $e');
+    }
+  }
+
+  Future<void> _sendAudioToBackend() async {
+    try {
+      final baseUrl = dotenv.env['BASE_URL']!;
+      final file = File(_recordingPath!);
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/chat/user_answer'),
+      );
+
+      request.files.add(await http.MultipartFile.fromPath('audio', file.path));
+      if (_conversationId != null) {
+        request.fields['conversation_id'] = _conversationId!;
+      }
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        setState(() {
+          _recognizedText = data['text'] ?? '';
+        });
+      } else {
+        print('서버 오류: $responseBody');
+      }
+
+      // await file.delete();
+    } catch (e) {
+      print('오디오 전송 오류: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,8 +283,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              /*
               // const SizedBox(height: 30),
-
               // // 기존에 표시하던 photoId 텍스트
               // Text(
               //   'Photo ID: $photoId',
@@ -144,10 +314,11 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               //   'API result:\n$apiResult',
               //   style: const TextStyle(fontSize: 16),
               // ),
+              */
               const SizedBox(height: 20),
 
               // 챗봇 질문 말풍선 (기존 디자인 반영)
-              AssistantBubble(text: assistantText, isActive: isTTSActive),
+              AssistantBubble(text: apiResult, isActive: isTTSActive),
 
               // const SizedBox(height: 10),
 
@@ -159,10 +330,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 ),
               ),
 
-              const SizedBox(height: 80),
+              const SizedBox(height: 20),
 
-              // // 사용자 음성 응답 말풍선
-              // UserSpeechBubble(text: userSpeechText, isActive: isSTTActive),
+              // 사용자 음성 응답 말풍선
+              UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
             ],
           ),
         ),
