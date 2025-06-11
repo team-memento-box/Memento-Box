@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 from db.models.anomaly_report import AnomalyReport
 from db.models.conversation import Conversation
 from db.models.photo import Photo
-from schemas.anomaly_report import AnomalyReportResponse, AnomalyReportListResponse, AnomalyReportDetailResponse
+from schemas.report import AnomalyReportResponse, AnomalyReportListResponse, AnomalyReportDetailResponse
 
 
 async def get_anomaly_reports(
@@ -42,6 +42,44 @@ async def get_anomaly_reports(
                 )
                 for r in reports
             ]
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"리포트 조회 실패: {str(e)}")
+    
+
+async def get_anomaly_report_detail(
+    db: AsyncSession,
+    report_id: UUID,
+    family_id: UUID
+) -> AnomalyReportDetailResponse:
+    """
+    특정 이상 보고서의 상세 정보를 조회합니다.
+    """
+    try:
+        stmt = (
+            select(AnomalyReport)
+            .join(AnomalyReport.conversation)
+            .join(Conversation.photo)
+            .where(
+                AnomalyReport.id == report_id,
+                Photo.family_id == family_id
+            )
+            .options(joinedload(AnomalyReport.conversation))
+        )
+
+        result = await db.execute(stmt)
+        report = result.scalar_one_or_none()
+
+        if not report:
+            raise HTTPException(status_code=404, detail="리포트를 찾을 수 없거나 접근 권한이 없습니다.")
+
+        return AnomalyReportDetailResponse(
+            status="ok",
+            mentionId=report.id,
+            severity="none",  # TODO: 실제 심각도 계산 로직 추가 필요
+            event_interval=report.anomaly_report or "내용 없음",
+            created_at=report.conversation.created_at
         )
 
     except Exception as e:
