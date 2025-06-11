@@ -224,6 +224,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                                 audioPath: result['summary_voice'] ?? '', // ✅ 실제 음성 파일 URL을 audioPath로 전달
                                 audioService: _audioService,
                                 summaryText: result['summaryText'],
+                                createdAt: result['createdAt'],
                               );
                               },
                               style: ElevatedButton.styleFrom(
@@ -315,54 +316,22 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
     }
   }
 
-  // Future<String?> fetchSummaryText(String photoId) async {
-  //   print('fetchSummaryText 호출됨');
-  //   try {
-  //     print('dotenv.env: ${dotenv.env}');
-  //     final baseUrl = dotenv.env['BASE_URL'];
-  //     print('baseUrl: $baseUrl');
-  //     if (baseUrl == null) {
-  //       print('BASE_URL이 null입니다!');
-  //       return null;
-  //     }
-
-  //     // 1. 최신 대화 정보 가져오기
-  //     final latestConvRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'));
-  //     print('latestConvRes.statusCode: ${latestConvRes.statusCode}');
-  //     print('latestConvRes.body: ${latestConvRes.body}');
-  //     if (latestConvRes.statusCode != 200) return null;
-  //     final latestConv = jsonDecode(utf8.decode(latestConvRes.bodyBytes)); 
-  //     final convId = latestConv['id'];
-  //     print('convId: $convId');
-
-  //     // 2. summary_text 가져오기
-  //     final summaryRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/conversations/$convId/summary_text'));
-  //     print('summaryRes.statusCode: ${summaryRes.statusCode}');
-  //     print('summaryRes.body: ${summaryRes.body}');
-  //     if (summaryRes.statusCode != 200) return null;
-  //     final summary = jsonDecode(utf8.decode(summaryRes.bodyBytes)); 
-  //     print('summary_text: ${summary['summary_text']}');
-  //     return summary['summary_text'];
-  //   } catch (e, st) {
-  //     print('fetchSummaryText 에러: $e');
-  //     print(st);
-  //     return null;
-  //   }
-  // }
   Future<Map<String, String?>> fetchSummaryAndOriginVoice(String photoId) async {
     print('fetchSummaryAndOriginVoice 호출됨');
     try {
       final baseUrl = dotenv.env['BASE_URL'];
       if (baseUrl == null) {
         print('BASE_URL이 null입니다!');
-        return {'summaryText': null, 'originVoiceUrl': null};
+        return {'summaryText': null, 'originVoiceUrl': null, 'createdAt': null};
       }
 
       // 1. 최신 대화 정보 가져오기
       final latestConvRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'));
       if (latestConvRes.statusCode != 200) return {'summaryText': null, 'originVoiceUrl': null};
       final latestConv = jsonDecode(utf8.decode(latestConvRes.bodyBytes));
+      
       final convId = latestConv['id'];
+      final createdAt = latestConv['created_at'];
       print('convId: $convId');
 
       // 2. summary_text 가져오기
@@ -384,11 +353,12 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
       return {
         'summaryText': summaryText,
         'summary_voice': summary_voice,
+        'createdAt': createdAt,
       };
     } catch (e, st) {
       print('fetchSummaryAndOriginVoice 에러: $e');
       print(st);
-      return {'summaryText': null, 'summary_voice': null};
+      return {'summaryText': null, 'summary_voice': null, 'createdAt': null};
     }
   }
 

@@ -11,6 +11,7 @@ void showSummaryModal(
   required String audioPath,
   required AudioService audioService,
   String? summaryText,
+  String? createdAt,
 }) {
   showModalBottomSheet(
     context: context,
@@ -20,7 +21,11 @@ void showSummaryModal(
       borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
     ),
     builder: (_) =>
-        SummaryModal(audioPath: audioPath, audioService: audioService, summaryText: summaryText),
+        SummaryModal(audioPath: audioPath, 
+        audioService: audioService, 
+        summaryText: summaryText, 
+        createdAt: createdAt
+      ),
   );
 }
 
@@ -28,12 +33,14 @@ class SummaryModal extends StatefulWidget {
   final String audioPath;
   final AudioService audioService;
   final String? summaryText;
+  final String? createdAt;
 
   const SummaryModal({
     super.key,
     required this.audioPath,
     required this.audioService,
     this.summaryText,
+    this.createdAt,
   });
 
   @override
@@ -46,6 +53,9 @@ class _SummaryModalState extends State<SummaryModal>
 
   @override
   Widget build(BuildContext context) {
+    final date = widget.createdAt != null ? DateTime.parse(widget.createdAt!) : DateTime.now();
+    final formatted = '${date.year}년 ${date.month}월 ${date.day}일';
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -64,8 +74,8 @@ class _SummaryModalState extends State<SummaryModal>
             Stack(
               alignment: Alignment.center,
               children: [
-                const Text(
-                  '2025년 5월 16일 대화 요약본',
+                Text(
+                  '$formatted 대화 요약본',
                   style: mainContentStyle,
                   textAlign: TextAlign.center,
                 ),

@@ -277,43 +277,52 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                 const SizedBox(height: 20),
 
                 // 사진 업로드 박스
+                // 사진 업로드 박스
                 Container(
                   width: double.infinity,
                   height: 250,
                   decoration: BoxDecoration(
-                    border: Border.all(
+                    border: _selectedImage == null ? Border.all( // _selectedImage가 null일 때만 border 표시
                       color: const Color(0xFF00C8B8),
                       width: 3,
-                    ),
+                    ) : null,
                     borderRadius: BorderRadius.circular(20),
-                    color: const Color(0x1900C8B8),
+                    color: _selectedImage == null ? const Color(0x1900C8B8) : null, // _selectedImage가 null일 때만 배경색 표시
                   ),
                   alignment: Alignment.center,
                   child: GestureDetector(
                     onTap: _pickImage,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _selectedImage == null
-                            ? Image.asset(
+                    child: _selectedImage == null
+                        ? Column( // _selectedImage가 null일 때만 Column 표시
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
                                 'assets/icons/Add_fill.png',
                                 width: 50,
                                 height: 50,
                                 color: const Color(0xFF00C8B8),
                                 colorBlendMode: BlendMode.srcIn,
-                              )
-                            : Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity, height: 180),
-                        const SizedBox(height: 10),
-                        const Text(
-                          '사진을 추가해주세요',
-                          style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF00C8B8),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                '사진을 추가해주세요',
+                                style: TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF00C8B8),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ClipRRect( // _selectedImage가 있을 때는 사진만 표시
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.file(
+                              _selectedImage!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 250,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
                 const SizedBox(height: 30),

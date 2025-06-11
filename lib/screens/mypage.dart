@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../user_provider.dart';
 import '../widgets/tap_widget.dart';
 import '../utils/routes.dart';
+import '../widgets/group_bar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,19 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          '나의 정보',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF00C8B8),
-      ),
+      appBar: GroupBar(title: '나의 정보'),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -191,50 +180,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _ActionButton(
                   text: '회원 탈퇴',
-                  onTap: () async {
-                    final userProvider = Provider.of<UserProvider>(context, listen: false);
-                    final kakaoId = userProvider.kakaoId;
-                    
-                    if (kakaoId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('카카오 ID를 찾을 수 없습니다.')),
-                      );
-                      return;
-                    }
-
-                    try {
-                      final response = await http.delete(
-                        Uri.parse('${dotenv.env['BASE_URL']}/auth/delete_by_kakao_id/$kakaoId'),
-                        headers: {
-                          'Authorization': 'Bearer ${userProvider.accessToken}',
-                          'Accept': 'application/json',
-                        },
-                      );
-
-                      if (response.statusCode == 200) {
-                        // 회원 탈퇴 성공
-                        userProvider.clearUser(); // UserProvider 데이터 초기화
-                        if (mounted) {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            Routes.signin,
-                            (route) => false, // 모든 이전 화면 제거
-                          );
-                        }
-                      } else {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('회원 탈퇴에 실패했습니다.')),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('서버와 통신 중 오류가 발생했습니다.')),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) {
+                        return AlertDialog(
+                          title: const Text('회원 탈퇴'),
+                          content: const Text('정말로 회원탈퇴하시겠습니까?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext); // 팝업 닫기
+                              },
+                              child: const Text('아니오'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext); // 팝업 닫기
+                                Future.delayed(Duration.zero, () async {
+                                  // 실제 회원 탈퇴 로직 실행
+                                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                                  final kakaoId = userProvider.kakaoId;
+                                  if (kakaoId == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('카카오 ID를 찾을 수 없습니다.')),
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    final response = await http.delete(
+                                      Uri.parse('${dotenv.env['BASE_URL']}/auth/delete_by_kakao_id/$kakaoId'),
+                                      headers: {
+                                        'Authorization': 'Bearer ${userProvider.accessToken}',
+                                        'Accept': 'application/json',
+                                      },
+                                    );
+                                    if (response.statusCode == 200) {
+                                      userProvider.clearUser();
+                                      if (mounted) {
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          Routes.signin,
+                                          (route) => false,
+                                        );
+                                      }
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('회원 탈퇴에 실패했습니다.')),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('서버와 통신 중 오류가 발생했습니다.')),
+                                      );
+                                    }
+                                  }
+                                });
+                              },
+                              child: const Text('예'),
+                            ),
+                          ],
                         );
-                      }
-                    }
+                      },
+                    );
                   },
                 ),
               ],

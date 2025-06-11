@@ -181,19 +181,25 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
         children: [
           Text(
             '안녕하세요 피보호자님,',
-            style: TextStyle(
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.black,
               fontSize: 21,
-              fontWeight: FontWeight.w500,
               fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+              height: 1.19,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 8), // 16에서 8로 변경 (0-3-1.dart와 동일하게)
           Text(
             '보호자님께 전달 받은 가족 코드를 입력해주세요.',
-            style: TextStyle(
-              fontSize: 19,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 17,
               fontFamily: 'Pretendard',
-              height: 1.5,
+              fontWeight: FontWeight.w500,
+              height: 1.42,
               letterSpacing: -1,
             ),
           ),
@@ -243,9 +249,9 @@ class _FamilyCodeInputScreenState extends State<FamilyCodeInputScreen> {
 
   Widget _buildSubmitButton() {
     return Positioned(
-      top: 482,
-      left: 30,
-      right: 30,
+      top: 520,
+      left: 50,
+      right: 50,
       child: GestureDetector(
         onTap: isCodeEntered
             ? _submitFamilyCode
