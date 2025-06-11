@@ -6,6 +6,7 @@ from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import shutil
 
 from services.blob_storage import BlobStorageService, get_blob_service_client
 from db.database import get_db
@@ -31,11 +32,78 @@ router = APIRouter(
 )
 system = OptimizedDementiaSystem()
 
+
+TEMP_DIR = "./temp_images2"
+ALL_AUDIO_DIR = "./temp_all_audio"
+A_AUDIO_DIR = "./temp_a_audio"
+
 # 이미지 기반 대화 세션 시작 (질문 생성) 
-@router.post("/start")
-async def start_chat(image_id: str, db: Session = Depends(get_db)):
-    TEMP_DIR = "./temp_images"
+@router.get("/start")
+async def load_image(image_id: str, db: Session = Depends(get_db)):
     
+    # [0] DB에서 photo 정보 조회
+    try:
+        # image_id를 UUID로 변환하여 DB에서 조회
+        photo_uuid = UUID(image_id)
+        stmt = select(Photo).where(Photo.id == photo_uuid)
+        result = await db.execute(stmt)
+        photo = result.scalar_one_or_none()
+        
+        if not photo:
+            raise HTTPException(status_code=404, detail=f"Photo not found with id: {image_id}")
+        
+        # Azure Blob Storage에서 이미지 다운로드 (URL에서 직접)
+        print(f"📥 이미지 다운로드 시작: {photo.url}")
+        image_bytes = await download_file_from_url(photo.url)
+        
+        # 임시 디렉토리 생성
+        if os.path.exists(TEMP_DIR):
+            shutil.rmtree(TEMP_DIR)
+        os.makedirs(TEMP_DIR)
+        
+        # 임시 파일로 저장
+        file_extension = os.path.splitext(photo.url)[-1] or '.jpg'
+        temp_filename = f"{image_id}{file_extension}"
+        image_path = os.path.join(TEMP_DIR, temp_filename)
+        
+        with open(image_path, 'wb') as f:
+            f.write(image_bytes)
+            
+        print(f"✅ 이미지 다운로드 완료: {image_path}")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format for image_id")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"이미지 다운로드 실패: {str(e)}")
+
+
+@router.post("/generate_question")
+async def start_chat(image_id: str, db: Session = Depends(get_db)):
+    # TEMP_DIR = "./temp_images"
+    latest_file = ""
+    image_file_name = ""
+    image_path = ""
+    try:
+        # Get list of all files in TEMP_DIR with full path
+        files = [os.path.join(TEMP_DIR, f) for f in os.listdir(TEMP_DIR) if os.path.isfile(os.path.join(TEMP_DIR, f))]
+        if not files:
+            return None  # No files in directory
+        latest_file = max(files, key=os.path.getmtime)
+        image_file_name = os.path.basename(latest_file)
+        image_path = os.path.join(TEMP_DIR, image_file_name)
+    except Exception as e:
+        print(f"Error while finding latest file: {e}")
+
+    # 임시 디렉토리 생성 - 전체 오디오
+        if os.path.exists(ALL_AUDIO_DIR):
+            shutil.rmtree(ALL_AUDIO_DIR)
+        os.makedirs(ALL_AUDIO_DIR)
+
+    # 임시 디렉토리 생성 - 대답 오디오
+        if os.path.exists(A_AUDIO_DIR):
+            shutil.rmtree(A_AUDIO_DIR)
+        os.makedirs(A_AUDIO_DIR)
+
+    """
     # [0] DB에서 photo 정보 조회
     try:
         # image_id를 UUID로 변환하여 DB에서 조회
@@ -69,6 +137,13 @@ async def start_chat(image_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid UUID format for image_id")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"이미지 다운로드 실패: {str(e)}")
+    """
+    
+    # image_id에 해당하는 이미지의 정보 확인
+    photo_uuid = UUID(image_id)
+    stmt = select(Photo).where(Photo.id == photo_uuid)
+    result = await db.execute(stmt)
+    photo = result.scalar_one_or_none()
     
     # 해당 이미지에 대한 가장 최근 대화 확인
     stmt = select(Conversation).where(
