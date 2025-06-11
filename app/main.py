@@ -4,8 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from datetime import timezone, timedelta
 import pytz
-from routers import auth
-from routers import chat
+from routers import auth, photo, conversation, chat
 
 app = FastAPI(
     title="Memento Box API",
@@ -27,21 +26,10 @@ KST = timezone(timedelta(hours=9))
 app.state.timezone = KST
 
 # 라우터 등록
-app.include_router(auth.router, prefix="/api", tags=["auth"])  # auth 라우터 추가
-app.include_router(chat.router, prefix="/api", tags=["llm"])
-# app.include_router(photo.router, prefix="/api", tags=["photo"])
-# app.include_router(user_create.router)
-# app.include_router(conv_tts.router)
-# app.include_router(conv_stt.router)
-# app.include_router(photo_router.router)
-
-
-# app.include_router(photo.router, prefix="/api/v1", tags=["photos"])
-# app.include_router(user.router, prefix="/api/v1", tags=["users"])
-# app.include_router(family.router, prefix="/api/v1", tags=["families"])
-# app.include_router(conversation.router, prefix="/api/v1", tags=["conversations"])
-# app.include_router(turn.router, prefix="/api/v1", tags=["turns"])
-# app.include_router(anomaly_report.router, prefix="/api/v1", tags=["anomaly_reports"])
+app.include_router(auth.router)
+app.include_router(photo.router)
+app.include_router(conversation.router)
+app.include_router(chat.router)
 
 @app.get("/")
 def read_root():
