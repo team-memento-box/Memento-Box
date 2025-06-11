@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # JWT 인증 설정
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Azure Speech 서비스 설정
+    AZURE_SPEECH_KEY: str
+    AZURE_SPEECH_REGION: str
+
     class Config:
         env_file = ".env"  # 루트 디렉토리에 있는 .env 파일을 읽도록 지정
 

@@ -13,3 +13,4 @@ pydantic-settings
 azure-storage-blob
 python-jose[cryptography]
 passlib[bcrypt]
+azure-cognitiveservices-speech==1.34.0 
