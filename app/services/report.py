@@ -38,7 +38,8 @@ async def get_anomaly_reports(
                     reportId=r.id,
                     convId=r.conv_id,
                     anomalyReport=r.anomaly_report,
-                    anomalyTurn=r.anomaly_turn
+                    anomalyTurn=r.anomaly_turn,
+                    created_at=r.conversation.created_at
                 )
                 for r in reports
             ]
