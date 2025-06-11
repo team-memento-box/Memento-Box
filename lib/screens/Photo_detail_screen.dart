@@ -15,6 +15,9 @@ import '../widgets/audio_player_widget.dart';
 import '../models/photo.dart'; // ← Photo 모델 import 추가
 import 'package:provider/provider.dart'; // ✅ Provider import
 import '../user_provider.dart'; // ✅ 사용자 Provider import
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PhotoDetailScreen extends StatefulWidget {
   final Photo photo; // ← Photo 객체 추가
@@ -214,11 +217,13 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                     Expanded(
                       child: isGuardian
                           ? ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                final summaryText = await fetchSummaryText(widget.photo.id);
                                 showSummaryModal(
                                   context,
                                   audioPath: audioPath,
                                   audioService: _audioService,
+                                  summaryText: summaryText,
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -307,6 +312,41 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
         return '겨울';
       default:
         return eng;
+    }
+  }
+
+  Future<String?> fetchSummaryText(String photoId) async {
+    print('fetchSummaryText 호출됨');
+    try {
+      print('dotenv.env: ${dotenv.env}');
+      final baseUrl = dotenv.env['BASE_URL'];
+      print('baseUrl: $baseUrl');
+      if (baseUrl == null) {
+        print('BASE_URL이 null입니다!');
+        return null;
+      }
+
+      // 1. 최신 대화 정보 가져오기
+      final latestConvRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'));
+      print('latestConvRes.statusCode: ${latestConvRes.statusCode}');
+      print('latestConvRes.body: ${latestConvRes.body}');
+      if (latestConvRes.statusCode != 200) return null;
+      final latestConv = jsonDecode(utf8.decode(latestConvRes.bodyBytes)); 
+      final convId = latestConv['id'];
+      print('convId: $convId');
+
+      // 2. summary_text 가져오기
+      final summaryRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/conversations/$convId/summary_text'));
+      print('summaryRes.statusCode: ${summaryRes.statusCode}');
+      print('summaryRes.body: ${summaryRes.body}');
+      if (summaryRes.statusCode != 200) return null;
+      final summary = jsonDecode(utf8.decode(summaryRes.bodyBytes)); 
+      print('summary_text: ${summary['summary_text']}');
+      return summary['summary_text'];
+    } catch (e, st) {
+      print('fetchSummaryText 에러: $e');
+      print(st);
+      return null;
     }
   }
 }
