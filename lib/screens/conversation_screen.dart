@@ -266,6 +266,30 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     }
   }
 
+  Future<void> forceEndConversation() async {
+    try {
+      final baseUrl = dotenv.env['BASE_URL']!;
+      final uri = Uri.parse('$baseUrl/api/chat/force-end');
+
+      var request = http.MultipartRequest('POST', uri);
+      request.fields['conversation_id'] = _conversationId ?? '';
+      if (apiResult != "Loading...") {
+        request.fields['current_question'] = apiResult;
+      }
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        print('✅ 대화 강제 종료 성공');
+      } else {
+        print('❌ 서버 오류: $responseBody');
+      }
+    } catch (e) {
+      print('🔥 강제 종료 API 호출 실패: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -559,6 +583,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 width: double.infinity, // 너비만 확장하고 싶을 때
                 child: OutlinedButton(
                   onPressed: () {
+                    // async {
+                    // Navigator.pop(context);
+                    forceEndConversation(); //await
+                    // if (!mounted) return;
                     Navigator.pushReplacementNamed(context, Routes.gallery);
                   },
                   style: OutlinedButton.styleFrom(
