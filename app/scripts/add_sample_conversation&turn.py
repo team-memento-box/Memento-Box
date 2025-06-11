@@ -30,17 +30,6 @@ def add_fake_conversation():
             print("사용 가능한 사진이 없습니다. 먼저 사진을 업로드해주세요.")
             return
             
-        # 이미 해당 사진에 대한 대화가 있는지 확인
-        existing_conversation = db.execute(
-            select(Conversation)
-            .where(Conversation.photo_id == photo.id)
-        ).scalar_one_or_none()
-        
-        if existing_conversation:
-            print(f"이미 해당 사진(ID: {photo.id})에 대한 대화가 존재합니다.")
-            print(f"conversation_id: {existing_conversation.id}")
-            return
-            
         # 가상 conversation_id
         conversation_id = uuid4()
         
