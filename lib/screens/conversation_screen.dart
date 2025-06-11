@@ -1,5 +1,7 @@
 // 0603 고권아 작업
 // 사용자 챗봇 화면
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import '../widgets/assistant_bubble.dart'; // 챗봇 말풍선 위젯
@@ -8,6 +10,28 @@ import '../widgets/user_speech_bubble.dart'; // 사용자 음성 말풍선 위�
 import '../data/user_data.dart'; // 질문/응답/사진 정보가 담긴 데이터 파일
 import '../utils/routes.dart';
 import '../utils/styles.dart';
+
+Future<String> startConversation(String imageId, String accessToken) async {
+  final baseUrl = 'http://YOUR_BASE_URL'; // .env 또는 상수로 관리하세요
+  final url = Uri.parse('$baseUrl/api/start');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: jsonEncode({'image_id': imageId}),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    return data['question'] ?? '질문이 없습니다.';
+  } else {
+    throw Exception('대화 시작 실패: ${response.statusCode}');
+  }
+}
 
 class PhotoConversationScreen extends StatefulWidget {
   const PhotoConversationScreen({super.key});
@@ -26,17 +50,41 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   String assistantText = '';
   String userSpeechText = '';
   String photoPath = '';
+  bool isLoading = true; // 로딩 상태 추가
+
+  final String photoId = '받아온_사진_ID'; // 실제 사진 ID로 교체 필요
+  final String accessToken = '유저_액세스토큰'; // Provider 또는 다른 방식으로 받아오세요
 
   @override
   void initState() {
     super.initState();
+    _initConversation();
 
-    // 예시: 첫 번째 회상 대화 데이터를 불러옴
-    final convo = photoConversations[0];
+    // // 예시: 첫 번째 회상 대화 데이터를 불러옴
+    // final convo = photoConversations[0];
 
-    assistantText = convo.assistantText;
-    userSpeechText = convo.userSpeechText;
-    photoPath = convo.photoPath;
+    // assistantText = convo.assistantText;
+    // userSpeechText = convo.userSpeechText;
+    // photoPath = convo.photoPath;
+  }
+
+  Future<void> _initConversation() async {
+    try {
+      // API 호출해서 질문 받아오기
+      final question = await startConversation(photoId, accessToken);
+
+      setState(() {
+        assistantText = question;
+        // 기존 더미 userSpeechText, photoPath 등도 같이 초기화 가능
+        photoPath = '사진_경로'; // 필요에 따라 세팅
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        assistantText = '대화 시작 중 오류가 발생했습니다.';
+        isLoading = false;
+      });
+    }
   }
 
   @override

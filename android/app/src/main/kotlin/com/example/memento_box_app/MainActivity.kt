@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import com.kakao.sdk.common.KakaoSdk
 import io.flutter.embedding.android.FlutterActivity
+import com.kakao.sdk.common.util.Utility
 
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,6 +15,9 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        val keyHash = Utility.getKeyHash(this)
+        Log.d("KeyHash", "Kakao KeyHash: $keyHash")
     }
 
     override fun onNewIntent(intent: Intent) {
