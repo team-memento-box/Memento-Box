@@ -59,8 +59,8 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      //initialRoute: Routes.signin,
-      initialRoute: Routes.intro,
+      initialRoute: Routes.signin,
+      //initialRoute: Routes.voiceTest,
       //initialRoute: Routes.photoDetail,
       onGenerateRoute: (settings) {
         switch (settings.name) {

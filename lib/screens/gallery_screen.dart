@@ -137,7 +137,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: Image.network(
-                            photo.sasUrl ?? photo.url,
+                            //photo.sasUrl ?? photo.url,
+                            photo.url,
                             fit: BoxFit.cover,
                             errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
                           ),

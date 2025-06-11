@@ -28,7 +28,8 @@ class CustomBottomNavBar extends StatelessWidget {
             if (isGuardian == true) {
               Navigator.pushReplacementNamed(context, Routes.gallery);
             } else {
-              Navigator.pushReplacementNamed(context, Routes.request);
+              //Navigator.pushReplacementNamed(context, Routes.request);
+              Navigator.pushReplacementNamed(context, Routes.gallery);
             }
             break;
           case 2:
@@ -36,6 +37,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Navigator.pushReplacementNamed(context, Routes.addPhoto);
             } else {
               Navigator.pushReplacementNamed(context, Routes.conversation);
+              
             }
             break;
           case 3:

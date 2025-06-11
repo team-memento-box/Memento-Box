@@ -35,4 +35,7 @@ class Routes {
   //음성 테스트
   static const voiceTest = '/voiceTest';
 
+  //대화
+  
+
 }
