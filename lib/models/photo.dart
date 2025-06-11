@@ -37,4 +37,13 @@ class Photo {
       user: json['user'],
     );
   }
+
+  String get formattedUploadedAt {
+    try {
+      final date = DateTime.parse(uploadedAt);
+      return '${date.year}년 ${date.month.toString().padLeft(2, '0')}월 ${date.day.toString().padLeft(2, '0')}일';
+    } catch (e) {
+      return uploadedAt; // 파싱 실패 시 원본 반환
+    }
+  }
 }

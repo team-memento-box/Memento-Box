@@ -101,7 +101,7 @@ class _HomeUpdateScreenState extends State<HomeUpdateScreen> {
                     content: photo.description ?? '',
                     //assetImagePath: photo.sasUrl ?? photo.url,
                     assetImagePath:photo.url,
-                    date: photo.uploadedAt,
+                    date: photo.formattedUploadedAt,
                     profileImgUrl: photo.user?['profile_img'] ?? '',
                   )).toList(),
                 );

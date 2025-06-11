@@ -141,9 +141,19 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                 // },
                 onPressed: () async {
                   if (!_isPlaying) {
-                    await widget.audioService.loadAsset(widget.audioPath);
-                    widget.audioService.play();
-                    setState(() => _isPlaying = true);
+                    try {
+                      await widget.audioService.loadAudio(widget.audioPath);
+                      widget.audioService.play();
+                      setState(() => _isPlaying = true);
+                    } catch (e) {
+                      print('오디오 로드 실패: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('오디오 파일을 불러올 수 없습니다'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   } else {
                     widget.audioService.pause();
                     setState(() => _isPlaying = false);
