@@ -15,8 +15,13 @@ import '../utils/routes.dart';
 import '../models/photo.dart';
 import 'intro_screen.dart';
 
+class PhotoWithConv {
+  final Photo photo;
+  final bool hasConversation;
+  PhotoWithConv({required this.photo, required this.hasConversation});
+}
 
-Future<List<Photo>> fetchPhotos(BuildContext context) async {
+Future<List<PhotoWithConv>> fetchPhotosWithConv(BuildContext context) async {
   final userProvider = Provider.of<UserProvider>(context, listen: false);
   final accessToken = userProvider.accessToken;
   final baseUrl = dotenv.env['BASE_URL']!;
@@ -30,33 +35,24 @@ Future<List<Photo>> fetchPhotos(BuildContext context) async {
   );
   if (response.statusCode == 200) {
     final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
-    final photos = data.map((json) => Photo.fromJson(json)).toList();
-
-    // 디버깅용 출력
-    for (var photo in photos) {
-      print('=== Photo 객체 디버깅 ===');
-      print('id: ${photo.id}');
-      print('name: ${photo.name}');
-      print('url: ${photo.url}');
-      print('year: ${photo.year}');
-      print('season: ${photo.season}');
-      print('description: ${photo.description}');
-      print('familyId: ${photo.familyId}');
-      print('uploadedAt: ${photo.uploadedAt}');
-      print('sasUrl: ${photo.sasUrl}');
-      print('user: ${photo.user}');
-      if (photo.user != null) {
-        photo.user!.forEach((key, value) {
-          print('user[$key]: $value');
-        });
-      }
-      print('=====================');
+    List<PhotoWithConv> result = [];
+    for (var json in data) {
+      final photo = Photo.fromJson(json);
+      // conversation 존재 여부 확인
+      final convRes = await http.get(
+        Uri.parse('$baseUrl/api/photos/${photo.id}/latest_conversation'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+      final hasConv = convRes.statusCode == 200;
+      result.add(PhotoWithConv(photo: photo, hasConversation: hasConv));
     }
-    return data.map((json) => Photo.fromJson(json)).toList();
+    return result;
   } else {
     throw Exception('사진 목록 불러오기 실패: \\${response.statusCode}');
   }
 }
+
+// ... (생략: import 및 fetchPhotosWithConv 등 기존 코드 동일)
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -66,7 +62,7 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
-  late Future<List<Photo>> _photosFuture;
+  late Future<List<PhotoWithConv>> _photosFuture;
 
   @override
   void initState() {
@@ -76,7 +72,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   void _loadPhotos() {
     setState(() {
-      _photosFuture = fetchPhotos(context);
+      _photosFuture = fetchPhotosWithConv(context);
     });
   }
 
@@ -87,7 +83,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       appBar: GroupBar(
         title: Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족',
       ),
-      body: FutureBuilder<List<Photo>>(
+      body: FutureBuilder<List<PhotoWithConv>>(
         future: _photosFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -96,17 +92,18 @@ class _GalleryScreenState extends State<GalleryScreen> {
           if (snapshot.hasError) {
             return const IntroScreen();
           }
-          final photos = snapshot.data ?? [];
-          if (photos.isEmpty) {
+          final photoWithConvs = snapshot.data ?? [];
+          if (photoWithConvs.isEmpty) {
             return const IntroScreen();
           }
           // 연도, 계절별로 그룹화
-          final grouped = <String, List<Photo>>{};
-          for (var photo in photos) {
-            final key = '${photo.year}년 ${_seasonKor(photo.season)}';
-            grouped.putIfAbsent(key, () => []).add(photo);
+          final grouped = <String, List<PhotoWithConv>>{};
+          for (var pwc in photoWithConvs) {
+            final key = '${pwc.photo.year}년 ${_seasonKor(pwc.photo.season)}';
+            grouped.putIfAbsent(key, () => []).add(pwc);
           }
           return ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: grouped.entries.map((entry) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,22 +122,39 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       childAspectRatio: 1.49,
                     ),
                     itemBuilder: (context, index) {
-                      final photo = entry.value[index];
+                      final pwc = entry.value[index];
                       return GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(
                             context,
                             Routes.photoDetail,
-                            arguments: photo, // Photo 객체 전달
+                            arguments: pwc.photo,
                           );
                         },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            //photo.sasUrl ?? photo.url,
-                            photo.url,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+                        child: AspectRatio(
+                          aspectRatio: 1.49, // childAspectRatio와 맞춤
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  pwc.photo.url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+                                ),
+                              ),
+                              if (pwc.hasConversation)
+                                Positioned(
+                                  bottom: 8,
+                                  right: 2,
+                                  child: Image.asset(
+                                    'assets/images/finger.png',
+                                    width: 50,
+                                    height: 50,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       );

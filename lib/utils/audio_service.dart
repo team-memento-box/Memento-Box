@@ -36,12 +36,21 @@ class AudioService {
       await _audioPlayer.setAsset(path);
       _currentAsset = path;
     }
-    // await _audioPlayer.setAsset(path);
+  }
 
-    // if (_currentAsset != path) {
-    //   _currentAsset = path;
-    //   await _audioPlayer.setAsset(path);
-    // }
+  Future<void> loadUrl(String url) async {
+    if (_currentAsset != url || _audioPlayer.audioSource == null) {
+      await _audioPlayer.setUrl(url);
+      _currentAsset = url;
+    }
+  }
+
+  Future<void> loadAudio(String path) async {
+    if (path.startsWith('http')) {
+      await loadUrl(path);
+    } else {
+      await loadAsset(path);
+    }
   }
 
   // AudioService() {

@@ -15,8 +15,8 @@ import '../widgets/audio_player_widget.dart';
 import '../models/photo.dart'; // ← Photo 모델 import 추가
 import 'package:provider/provider.dart'; // ✅ Provider import
 import '../user_provider.dart'; // ✅ 사용자 Provider import
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PhotoDetailScreen extends StatefulWidget {
@@ -150,7 +150,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.photo.uploadedAt, // ← Photo 객체 사용
+                        widget.photo.formattedUploadedAt,
                         style: const TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 15,
@@ -223,11 +223,18 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                     Expanded(
                       child: isGuardian
                           ? ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                final result = await fetchSummaryAndOriginVoice(
+                                  widget.photo.id,
+                                );
                                 showSummaryModal(
                                   context,
-                                  audioPath: audioPath,
+                                  audioPath:
+                                      result['summary_voice'] ??
+                                      '', // ✅ 실제 음성 파일 URL을 audioPath로 전달
                                   audioService: _audioService,
+                                  summaryText: result['summaryText'],
+                                  createdAt: result['createdAt'],
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -250,18 +257,14 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                             )
                           : ElevatedButton(
                               onPressed: () {
-                                print(
-                                  "A 데이터: ${widget.photo.id}, ${widget.photo.url}",
-                                );
                                 Navigator.pushNamed(
                                   context,
                                   Routes.conversation,
                                   arguments: {
                                     'photoId':
-                                        widget.photo.id, // 실제 photoId 변수로 바꾸기
-                                    'photoUrl': widget
-                                        .photo
-                                        .url, // 필요하면 photoUrl도 같이 넘기기
+                                        widget.photo.id, // photo 객체에서 id 가져오기
+                                    'photoUrl':
+                                        widget.photo.url, // photo 객체에서 url 가져오기
                                   },
                                 );
                               },
@@ -333,6 +336,65 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
         return '겨울';
       default:
         return eng;
+    }
+  }
+
+  Future<Map<String, String?>> fetchSummaryAndOriginVoice(
+    String photoId,
+  ) async {
+    print('fetchSummaryAndOriginVoice 호출됨');
+    try {
+      final baseUrl = dotenv.env['BASE_URL'];
+      if (baseUrl == null) {
+        print('BASE_URL이 null입니다!');
+        return {'summaryText': null, 'originVoiceUrl': null, 'createdAt': null};
+      }
+
+      // 1. 최신 대화 정보 가져오기
+      final latestConvRes = await http.get(
+        Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'),
+      );
+      if (latestConvRes.statusCode != 200)
+        return {'summaryText': null, 'originVoiceUrl': null};
+      final latestConv = jsonDecode(utf8.decode(latestConvRes.bodyBytes));
+
+      final convId = latestConv['id'];
+      final createdAt = latestConv['created_at'];
+      print('convId: $convId');
+
+      // 2. summary_text 가져오기
+      final summaryRes = await http.get(
+        Uri.parse(
+          '$baseUrl/api/photos/$photoId/conversations/$convId/summary_text',
+        ),
+      );
+      String? summaryText;
+      if (summaryRes.statusCode == 200) {
+        final summary = jsonDecode(utf8.decode(summaryRes.bodyBytes));
+        summaryText = summary['summary_text'];
+      }
+
+      // 3. origin_voice 가져오기
+      final voiceRes = await http.get(
+        Uri.parse(
+          '$baseUrl/api/photos/$photoId/conversations/$convId/summary_voice',
+        ),
+      );
+      String? summary_voice;
+      if (voiceRes.statusCode == 200) {
+        final voice = jsonDecode(utf8.decode(voiceRes.bodyBytes));
+        summary_voice = voice['summary_voice'];
+      }
+
+      return {
+        'summaryText': summaryText,
+        'summary_voice': summary_voice,
+        'createdAt': createdAt,
+      };
+    } catch (e, st) {
+      print('fetchSummaryAndOriginVoice 에러: $e');
+      print(st);
+      return {'summaryText': null, 'summary_voice': null, 'createdAt': null};
     }
   }
 }

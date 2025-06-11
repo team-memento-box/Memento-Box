@@ -1,5 +1,7 @@
 // 0603 고권아 작업
 // 사용자 챗봇 화면
+
+import '../utils/audio_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -60,11 +62,15 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   final double _silenceThreshold = -15.0; // dB 단위
   final int _silenceDuration = 7000; // 밀리초 단위 (7초)
 
+  // === 자동 음성 재생을 위한 AudioService 인스턴스 ===
+  late AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
     photoId = widget.photoId;
     photoUrl = widget.photoUrl;
+    _audioService = AudioService(); // AudioService 초기화
     print('photoId: $photoId');
     print('photoUrl: $photoUrl');
 
@@ -72,6 +78,12 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       await _startConversation();
       _startRecording();
     });
+  }
+
+  @override
+  void dispose() {
+    _audioService.dispose();
+    super.dispose();
   }
 
   Future<void> _startConversation() async {
@@ -88,6 +100,12 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       setState(() {
         apiResult = conversation.question; // 또는 원하는 값을 화면에 보여주기 위해 저장
       });
+
+      // === 질문/음성파일을 받아온 직후 자동 재생 ===
+      if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+        await _audioService.loadAudio(conversation.audioUrl);
+        await _audioService.play();
+      }
     } catch (e) {
       print('❌ API error: $e');
       setState(() {
@@ -235,21 +253,31 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
   Future<void> _sendAudioToBackend() async {
     try {
+      print('[디버그] _sendAudioToBackend 진입');
       final baseUrl = dotenv.env['BASE_URL']!;
       final file = File(_recordingPath!);
+      print('[디버그] 녹음 파일 경로: \\${file.path}');
+      print('[디버그] _conversationId: \\${_conversationId}');
 
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/api/chat/user_answer'),
       );
-
       request.files.add(await http.MultipartFile.fromPath('audio', file.path));
       if (_conversationId != null) {
         request.fields['conversation_id'] = _conversationId!;
+      } else {
+        print('[경고] _conversationId가 null입니다!');
       }
+      print('[디버그] 서버로 전송할 필드: \\${request.fields}');
+      print(
+        '[디버그] 서버로 전송할 파일: \\${request.files.map((f) => f.filename).toList()}',
+      );
 
       var response = await request.send();
+      print('[디버그] 서버 응답 코드: \\${response.statusCode}');
       var responseBody = await response.stream.bytesToString();
+      print('[디버그] 서버 응답 바디: \\${responseBody}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
@@ -430,34 +458,72 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
+
+      // 기존 AppBar 대신 커스텀 앱바 적용
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(114),
-        child: Column(
-          children: [
-            _buildCustomAppBar(context), // 상단 타이틀 바
-          ],
-        ),
+        child: _buildCustomAppBar(context),
       ),
+
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // const SizedBox(height: 30),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /*
+              // const SizedBox(height: 30),
+              // // 기존에 표시하던 photoId 텍스트
+              // Text(
+              //   'Photo ID: $photoId',
+              //   style: const TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
 
-            // 챗봇 질문 말풍선
-            AssistantBubble(text: assistantText, isActive: isTTSActive),
-            // const SizedBox(height: 30),
+              // const SizedBox(height: 10),
 
-            // 사진 영역 (375x375)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: PhotoBox(photoPath: photoPath),
-            ),
-            // const SizedBox(height: 80),
+              // // 기존에 있던 photoUrl 이미지 (있는 경우만)
+              // if (photoUrl.isNotEmpty)
+              //   Center(
+              //     child: Image.network(
+              //       photoUrl,
+              //       width: 200,
+              //       height: 200,
+              //       fit: BoxFit.cover,
+              //     ),
+              //   ),
 
-            // 사용자 음성 응답 말풍선
-            UserSpeechBubble(text: userSpeechText, isActive: isSTTActive),
-          ],
+              // const SizedBox(height: 20),
+
+              // // 기존에 표시하던 API 결과 텍스트
+              // Text(
+              //   'API result:\n$apiResult',
+              //   style: const TextStyle(fontSize: 16),
+              // ),
+              */
+              const SizedBox(height: 20),
+
+              // 챗봇 질문 말풍선 (기존 디자인 반영)
+              AssistantBubble(text: apiResult, isActive: isTTSActive),
+
+              // const SizedBox(height: 10),
+
+              // 사진 영역 (375x375) - 기존 PhotoBox 사용
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: PhotoBox(photoPath: photoPath, isNetwork: true),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 사용자 음성 응답 말풍선
+              UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
+            ],
+          ),
         ),
       ),
     );
