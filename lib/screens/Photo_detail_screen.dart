@@ -62,6 +62,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final familyName = Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
+    final isGuardian = Provider.of<UserProvider>(context).isGuardian ?? true;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -161,7 +162,8 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage(widget.photo.sasUrl ?? widget.photo.url), // ← Photo 객체 사용
+                  //image: NetworkImage(widget.photo.sasUrl ?? widget.photo.url), // ← Photo 객체 사용
+                  image: NetworkImage(widget.photo.url), // ← Photo 객체 사용
                   fit: BoxFit.cover,
                 ),
               ),
@@ -210,30 +212,51 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          showSummaryModal(
-                            context,
-                            audioPath: audioPath,
-                            audioService: _audioService,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00C8B8),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text(
-                          '대화 듣기',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                      child: isGuardian
+                          ? ElevatedButton(
+                              onPressed: () {
+                                showSummaryModal(
+                                  context,
+                                  audioPath: audioPath,
+                                  audioService: _audioService,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00C8B8),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text(
+                                '대화 듣기',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            )
+                          : ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, Routes.conversation);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00C8B8),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text(
+                                '대화하기',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
