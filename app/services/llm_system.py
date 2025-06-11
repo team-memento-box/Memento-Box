@@ -39,7 +39,6 @@ class OptimizedDementiaSystem:
         if not os.path.exists(image_path):
             return None
         
-
         # 이미지 분석
         analysis_result = self.image_analyzer.analyze_image(image_path)
         if not analysis_result:
@@ -55,37 +54,6 @@ class OptimizedDementiaSystem:
         audio_path = self.voice_system.synthesize_speech(initial_question)
         
         return initial_question, audio_path
-    
-    # def generate_complete_analysis(self, image_path):
-    #     """완전한 분석 생성"""
-    #     print("\n📊 종합 분석 결과 생성 중...")
-        
-    #     # 1. 대화 기록 저장 (새로운 폴더 구조)
-    #     conversation_file, analysis_file = self.story_generator.save_conversation_to_file(image_path)
-        
-    #     # 2. 추억 스토리 생성
-    #     story, story_file = self.story_generator.generate_story_from_conversation(image_path)
-        
-    #     # 3. 콘솔에 요약 출력
-    #     summary = self.story_generator.save_conversation_summary()
-    #     print(summary)
-        
-    #     # 4. 스토리 출력
-    #     if story:
-    #         print(f"\n{'='*50}")
-    #         print("📖 생성된 추억 이야기")
-    #         print(f"{'='*50}")
-    #         print(story)
-    #         print(f"{'='*50}")
-        
-    #     return {
-    #         'conversation_file': conversation_file,
-    #         'analysis_file': analysis_file,
-    #         'story_file': story_file,
-    #         'story_content': story,
-    #         'summary': summary,
-    #         'conversation_id': self.story_generator.conversation_id
-    #     }
 
     def generate_complete_analysis_from_turns(self, turns, conversation_id):
         """Turn 데이터로부터 완전한 분석 생성"""
@@ -198,7 +166,7 @@ class OptimizedDementiaSystem:
             if user_input.lower() in ['exit', '종료', 'quit', '그만']:
                 print("대화를 종료합니다.")
                 should_end = True
-
+        
         return user_input, audio_path, should_end
 
     def check_end_keywords(self, user_answer):
@@ -273,18 +241,6 @@ class OptimizedDementiaSystem:
         except Exception as e:
             print(f"❌ 다음 질문 생성 중 오류: {str(e)}")
             return "계속해서 이야기를 나눠볼까요?"
-
-    
-    def voice_conversation(self, image_path):
-        """음성 대화 실행"""
-        if not self.voice_system:
-            return None
-        return self._run_conversation_loop(image_path, is_voice=True)
-    
-    def text_conversation(self, image_path):
-        """텍스트 대화 실행"""
-        return self._run_conversation_loop(image_path, is_voice=False)
-
 
 async def upload_audio_to_blob(file_path: str, original_filename: str, blob_service_client) -> str:
     """

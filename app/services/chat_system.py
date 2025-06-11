@@ -7,8 +7,6 @@ from pathlib import Path
 import numpy as np
 from datetime import datetime
 import soundfile as sf
-# import sounddevice as sd
-
 from core.config import settings
 
 @dataclass
