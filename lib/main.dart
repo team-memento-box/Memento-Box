@@ -76,8 +76,16 @@ class MyCustomApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const GalleryScreen());
           case Routes.addPhoto:
             return MaterialPageRoute(builder: (_) => const AddPhotoScreen());
+          // case Routes.conversation:
+          //   return MaterialPageRoute(builder: (_) => const PhotoConversationScreen());
           case Routes.conversation:
-            return MaterialPageRoute(builder: (_) => const PhotoConversationScreen());
+            final args = settings.arguments as Map<String, dynamic>;
+            return MaterialPageRoute(
+              builder: (_) => PhotoConversationScreen(
+                photoId: args['photoId'],
+                photoUrl: args['photoUrl'],
+              ),
+            );
           case Routes.kakaoSignin:
             return MaterialPageRoute(builder: (_) => const KakaoSigninScreen());
           case Routes.groupSelect:

@@ -245,7 +245,14 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                             )
                           : ElevatedButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, Routes.conversation);
+                                Navigator.pushNamed(
+                                  context, 
+                                  Routes.conversation,
+                                  arguments: {
+                                    'photoId': widget.photo.id,  // photo 객체에서 id 가져오기
+                                    'photoUrl': widget.photo.url, // photo 객체에서 url 가져오기
+                                  },
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00C8B8),

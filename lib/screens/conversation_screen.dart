@@ -1,16 +1,36 @@
 // 0603 고권아 작업
 // 사용자 챗봇 화면
 
+import '../utils/audio_service.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../widgets/assistant_bubble.dart'; // 챗봇 말풍선 위젯
 import '../widgets/photo_box.dart'; // 고정된 사진 영역 위젯
 import '../widgets/user_speech_bubble.dart'; // 사용자 음성 말풍선 위젯
 import '../data/user_data.dart'; // 질문/응답/사진 정보가 담긴 데이터 파일
+import '../user_provider.dart';
 import '../utils/routes.dart';
 import '../utils/styles.dart';
+import '../models/photo.dart';
+import '../models/question.dart';
 
 class PhotoConversationScreen extends StatefulWidget {
-  const PhotoConversationScreen({super.key});
+  final String photoId;
+  final String photoUrl;
+
+  const PhotoConversationScreen({
+    Key? key,
+    required this.photoId,
+    required this.photoUrl,
+  }) : super(key: key);
 
   @override
   State<PhotoConversationScreen> createState() =>
@@ -18,63 +38,336 @@ class PhotoConversationScreen extends StatefulWidget {
 }
 
 class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
+  late String photoId;
+  late String photoUrl;
+
+  String apiResult = 'Loading...';
+  // String assistantText = '초기 텍스트';
+  String photoPath = '초기 url';
+  // String userSpeechText = '초기 대답';
+  String? _conversationId;
+
   // TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
   bool isTTSActive = false;
   bool isSTTActive = false;
 
-  // 대화 관련 변수들: 질문, 응답, 사진 경로
-  String assistantText = '';
-  String userSpeechText = '';
-  String photoPath = '';
+  // 음성 인식 관련 변수들
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _isRecording = false;
+  String _recognizedText = '초기 대답';
+  String? _recordingPath;
+  Timer? _silenceTimer;
+  StreamSubscription<Amplitude>? _amplitudeSubscription;
+  // 무음 감지 설정
+  final double _silenceThreshold = -15.0; // dB 단위
+  final int _silenceDuration = 7000; // 밀리초 단위 (7초)
+
+  // === 자동 음성 재생을 위한 AudioService 인스턴스 ===
+  late AudioService _audioService;
 
   @override
   void initState() {
     super.initState();
+    photoId = widget.photoId;
+    photoUrl = widget.photoUrl;
+    _audioService = AudioService(); // AudioService 초기화
+    print('photoId: $photoId');
+    print('photoUrl: $photoUrl');
 
-    // 예시: 첫 번째 회상 대화 데이터를 불러옴
-    final convo = photoConversations[0];
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _startConversation();
+      _startRecording();
+    });
+  }
 
-    assistantText = convo.assistantText;
-    userSpeechText = convo.userSpeechText;
-    photoPath = convo.photoPath;
+  @override
+  void dispose() {
+    _audioService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startConversation() async {
+    try {
+      final jsonData = await startConversation(photoId);
+      final conversation = ConversationResponse.fromJson(jsonData);
+
+      apiResult = conversation.question;
+      photoPath = conversation.photoInfo.url;
+      _conversationId = conversation.conversationId;
+      // print('Question: ${conversation.question}');
+      // print('Photo URL: ${conversation.photoInfo.url}');
+
+      setState(() {
+        apiResult = conversation.question; // 또는 원하는 값을 화면에 보여주기 위해 저장
+      });
+
+      // === 질문/음성파일을 받아온 직후 자동 재생 ===
+      if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+        await _audioService.loadAudio(conversation.audioUrl);
+        await _audioService.play();
+      }
+    } catch (e) {
+      print('❌ API error: $e');
+      setState(() {
+        apiResult = 'API failed: $e';
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> startConversation(String imageId) async {
+    final baseUrl = dotenv.env['BASE_URL']!;
+    print("**********");
+    print(imageId);
+    print("**********");
+    final url = Uri.parse('$baseUrl/api/chat/start?image_id=$imageId');
+
+    final response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      // 여기서 응답 바디를 UTF8로 디코딩
+      final decoded = utf8.decode(response.bodyBytes);
+      final Map<String, dynamic> jsonData = jsonDecode(decoded);
+      return jsonData;
+    } else {
+      throw Exception('대화 시작 실패: ${response.statusCode}, ${response.body}');
+    }
+  }
+
+  Future<bool> _requestPermissions() async {
+    // 현재 권한 상태 확인
+    final micStatus = await Permission.microphone.status;
+
+    if (micStatus.isGranted) {
+      return true;
+    }
+
+    // 권한이 없는 경우 요청
+    final result = await Permission.microphone.request();
+
+    if (result.isGranted) {
+      return true;
+    }
+
+    if (result.isPermanentlyDenied) {
+      // 영구적으로 거부된 경우 설정으로 이동
+      await openAppSettings();
+    }
+
+    return false;
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      final hasPermission = await _requestPermissions();
+
+      if (hasPermission) {
+        final directory = await getTemporaryDirectory();
+        _recordingPath =
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+        await _audioRecorder.start(
+          RecordConfig(
+            encoder: AudioEncoder.wav,
+            sampleRate: 16000,
+            numChannels: 1,
+          ),
+          path: _recordingPath!,
+        );
+
+        setState(() {
+          _isRecording = true;
+          _recognizedText = '';
+        });
+
+        _startAmplitudeMonitoring();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('마이크 권한이 필요합니다. 설정에서 권한을 허용해주세요.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('녹음 시작 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('녹음 시작 중 오류가 발생했습니다: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _startAmplitudeMonitoring() {
+    _amplitudeSubscription?.cancel();
+
+    _amplitudeSubscription = _audioRecorder
+        .onAmplitudeChanged(const Duration(milliseconds: 300))
+        .listen((amplitude) {
+          print('현재 dB: ${amplitude.current}'); // dB값 로그
+          if (amplitude.current < _silenceThreshold) {
+            if (_silenceTimer == null || !_silenceTimer!.isActive) {
+              print('무음 타이머 시작');
+              _silenceTimer = Timer(
+                Duration(milliseconds: _silenceDuration),
+                () {
+                  if (_isRecording) {
+                    print('무음 지속 ${_silenceDuration}ms, 녹음 중지 시도');
+                    _stopRecording();
+                  }
+                },
+              );
+            }
+          } else {
+            if (_silenceTimer != null) print('소리 감지, 타이머 취소');
+            _silenceTimer?.cancel();
+            _silenceTimer = null;
+          }
+        });
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      print('녹음 중지 시도');
+      _silenceTimer?.cancel();
+      await _amplitudeSubscription?.cancel();
+
+      await _audioRecorder.stop();
+      setState(() {
+        _isRecording = false;
+      });
+
+      if (_recordingPath != null) {
+        print('녹음 파일 경로: $_recordingPath');
+        await _sendAudioToBackend();
+      }
+    } catch (e) {
+      print('녹음 중지 오류: $e');
+    }
+  }
+
+  Future<void> _sendAudioToBackend() async {
+    try {
+      print('[디버그] _sendAudioToBackend 진입');
+      final baseUrl = dotenv.env['BASE_URL']!;
+      final file = File(_recordingPath!);
+      print('[디버그] 녹음 파일 경로: \\${file.path}');
+      print('[디버그] _conversationId: \\${_conversationId}');
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/chat/user_answer'),
+      );
+      request.files.add(await http.MultipartFile.fromPath('audio', file.path));
+      if (_conversationId != null) {
+        request.fields['conversation_id'] = _conversationId!;
+      } else {
+        print('[경고] _conversationId가 null입니다!');
+      }
+      print('[디버그] 서버로 전송할 필드: \\${request.fields}');
+      print('[디버그] 서버로 전송할 파일: \\${request.files.map((f) => f.filename).toList()}');
+
+      var response = await request.send();
+      print('[디버그] 서버 응답 코드: \\${response.statusCode}');
+      var responseBody = await response.stream.bytesToString();
+      print('[디버그] 서버 응답 바디: \\${responseBody}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        setState(() {
+          _recognizedText = data['text'] ?? '';
+        });
+      } else {
+        print('[에러] 서버 오류: \\${responseBody}');
+      }
+
+      // await file.delete();
+    } catch (e, st) {
+      print('[에러] 오디오 전송 오류: \\${e}');
+      print('[에러] 스택트레이스: \\${st}');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
+
+      // 기존 AppBar 대신 커스텀 앱바 적용
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(114),
-        child: Column(
-          children: [
-            _buildCustomAppBar(context), // 상단 타이틀 바
-          ],
-        ),
+        child: _buildCustomAppBar(context),
       ),
+
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // const SizedBox(height: 30),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /*
+              // const SizedBox(height: 30),
+              // // 기존에 표시하던 photoId 텍스트
+              // Text(
+              //   'Photo ID: $photoId',
+              //   style: const TextStyle(
+              //     fontSize: 18,
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
 
-            // 챗봇 질문 말풍선
-            AssistantBubble(text: assistantText, isActive: isTTSActive),
-            // const SizedBox(height: 30),
+              // const SizedBox(height: 10),
 
-            // 사진 영역 (375x375)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: PhotoBox(photoPath: photoPath),
-            ),
-            // const SizedBox(height: 80),
+              // // 기존에 있던 photoUrl 이미지 (있는 경우만)
+              // if (photoUrl.isNotEmpty)
+              //   Center(
+              //     child: Image.network(
+              //       photoUrl,
+              //       width: 200,
+              //       height: 200,
+              //       fit: BoxFit.cover,
+              //     ),
+              //   ),
 
-            // 사용자 음성 응답 말풍선
-            UserSpeechBubble(text: userSpeechText, isActive: isSTTActive),
-          ],
+              // const SizedBox(height: 20),
+
+              // // 기존에 표시하던 API 결과 텍스트
+              // Text(
+              //   'API result:\n$apiResult',
+              //   style: const TextStyle(fontSize: 16),
+              // ),
+              */
+              const SizedBox(height: 20),
+
+              // 챗봇 질문 말풍선 (기존 디자인 반영)
+              AssistantBubble(text: apiResult, isActive: isTTSActive),
+
+              // const SizedBox(height: 10),
+
+              // 사진 영역 (375x375) - 기존 PhotoBox 사용
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: PhotoBox(photoPath: photoPath, isNetwork: true),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 사용자 음성 응답 말풍선
+              UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
   /// 사용자 정의 상단 타이틀 바
   Widget _buildCustomAppBar(BuildContext context) {
