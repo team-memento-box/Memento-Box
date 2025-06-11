@@ -1,5 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+
+
+    package="com.example.memento_box_app"> <!-- 👈 패키지명 명시 (확인 필요) -->
+
+    <!-- ✅ 마이크 사용 권한 (필수) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- ✅ Android 13(API 33)+: 오디오 접근 권한 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    <!-- ✅ Android 12 이하: 외부 저장소 접근 권한 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    
     <application
         android:label="memento_box_app"
         android:name="${applicationName}"

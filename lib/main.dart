@@ -19,6 +19,7 @@ import 'screens/0-3-2.dart';
 import 'screens/intro_screen.dart';
 import 'screens/add_photo_request.dart';
 import 'screens/photo_detail_screen.dart';
+import 'screens/voice_test.dart';
 //우회용//
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -58,7 +59,8 @@ class MyCustomApp extends StatelessWidget {
       title: 'Memento Box',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
-      initialRoute: Routes.signin,
+      //initialRoute: Routes.signin,
+      initialRoute: Routes.voiceTest,
       //initialRoute: Routes.photoDetail,
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -90,6 +92,8 @@ class MyCustomApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const ReportListScreen());
           case Routes.reportDetail:
             return MaterialPageRoute(builder: (_) => const ReportDetailScreen());
+          case Routes.voiceTest:
+            return MaterialPageRoute(builder: (_) => const VoiceRecognitionScreen());
           // case Routes.photoDetail:
           //   return MaterialPageRoute(builder: (_) => const PhotoDetailScreen());
           case Routes.photoDetail:

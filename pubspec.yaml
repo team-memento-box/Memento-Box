@@ -30,7 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  record: ^5.0.0
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.1
   kakao_flutter_sdk_user: ^1.9.5
+
   #url_launcher: ^6.3.1           # 🌐 외부 URL (예: 카카오 로그인 페이지) 브라우저에서 열기
   #app_links: ^3.4.1              # 🔗 앱이 딥링크/리디렉션 URL을 감지하고 추출할 수 있게 해주는 패키지 (예: myapp://oauth 또는 http://도 가능)
   flutter_dotenv: ^5.2.1         # 📄 .env 파일에서 환경 변수 (client_id, redirect_uri 등)를 불러오기

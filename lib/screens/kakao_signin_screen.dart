@@ -78,12 +78,7 @@ class KakaoSigninScreen extends StatelessWidget {
         phone: userInfo['phone'].toString(),
       );
 
-      // ✅ accessToken 발급 및 저장
-      final kakaoId = userProvider.kakaoId ?? '';
-      final accessToken = await _fetchAccessToken(kakaoId);
-      if (accessToken != null) {
-        userProvider.setAccessToken(accessToken);
-      }
+      
 
       // 이미 가입된 사용자인 경우
       if (userInfo['is_registered'] == true) {
@@ -98,7 +93,12 @@ class KakaoSigninScreen extends StatelessWidget {
         );
         
         // 바로 홈 화면으로 이동
-        
+        // ✅ accessToken 발급 및 저장
+        final kakaoId = userProvider.kakaoId ?? '';
+        final accessToken = await _fetchAccessToken(kakaoId);
+        if (accessToken != null) {
+          userProvider.setAccessToken(accessToken);
+        }
         Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
 
       } else {

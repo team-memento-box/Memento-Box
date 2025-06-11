@@ -15,6 +15,7 @@ import 'package:shared_preferences_foundation/shared_preferences_foundation.dart
 import 'package:file_selector_linux/file_selector_linux.dart';
 import 'package:image_picker_linux/image_picker_linux.dart';
 import 'package:path_provider_linux/path_provider_linux.dart';
+import 'package:record_linux/record_linux.dart';
 import 'package:shared_preferences_linux/shared_preferences_linux.dart';
 import 'package:file_selector_macos/file_selector_macos.dart';
 import 'package:image_picker_macos/image_picker_macos.dart';
@@ -110,6 +111,15 @@ class _PluginRegistrant {
       } catch (err) {
         print(
           '`path_provider_linux` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+      try {
+        RecordLinux.registerWith();
+      } catch (err) {
+        print(
+          '`record_linux` threw an error: $err. '
           'The app may not function as expected until you remove this plugin from pubspec.yaml'
         );
       }

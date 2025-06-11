@@ -28,7 +28,11 @@ class Routes {
   static const profile = '/profile'; // 프로필 화면
   //위젯 끝//
 
-
+  //사진첩 없을때
   static const intro = '/intro'; // 소개 화면 (아직 안씀) //
   static const request = '/request';
+ 
+  //음성 테스트
+  static const voiceTest = '/voiceTest';
+
 }
