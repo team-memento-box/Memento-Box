@@ -1,6 +1,6 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=E:\flutter
-FLUTTER_APPLICATION_PATH=E:\Memento-Box
+FLUTTER_ROOT=/Users/syk/development/flutter
+FLUTTER_APPLICATION_PATH=/Users/syk/PC/git/Memento-Box
 COCOAPODS_PARALLEL_CODE_SIGN=true
 FLUTTER_BUILD_DIR=build
 FLUTTER_BUILD_NAME=1.0.0
