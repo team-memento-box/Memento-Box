@@ -19,3 +19,4 @@ class MainActivity : FlutterActivity() {
         val keyHash = Utility.getKeyHash(this)
         Log.d("KeyHash", "Kakao KeyHash: $keyHash")
     }
+}
