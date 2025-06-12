@@ -194,3 +194,5 @@ async def delete_user_by_kakao_id(
         await session.delete(user)
         await session.commit()
         return {"message": f"{kakao_id} 사용자가 삭제되었습니다."} 
+    
+

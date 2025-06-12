@@ -6,12 +6,10 @@ from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
 from fish_speech.models.vqgan.inference import load_model as load_decoder_model
 from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
 
-# checkpoints/fish-speech-1.5 -> checkpoints/fish-speech-1.5-yth-lora
+
 def init_engine(
-    #llama_checkpoint_path="checkpoints/fish-speech-1.5",
-    llama_checkpoint_path="checkpoints/fish-speech-1.5-yth-lora-new-step_000009250",
+    llama_checkpoint_path="checkpoints/fish-speech-1.5",
     decoder_checkpoint_path="checkpoints/fish-speech-1.5/firefly-gan-vq-fsq-8x1024-21hz-generator.pth",
-    #decoder_checkpoint_path="checkpoints/fish-speech-1.5-yth-lora-8000/model.pth",
     decoder_config_name="firefly_gan_vq",
     device="cuda",
     half=False,
@@ -24,8 +22,6 @@ def init_engine(
     elif not torch.cuda.is_available():
         device = "cpu"
 
-    
-    
     llama_queue = launch_thread_safe_queue(
         checkpoint_path=Path(llama_checkpoint_path),
         device=device,
@@ -70,8 +66,11 @@ def run_tts(engine, input_text, prompt_audio_path=None, prompt_text=""):
 
     for result in engine.inference(request):
         if result.code == "final":
-            return result.audio  # -> (sample_rate: int, waveform: np.ndarray)
+            audio_tuple = result.audio
+            if not isinstance(audio_tuple, tuple) or len(audio_tuple) != 2:
+                raise ValueError("TTS output is not a valid (sample_rate, waveform) tuple")
+            return audio_tuple
         elif result.code == "error":
             raise RuntimeError(result.error)
 
-    raise RuntimeError("No audio generated.")
+    raise RuntimeError("No audio generated")

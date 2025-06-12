@@ -17,7 +17,7 @@ from services.photo import PhotoService, upload_photo_to_blob, save_photo_to_db,
 from services.blob_storage import get_blob_service_client
 from schemas.user import UserResponse  # 유저 응답 스키마 import
 from pydantic import ConfigDict
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from schemas.user import UserResponse
 
 class PhotoResponse(PhotoBase):
@@ -100,7 +100,11 @@ async def list_photos(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    photos = await get_photos_by_family(current_user.family_id, db)
+    # family_id로 사진 조회 시 user 정보도 함께 가져오도록 수정
+    query = select(Photo).options(joinedload(Photo.user)).where(Photo.family_id == current_user.family_id)
+    result = await db.execute(query)
+    photos = result.scalars().all()
+    
     response = []
     for photo in photos:
         # url에서 파일명만 추출
@@ -108,10 +112,9 @@ async def list_photos(
         sas_url = generate_sas_url(blob_name=blob_name, container_name="photo")
         photo_dict = photo.__dict__.copy()
         photo_dict["sas_url"] = sas_url
-        # user 정보 추가!
-        user = photo.user
-        photo_dict["user"] = UserResponse.model_validate(user, from_attributes=True).dict() if user else None
-        # SQLAlchemy 내부 속성 제거 (선택)
+        # user 정보 추가
+        photo_dict["user"] = UserResponse.model_validate(photo.user, from_attributes=True).dict() if photo.user else None
+        # SQLAlchemy 내부 속성 제거
         photo_dict.pop('_sa_instance_state', None)
         response.append(PhotoResponse(**photo_dict))
     return response
