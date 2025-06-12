@@ -105,6 +105,11 @@ class AudioService {
     }
   }
 
+  Future<void> stop() async {
+    await _audioPlayer.stop();
+    _playingController.add(false);
+  }
+
   Stream<Duration> get positionStream => _audioPlayer.positionStream;
   Stream<Duration?> get durationStream => _audioPlayer.durationStream;
   // Stream<bool> get player => _audioPlayer.playingStream;

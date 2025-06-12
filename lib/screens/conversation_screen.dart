@@ -46,15 +46,19 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   String photoPath = '초기 url';
   // String userSpeechText = '초기 대답';
   String? _conversationId;
+  bool shouldEnd = false;
 
   // TTS, STT 기능이 동작 중인지 여부를 저장하는 상태 변수
   bool isTTSActive = false;
   bool isSTTActive = false;
 
+  // 종료 플래그
+  bool _isConversationActive = true;
+
   // 음성 인식 관련 변수들
   final AudioRecorder _audioRecorder = AudioRecorder();
   bool _isRecording = false;
-  String _recognizedText = '초기 대답';
+  String _recognizedText = '...';
   String? _recordingPath;
   Timer? _silenceTimer;
   StreamSubscription<Amplitude>? _amplitudeSubscription;
@@ -71,17 +75,24 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     photoId = widget.photoId;
     photoUrl = widget.photoUrl;
     _audioService = AudioService(); // AudioService 초기화
+    _isConversationActive = true;
+    shouldEnd = false;
     print('photoId: $photoId');
     print('photoUrl: $photoUrl');
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _startConversation();
-      _startRecording();
+      while (_isConversationActive) {
+        await _startConversation();
+        await _startRecording();
+        if (shouldEnd == true || !_isConversationActive) break;
+      }
+      await _audioService.stop(); // 만약 루프 탈출 후 오디오 남아 있으면 멈춤
     });
   }
 
   @override
   void dispose() {
+    _amplitudeSubscription?.cancel();
     _audioService.dispose();
     super.dispose();
   }
@@ -94,6 +105,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       apiResult = conversation.question;
       photoPath = conversation.photoInfo.url;
       _conversationId = conversation.conversationId;
+
       // print('Question: ${conversation.question}');
       // print('Photo URL: ${conversation.photoInfo.url}');
 
@@ -104,7 +116,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       // === 질문/음성파일을 받아온 직후 자동 재생 ===
       if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
         await _audioService.loadAudio(conversation.audioUrl);
+        isTTSActive = true;
         await _audioService.play();
+        isTTSActive = false;
       }
     } catch (e) {
       print('❌ API error: $e');
@@ -112,6 +126,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
         apiResult = 'API failed: $e';
       });
     }
+    isTTSActive = false;
   }
 
   Future<Map<String, dynamic>> startConversation(String imageId) async {
@@ -167,15 +182,17 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
         await _audioRecorder.start(
           RecordConfig(
-            encoder: AudioEncoder.wav,
-            sampleRate: 16000,
-            numChannels: 1,
+            encoder: AudioEncoder.wav, // WAV 포맷
+            sampleRate: 16000, // 16kHz
+            numChannels: 1, // Mono
+            bitRate: 256000, // 실제 STT에는 영향 적지만 고정값 가능
           ),
           path: _recordingPath!,
         );
 
         setState(() {
           _isRecording = true;
+          isSTTActive = true;
           _recognizedText = '';
         });
 
@@ -240,6 +257,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
+        isSTTActive = false;
       });
 
       if (_recordingPath != null) {
@@ -281,6 +299,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
+        shouldEnd = data['should_end'];
         setState(() {
           _recognizedText = data['text'] ?? '';
         });
@@ -335,38 +354,6 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /*
-              // const SizedBox(height: 30),
-              // // 기존에 표시하던 photoId 텍스트
-              // Text(
-              //   'Photo ID: $photoId',
-              //   style: const TextStyle(
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.w600,
-              //   ),
-              // ),
-
-              // const SizedBox(height: 10),
-
-              // // 기존에 있던 photoUrl 이미지 (있는 경우만)
-              // if (photoUrl.isNotEmpty)
-              //   Center(
-              //     child: Image.network(
-              //       photoUrl,
-              //       width: 200,
-              //       height: 200,
-              //       fit: BoxFit.cover,
-              //     ),
-              //   ),
-
-              // const SizedBox(height: 20),
-
-              // // 기존에 표시하던 API 결과 텍스트
-              // Text(
-              //   'API result:\n$apiResult',
-              //   style: const TextStyle(fontSize: 16),
-              // ),
-              */
               const SizedBox(height: 20),
 
               // 챗봇 질문 말풍선 (기존 디자인 반영)
@@ -382,144 +369,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // 사용자 음성 응답 말풍선
-              UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     appBar: AppBar(title: const Text('대화 시작')),
-  //     body: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Text('Photo ID: ${widget.photoId}'),
-  //         Image.network(widget.photoUrl),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  /*
-  @override
-  void initState() {
-    super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   _initConversation(context);
-    // });
-  }
-
-  Future<void> _initConversation(BuildContext context) async {
-    try {
-      // API 호출해서 질문 받아오기
-      final jsonString = await startConversation(photoId);
-      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-      final questionData = QuestionData.fromJson(jsonMap);
-
-      final questionTxt = questionData.question; // 질문 텍스트
-      final audioUrl = questionData.audioUrl;
-      final conversationId = questionData.conversationId;
-      final isContinuation = questionData.isContinuation;
-
-      final photoData = PhotoInfo.fromJson(questionData.photoInfo);
-      final objPhotoUrl = photoData.url;
-      final objPhotoName = photoData.name;
-      final objPhotoId = photoData.id;
-
-      print('=== 대화 객체 디버깅 ===');
-      print('questionTxt: ${questionTxt}');
-      print('audioUrl: ${audioUrl}');
-      print('conversationId: ${conversationId}');
-      print('isContinuation: ${isContinuation}');
-
-      setState(() {
-        assistantText = questionTxt;
-        // 기존 더미 userSpeechText, photoPath 등도 같이 초기화 가능
-        audioPath = audioUrl; // 필요에 따라 세팅
-        photoPath = objPhotoUrl;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        assistantText = '대화 시작 중 오류가 발생했습니다.';
-        isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-
-      // 기존 AppBar 대신 커스텀 앱바 적용
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(114),
-        child: _buildCustomAppBar(context),
-      ),
-
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /*
-              // const SizedBox(height: 30),
-              // // 기존에 표시하던 photoId 텍스트
-              // Text(
-              //   'Photo ID: $photoId',
-              //   style: const TextStyle(
-              //     fontSize: 18,
-              //     fontWeight: FontWeight.w600,
-              //   ),
-              // ),
-
-              // const SizedBox(height: 10),
-
-              // // 기존에 있던 photoUrl 이미지 (있는 경우만)
-              // if (photoUrl.isNotEmpty)
-              //   Center(
-              //     child: Image.network(
-              //       photoUrl,
-              //       width: 200,
-              //       height: 200,
-              //       fit: BoxFit.cover,
-              //     ),
-              //   ),
-
               // const SizedBox(height: 20),
 
-              // // 기존에 표시하던 API 결과 텍스트
-              // Text(
-              //   'API result:\n$apiResult',
-              //   style: const TextStyle(fontSize: 16),
-              // ),
-              */
-              const SizedBox(height: 20),
-
-              // 챗봇 질문 말풍선 (기존 디자인 반영)
-              AssistantBubble(text: apiResult, isActive: isTTSActive),
-
-              // const SizedBox(height: 10),
-
-              // 사진 영역 (375x375) - 기존 PhotoBox 사용
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: PhotoBox(photoPath: photoPath, isNetwork: true),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
               // 사용자 음성 응답 말풍선
               UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
             ],
@@ -528,7 +379,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       ),
     );
   }
-*/
+
   /// 사용자 정의 상단 타이틀 바
   Widget _buildCustomAppBar(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
@@ -648,11 +499,12 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               SizedBox(
                 width: double.infinity, // 너비만 확장하고 싶을 때
                 child: OutlinedButton(
-                  onPressed: () {
-                    // async {
-                    // Navigator.pop(context);
-                    forceEndConversation(); //await
-                    // if (!mounted) return;
+                  onPressed: () async {
+                    Navigator.pop(context); // 모달 먼저 닫기
+                    _isConversationActive = false; // 루프 중단
+                    await _audioService.stop(); // TTS 정지
+                    forceEndConversation(); // 서버에 종료 통보
+                    if (!mounted) return;
                     Navigator.pushReplacementNamed(context, Routes.gallery);
                   },
                   style: OutlinedButton.styleFrom(
