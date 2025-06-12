@@ -193,6 +193,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
         setState(() {
           _isRecording = true;
+          isSTTActive = true;
           _recognizedText = '';
         });
 
@@ -248,6 +249,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
+        isSTTActive = false;
       });
 
       if (_recordingPath != null) {
@@ -270,21 +272,21 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     _silenceTimer?.cancel();
     _silenceTimer = null;
     _audioRecorder.dispose();
-    
+
     // 2. TTS 중지
     await _audioService.pause();
-    
+
     // 3. API 타임아웃 타이머 취소
     _apiTimeoutTimer?.cancel();
     _apiTimeoutTimer = null;
-    
+
     // 4. API 호출 상태 초기화
     _isApiCallInProgress = false;
   }
 
   Future<void> _sendAudioToBackend() async {
     if (_isApiCallInProgress) return; // 이미 API 호출 중이면 중복 호출 방지
-    
+
     try {
       _isApiCallInProgress = true;
       print('[디버그] _sendAudioToBackend 진입');
@@ -306,7 +308,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
       var response = await request.send();
       if (!mounted) return; // 위젯이 dispose된 경우 중단
-      
+
       print('[디버그] 서버 응답 코드: \\${response.statusCode}');
       var responseBody = await response.stream.bytesToString();
       print('[디버그] 서버 응답 바디: \\${responseBody}');
@@ -314,21 +316,21 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
         print('[디버그] 받은 사용자 발화 텍스트: ${data['answer']}');
-        
+
         if (!mounted) return;
         setState(() {
           _recognizedText = data['answer'] ?? '';
           print('[디버그] _recognizedText 업데이트: $_recognizedText');
         });
-        
+
         // AI 응답 음성 재생 (있는 경우에만)
         if (data['audio_url'] != null && data['audio_url'].isNotEmpty) {
           await _audioService.loadAudio(data['audio_url']);
-          
+
           // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
           _audioService.onCompleted = () async {
             if (!mounted) return;
-            
+
             // 기존 녹음 리소스 정리 및 새로 생성
             if (_isRecording) {
               await _audioRecorder.stop();
@@ -339,19 +341,20 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
             _silenceTimer = null;
             _audioRecorder.dispose();
             _audioRecorder = AudioRecorder();
-            
+
             // 대화가 끝나지 않았다면 AI의 새로운 질문을 받아옴
             if (data['should_end'] != true) {
               final nextQuestion = await startConversation(photoId);
               if (!mounted) return;
-              
+
               final conversation = ConversationResponse.fromJson(nextQuestion);
               setState(() {
                 apiResult = conversation.question;
               });
-              
+
               // AI의 새로운 질문 음성 재생
-              if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+              if (conversation.audioUrl != null &&
+                  conversation.audioUrl.isNotEmpty) {
                 await _audioService.loadAudio(conversation.audioUrl);
                 await _audioService.play();
                 // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
@@ -363,20 +366,21 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               }
             }
           };
-          
+
           await _audioService.play();
         } else {
           // 음성이 없는 경우 바로 다음 단계 진행
           if (data['should_end'] != true) {
             final nextQuestion = await startConversation(photoId);
             if (!mounted) return;
-            
+
             final conversation = ConversationResponse.fromJson(nextQuestion);
             setState(() {
               apiResult = conversation.question;
             });
-            
-            if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+
+            if (conversation.audioUrl != null &&
+                conversation.audioUrl.isNotEmpty) {
               await _audioService.loadAudio(conversation.audioUrl);
               await _audioService.play();
               // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
@@ -404,19 +408,19 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     try {
       final baseUrl = dotenv.env['BASE_URL']!;
       final url = Uri.parse('$baseUrl/api/chat/convert');
-      
+
       var request = http.MultipartRequest('POST', url);
       request.fields['conversation_id'] = _conversationId!;
       request.fields['a_voice_url'] = aVoiceUrl;
       request.fields['summary_text'] = summaryText;
-      
+
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
         print('음성 변환 성공: ${data['url']}');
-        
+
         // 변환된 음성 URL을 저장하고 재생
         if (data['url'] != null) {
           await _audioService.loadAudio(data['url']);
@@ -510,17 +514,18 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              // const SizedBox(height: 20),
 
               // 사용자 음성 응답 말풍선
               UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
+
+              const SizedBox(height: 50),
             ],
           ),
         ),
       ),
     );
   }
-
 
   /// 사용자 정의 상단 타이틀 바
   Widget _buildCustomAppBar(BuildContext context) {
@@ -581,9 +586,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   void showExitModal() async {
     // 모든 작업 취소
     await _cancelAllOperations();
-    
+
     if (!mounted) return;
-    
+
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
@@ -652,23 +657,26 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                       if (_conversationId != null) {
                         final baseUrl = dotenv.env['BASE_URL']!;
                         final url = Uri.parse('$baseUrl/api/chat/force-end');
-                        
+
                         var request = http.MultipartRequest('POST', url);
                         request.fields['conversation_id'] = _conversationId!;
                         if (apiResult.isNotEmpty) {
                           request.fields['current_question'] = apiResult;
                         }
-                        
+
                         // 5초 타임아웃 설정
                         var response = await request.send().timeout(
                           const Duration(seconds: 5),
                           onTimeout: () {
                             print('force-end API 타임아웃');
-                            Navigator.pushReplacementNamed(context, Routes.gallery);
+                            Navigator.pushReplacementNamed(
+                              context,
+                              Routes.gallery,
+                            );
                             throw TimeoutException('force-end API 타임아웃');
                           },
                         );
-                        
+
                         if (response.statusCode == 200) {
                           print('대화 강제 종료 성공');
                           // 대화 종료 후 음성 변환 요청
@@ -680,15 +688,16 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                     } catch (e) {
                       print('대화 강제 종료 중 오류 발생: $e');
                     }
-                    
+
                     // 어떤 경우든 갤러리로 이동
-                    Navigator.pushReplacementNamed(context, Routes.gallery);
+                    // ✅ 3초 대기 후 갤러리 이동
+                    await Future.delayed(const Duration(seconds: 3));
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, Routes.gallery);
+                    }
                   },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                      color: Color(0xFF00C8B8),
-                      width: 2,
-                    ),
+                    side: const BorderSide(color: Color(0xFF00C8B8), width: 2),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),

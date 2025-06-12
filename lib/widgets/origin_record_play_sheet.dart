@@ -176,21 +176,21 @@ class _OriginalModalState extends State<OriginalModal>
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       children: [
-                        _chatBubble("이 사진 언제 찍었는지 기억 나세요?", isBot: true),
-                        _chatBubble("응 당연하지~ 국민 학교 다닐 적이었을 거야"),
+                        _chatBubble("어르신, 이 사진 언제 찍었는지 기억 나세요?", isBot: true),
+                        _chatBubble("응 당연하지~ 스무 살 때 서울 구경가서 찍었을 거야"),
                         _chatBubble(
-                          "와 아주 옛날 일까지 기억하고 계시네요 대단해요! 그때 무슨 일이 있었는지 말씀해주실 수 있나요?",
+                          "스무 살 때 서울 구경이라니, 정말 설레는 순간이었겠어요. 그날 가장 기억에 남는 일이 있다면 뭐였을까요?",
                           isBot: true,
                         ),
-                        _chatBubble("친구들, 저 짝 삼승리 넘어 동네 친구들이"),
-                        _chatBubble("삼삼오오 다같이 모여 가지고는 공기놀이를 했어"),
-                        _chatBubble("그때는 내가 영 실력이 파이야 벌칙에 제일 많이 걸렸어"),
+                        _chatBubble("음, 아무래도 순이랑 남대문 시장 돌아다닌 게 제일 기억에 남아."),
+                        _chatBubble("사람도 많고, 물건도 많고…"),
+                        _chatBubble("하늘색 원피스 하나 사서 신나서 입고 다녔어."),
                         _chatBubble(
-                          "친구들과 공기놀이라니! 너무 재미있었을 것 같아요. 공기놀이에 져서 어떤 벌칙을 주로 받으셨어요?",
+                          "하늘색 원피스를 입고 친구랑 웃으면서 걸었을 모습이 그려져요. 순이는 어떤 친구였어요?",
                           isBot: true,
                         ),
                         _chatBubble(
-                          "콧수염 붙이기였어~ 아유 지금 생각해도 너무 웃겨. 그때 아주 영히하고 민속히하고 배꼽을 잡고 웃었는데",
+                          "정말 말도 많고, 잘 웃는 애였고 나랑 성격은 다르지만 이상하게 잘 맞았어.",
                         ),
                       ],
                     ),
