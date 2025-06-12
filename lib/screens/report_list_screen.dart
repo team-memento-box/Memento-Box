@@ -8,6 +8,8 @@ import '../widgets/group_bar_widget.dart';
 import 'report_detail_screen.dart'; // ReportDetailScreen import 추가
 import 'package:provider/provider.dart';
 import '../user_provider.dart';
+import '../data/report_api.dart';
+import '../models/report.dart';
 
 class ReportListScreen extends StatefulWidget {
   const ReportListScreen({Key? key}) : super(key: key);
@@ -17,63 +19,43 @@ class ReportListScreen extends StatefulWidget {
 }
 
 class _ReportListScreenState extends State<ReportListScreen> {
-  List<Map<String, String>> analysisFiles = [];
+  List<Report> reports = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadAnalysisFiles();
+    _loadReports();
   }
 
-  Future<void> _loadAnalysisFiles() async {
+  Future<void> _loadReports() async {
+    setState(() => isLoading = true);
     try {
-      // AssetManifest.json에서 모든 assets 파일 목록 가져오기
-      final manifestContent = await rootBundle.loadString('AssetManifest.json');
-      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-
-      // analysis 폴더의 txt 파일들만 필터링
-      final analysisAssets = manifestMap.keys
-          .where(
-            (String key) =>
-                key.startsWith('assets/analysis/') && key.endsWith('.txt'),
-          )
-          .toList();
-
-      List<Map<String, String>> availableFiles = [];
-
-      for (String assetPath in analysisAssets) {
-        try {
-          // 파일이 실제로 존재하는지 확인
-          await rootBundle.loadString(assetPath);
-
-          // 파일명에서 정보 추출
-          final fileName = assetPath.split('/').last.replaceAll('.txt', '');
-          final displayTitle = _generateDisplayTitle(fileName);
-
-          availableFiles.add({
-            'fileName': fileName,
-            'displayTitle': displayTitle,
-            'filePath': assetPath,
-          });
-        } catch (e) {
-          print('파일을 읽을 수 없습니다: $assetPath');
-        }
+      final accessToken = Provider.of<UserProvider>(context, listen: false).accessToken;
+      if (accessToken == null) {
+        print('==== [DEBUG] No accessToken found!');
+        setState(() {
+          reports = [];
+          isLoading = false;
+        });
+        return;
       }
-
-      // 날짜순으로 정렬 (최신순)
-      availableFiles.sort((a, b) => b['fileName']!.compareTo(a['fileName']!));
-
+      final result = await ReportApi.fetchReports(accessToken);
+      print('==== [DEBUG] _loadReports result.length: [32m${result.length}[0m');
+      for (var i = 0; i < result.length; i++) {
+        print('==== [DEBUG] _loadReports report[$i]: anomalyReport=${result[i].anomalyReport}, created_at=${result[i].created_at}');
+      }
       setState(() {
-        analysisFiles = availableFiles;
+        reports = result;
         isLoading = false;
       });
     } catch (e) {
-      print('파일 목록을 불러오는 중 오류: $e');
+      print('==== [DEBUG] _loadReports error: $e');
       setState(() {
-        analysisFiles = [];
+        reports = [];
         isLoading = false;
       });
+      // 에러 처리(토스트 등)
     }
   }
 
@@ -146,9 +128,9 @@ class _ReportListScreenState extends State<ReportListScreen> {
                   const ContentHeaderWidget(),
                   Expanded(
                     child: ReportListWidget(
-                      analysisFiles: analysisFiles,
+                      reports: reports,
                       isLoading: isLoading,
-                      onRefresh: _loadAnalysisFiles,
+                      onRefresh: _loadReports,
                     ),
                   ),
                   const WarningMessageWidget(),
@@ -225,13 +207,13 @@ class ContentHeaderWidget extends StatelessWidget {
 
 // 보고서 리스트 위젯 (수정됨)
 class ReportListWidget extends StatelessWidget {
-  final List<Map<String, String>> analysisFiles;
+  final List<Report> reports;
   final bool isLoading;
   final VoidCallback onRefresh;
 
   const ReportListWidget({
     Key? key,
-    required this.analysisFiles,
+    required this.reports,
     required this.isLoading,
     required this.onRefresh,
   }) : super(key: key);
@@ -247,14 +229,13 @@ class ReportListWidget extends StatelessWidget {
       );
     }
 
-    if (analysisFiles.isEmpty) {
+    if (reports.isEmpty) {
       return Container(
         color: Colors.white,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // TODO: 빈 상태 메시지는 API에서 받아올 예정
               Text(
                 AppConstants.noReportsMessage,
                 style: const TextStyle(
@@ -297,17 +278,22 @@ class ReportListWidget extends StatelessWidget {
         onRefresh: () async => onRefresh(),
         child: ListView.builder(
           padding: EdgeInsets.zero,
-          itemCount: analysisFiles.length,
+          itemCount: reports.length,
           itemBuilder: (context, index) {
-            final fileInfo = analysisFiles[index];
-
+            final report = reports[index];
+            // created_at을 yyyy-MM-dd HH:mm 포맷으로 변환
+            String formattedDate = '';
+            if (report.created_at != null) {
+              final date = report.created_at;
+              formattedDate =
+                  '${date!.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+            }
             return ReportItemWidget(
               isSelected: index == 0,
-              displayTitle: fileInfo['displayTitle']!,
-              fileName: fileInfo['fileName']!,
-              filePath: fileInfo['filePath']!,
-              // 추가: 전체 리포트 목록과 현재 인덱스 전달
-              allReports: analysisFiles,
+              displayTitle: formattedDate.isNotEmpty ? '$formattedDate 대화 분석 보고서' : '대화 분석 보고서',
+              createdAt: report.created_at?.toString() ?? '',
+              report: report,
+              allReports: reports,
               currentIndex: index,
             );
           },
@@ -321,19 +307,19 @@ class ReportListWidget extends StatelessWidget {
 class ReportItemWidget extends StatelessWidget {
   final bool isSelected;
   final String displayTitle;
-  final String fileName;
-  final String filePath;
-  final List<Map<String, String>>? allReports; // 추가
-  final int? currentIndex; // 추가
+  final String createdAt;
+  final Report report;
+  final List<Report> allReports;
+  final int? currentIndex;
 
   const ReportItemWidget({
     Key? key,
     this.isSelected = false,
     required this.displayTitle,
-    required this.fileName,
-    required this.filePath,
-    this.allReports, // 추가
-    this.currentIndex, // 추가
+    required this.createdAt,
+    required this.report,
+    required this.allReports,
+    this.currentIndex,
   }) : super(key: key);
 
   @override
@@ -345,10 +331,12 @@ class ReportItemWidget extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ReportDetailScreen(
+              // 상세화면에 필요한 정보 전달 (예시)
               fileName: displayTitle,
-              filePath: filePath,
-              allReports: allReports, // 추가
-              currentIndex: currentIndex, // 추가
+              filePath: '', // asset 기반이 아니므로 빈 값
+              allReports: allReports,
+              currentIndex: currentIndex,
+              reportId: report.reportId,
             ),
           ),
         );
@@ -371,20 +359,34 @@ class ReportItemWidget extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                displayTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 18,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 18,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    report.created_at?.toString() ?? createdAt,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
-            // 화살표 아이콘 추가
             const Icon(
               Icons.arrow_forward_ios,
               size: 16,

@@ -5,6 +5,10 @@ import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import '../widgets/tap_widget.dart';
 import '../utils/styles.dart';
+import '../models/report.dart';
+import '../data/report_api.dart';
+import 'package:provider/provider.dart';
+import '../user_provider.dart';
 
 // TODO: 실제 API 연동 시 사용할 설정값들
 // const String API_BASE_URL = 'https://your-api-server.com/api';
@@ -13,8 +17,9 @@ import '../utils/styles.dart';
 class ReportDetailScreen extends StatefulWidget {
   final String? fileName;
   final String? filePath;
-  final List<Map<String, String>>? allReports; // 전체 리포트 목록 추가
-  final int? currentIndex; // 현재 리포트 인덱스 추가
+  final List<Report>? allReports;
+  final int? currentIndex;
+  final String reportId;
 
   const ReportDetailScreen({
     Key? key,
@@ -22,6 +27,7 @@ class ReportDetailScreen extends StatefulWidget {
     this.filePath,
     this.allReports,
     this.currentIndex,
+    required this.reportId,
   }) : super(key: key);
 
   @override
@@ -36,6 +42,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Duration currentPosition = Duration.zero;
   Duration totalDuration = Duration.zero;
   bool isAudioLoaded = false;
+  Report? report;
+  String? errorMessage;
 
   late AudioPlayer audioPlayer;
   StreamSubscription<Duration>? _positionSub;
@@ -104,15 +112,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Future<void> _loadData() async {
     try {
-      final content = await _getContent();
-      await _loadAudio();
+      final accessToken = Provider.of<UserProvider>(context, listen: false).accessToken;
+      if (accessToken == null) {
+        throw Exception('로그인이 필요합니다');
+      }
+      final detail = await ReportApi.fetchReportDetail(accessToken, widget.reportId);
       setState(() {
-        fileContent = content;
+        report = detail;
+        fileContent = detail.anomalyReport ?? '내용 없음';
         isLoading = false;
       });
+      await _loadAudio();
     } catch (e) {
       setState(() {
-        fileContent = '파일 읽기 오류: $e';
+        errorMessage = e.toString();
         isLoading = false;
       });
     }
@@ -315,10 +328,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final previousReport = widget.allReports![currentIdx - 1];
     final newPage = ReportDetailScreen(
-      fileName: previousReport['displayTitle'],
-      filePath: previousReport['filePath'],
+      fileName: previousReport.anomalyReport ?? '이상 대화 리포트',
+      filePath: '',
       allReports: widget.allReports,
       currentIndex: currentIdx - 1,
+      reportId: '',
     );
 
     // 오른쪽에서 왼쪽으로 슬라이드 (이전 페이지)
@@ -353,10 +367,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final nextReport = widget.allReports![currentIdx + 1];
     final newPage = ReportDetailScreen(
-      fileName: nextReport['displayTitle'],
-      filePath: nextReport['filePath'],
+      fileName: nextReport.anomalyReport ?? '이상 대화 리포트',
+      filePath: '',
       allReports: widget.allReports,
       currentIndex: currentIdx + 1,
+      reportId: '',
     );
 
     // 왼쪽에서 오른쪽으로 슬라이드 (다음 페이지)
@@ -395,10 +410,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Widget _Header() {
-    final reportTitle = widget.fileName ?? '9999-99-99 00:00 대화 분석 보고서';
-    final parts = reportTitle.split(' ');
-    final title = parts.sublist(2).join(' ');
-    final subTitle = '${parts[0]} ${parts[1]}';
+    final reportTitle = widget.fileName ?? '대화 분석 보고서';
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
+    // 제목에서 날짜와 시간 부분 분리
+    String dateTime = '';
+    String title = '대화 분석 보고서';
+    
+    if (reportTitle != '대화 분석 보고서') {
+      final parts = reportTitle.split(' ');
+      if (parts.length >= 2) {
+        dateTime = '${parts[0]} ${parts[1]}';
+      }
+    }
 
     final bool hasPrevious =
         widget.allReports != null &&
@@ -409,8 +433,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         widget.allReports != null &&
         widget.currentIndex != null &&
         widget.currentIndex! < widget.allReports!.length - 1;
-
-    final statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Container(
       padding: EdgeInsets.only(top: statusBarHeight),
@@ -430,16 +452,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                Text(
-                  subTitle,
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF777777),
+                if (dateTime.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    dateTime,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF777777),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -498,7 +525,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               image: DecorationImage(
-                image: AssetImage('assets/photos/3.png'),
+                image: report?.imageUrl != null
+                    ? NetworkImage(report!.imageUrl!)
+                    : AssetImage('assets/photos/3.png') as ImageProvider,
                 fit: BoxFit.cover,
               ),
             ),
@@ -613,19 +642,29 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
             )
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                fileContent,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
+          : errorMessage != null
+              ? Container(
+                  height: 200,
+                  child: Center(
+                    child: Text(
+                      errorMessage!,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    (report?.anomalyReport ?? '내용 없음').toString(),
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
-              ),
-            ),
     );
   }
 
