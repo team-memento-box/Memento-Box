@@ -52,7 +52,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   bool isSTTActive = false;
 
   // 음성 인식 관련 변수들
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  late AudioRecorder _audioRecorder;
   bool _isRecording = false;
   String _recognizedText = '초기 대답';
   String? _recordingPath;
@@ -71,6 +71,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     photoId = widget.photoId;
     photoUrl = widget.photoUrl;
     _audioService = AudioService(); // AudioService 초기화
+    _audioRecorder = AudioRecorder(); // AudioRecorder 초기화
     print('photoId: $photoId');
     print('photoUrl: $photoUrl');
 
@@ -94,17 +95,17 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       apiResult = conversation.question;
       photoPath = conversation.photoInfo.url;
       _conversationId = conversation.conversationId;
-      // print('Question: ${conversation.question}');
-      // print('Photo URL: ${conversation.photoInfo.url}');
 
       setState(() {
-        apiResult = conversation.question; // 또는 원하는 값을 화면에 보여주기 위해 저장
+        apiResult = conversation.question;
       });
 
-      // === 질문/음성파일을 받아온 직후 자동 재생 ===
+      // === 초기 질문/음성파일만 재생 ===
       if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
         await _audioService.loadAudio(conversation.audioUrl);
         await _audioService.play();
+        // 초기 음성 재생이 완료될 때까지 대기
+        await Future.delayed(const Duration(milliseconds: 500));
       }
     } catch (e) {
       print('❌ API error: $e');
@@ -158,6 +159,17 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
   Future<void> _startRecording() async {
     try {
+      // 기존 녹음 중지 및 리소스 정리
+      if (_isRecording) {
+        await _audioRecorder.stop();
+      }
+      await _amplitudeSubscription?.cancel();
+      _amplitudeSubscription = null;
+      _silenceTimer?.cancel();
+      _silenceTimer = null;
+      _audioRecorder.dispose();
+      _audioRecorder = AudioRecorder();
+
       final hasPermission = await _requestPermissions();
 
       if (hasPermission) {
@@ -165,6 +177,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
         _recordingPath =
             '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
 
+        // 새로운 녹음 시작
         await _audioRecorder.start(
           RecordConfig(
             encoder: AudioEncoder.wav,
@@ -179,7 +192,26 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
           _recognizedText = '';
         });
 
-        _startAmplitudeMonitoring();
+        // 새로운 amplitude 모니터링 시작
+        _amplitudeSubscription = _audioRecorder
+            .onAmplitudeChanged(const Duration(milliseconds: 300))
+            .listen((amplitude) {
+              if (amplitude.current < _silenceThreshold) {
+                if (_silenceTimer == null || !_silenceTimer!.isActive) {
+                  _silenceTimer = Timer(
+                    Duration(milliseconds: _silenceDuration),
+                    () {
+                      if (_isRecording) {
+                        _stopRecording();
+                      }
+                    },
+                  );
+                }
+              } else {
+                _silenceTimer?.cancel();
+                _silenceTimer = null;
+              }
+            });
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -201,34 +233,6 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
         );
       }
     }
-  }
-
-  void _startAmplitudeMonitoring() {
-    _amplitudeSubscription?.cancel();
-
-    _amplitudeSubscription = _audioRecorder
-        .onAmplitudeChanged(const Duration(milliseconds: 300))
-        .listen((amplitude) {
-          print('현재 dB: ${amplitude.current}'); // dB값 로그
-          if (amplitude.current < _silenceThreshold) {
-            if (_silenceTimer == null || !_silenceTimer!.isActive) {
-              print('무음 타이머 시작');
-              _silenceTimer = Timer(
-                Duration(milliseconds: _silenceDuration),
-                () {
-                  if (_isRecording) {
-                    print('무음 지속 ${_silenceDuration}ms, 녹음 중지 시도');
-                    _stopRecording();
-                  }
-                },
-              );
-            }
-          } else {
-            if (_silenceTimer != null) print('소리 감지, 타이머 취소');
-            _silenceTimer?.cancel();
-            _silenceTimer = null;
-          }
-        });
   }
 
   Future<void> _stopRecording() async {
@@ -269,8 +273,6 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       } else {
         print('[경고] _conversationId가 null입니다!');
       }
-      print('[디버그] 서버로 전송할 필드: \\${request.fields}');
-      print('[디버그] 서버로 전송할 파일: \\${request.files.map((f) => f.filename).toList()}');
 
       var response = await request.send();
       print('[디버그] 서버 응답 코드: \\${response.statusCode}');
@@ -279,14 +281,79 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(responseBody);
+        print('[디버그] 받은 사용자 발화 텍스트: ${data['answer']}');
+        
         setState(() {
-          _recognizedText = data['text'] ?? '';
+          _recognizedText = data['answer'] ?? '';
+          print('[디버그] _recognizedText 업데이트: $_recognizedText');
         });
+        
+        // AI 응답 음성 재생 (있는 경우에만)
+        if (data['audio_url'] != null && data['audio_url'].isNotEmpty) {
+          await _audioService.loadAudio(data['audio_url']);
+          
+          // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
+          _audioService.onCompleted = () async {
+            // 기존 녹음 리소스 정리 및 새로 생성
+            if (_isRecording) {
+              await _audioRecorder.stop();
+            }
+            await _amplitudeSubscription?.cancel();
+            _amplitudeSubscription = null;
+            _silenceTimer?.cancel();
+            _silenceTimer = null;
+            _audioRecorder.dispose();
+            _audioRecorder = AudioRecorder();
+            
+            // 대화가 끝나지 않았다면 AI의 새로운 질문을 받아옴
+            if (data['should_end'] != true) {
+              final nextQuestion = await startConversation(photoId);
+              final conversation = ConversationResponse.fromJson(nextQuestion);
+              
+              setState(() {
+                apiResult = conversation.question;
+              });
+              
+              // AI의 새로운 질문 음성 재생
+              if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+                await _audioService.loadAudio(conversation.audioUrl);
+                await _audioService.play();
+                // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
+                _audioService.onCompleted = () {
+                  _startRecording();
+                };
+              } else {
+                _startRecording();
+              }
+            }
+          };
+          
+          await _audioService.play();
+        } else {
+          // 음성이 없는 경우 바로 다음 단계 진행
+          if (data['should_end'] != true) {
+            final nextQuestion = await startConversation(photoId);
+            final conversation = ConversationResponse.fromJson(nextQuestion);
+            
+            setState(() {
+              apiResult = conversation.question;
+            });
+            
+            if (conversation.audioUrl != null && conversation.audioUrl.isNotEmpty) {
+              await _audioService.loadAudio(conversation.audioUrl);
+              await _audioService.play();
+              // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
+              _audioService.onCompleted = () {
+                _startRecording();
+              };
+            } else {
+              _startRecording();
+            }
+          }
+        }
       } else {
         print('[에러] 서버 오류: \\${responseBody}');
       }
-
-      // await file.delete();
     } catch (e, st) {
       print('[에러] 오디오 전송 오류: \\${e}');
       print('[에러] 스택트레이스: \\${st}');
@@ -425,7 +492,17 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     });
   }
 
-  void showExitModal() {
+  void showExitModal() async {
+    // 녹음 중지 및 리소스 정리
+    if (_isRecording) {
+      await _audioRecorder.stop();
+    }
+    await _amplitudeSubscription?.cancel();
+    _amplitudeSubscription = null;
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
+    _audioRecorder.dispose();
+    
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
