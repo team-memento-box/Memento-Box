@@ -99,7 +99,10 @@ class MyCustomApp extends StatelessWidget {
           case Routes.report:
             return MaterialPageRoute(builder: (_) => const ReportListScreen());
           case Routes.reportDetail:
-            return MaterialPageRoute(builder: (_) => const ReportDetailScreen());
+            final String reportId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (_) => ReportDetailScreen(reportId: reportId),
+            );
           case Routes.voiceTest:
             return MaterialPageRoute(builder: (_) => const VoiceRecognitionScreen());
           // case Routes.photoDetail:

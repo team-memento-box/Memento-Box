@@ -65,6 +65,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   // === 자동 음성 재생을 위한 AudioService 인스턴스 ===
   late AudioService _audioService;
 
+  // API 호출 상태 추적을 위한 변수 추가
+  bool _isApiCallInProgress = false;
+  Timer? _apiTimeoutTimer;
+
   @override
   void initState() {
     super.initState();
@@ -255,8 +259,34 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     }
   }
 
+  // 모든 작업 취소를 위한 함수
+  Future<void> _cancelAllOperations() async {
+    // 1. 녹음 중지 및 리소스 정리
+    if (_isRecording) {
+      await _audioRecorder.stop();
+    }
+    await _amplitudeSubscription?.cancel();
+    _amplitudeSubscription = null;
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
+    _audioRecorder.dispose();
+    
+    // 2. TTS 중지
+    await _audioService.pause();
+    
+    // 3. API 타임아웃 타이머 취소
+    _apiTimeoutTimer?.cancel();
+    _apiTimeoutTimer = null;
+    
+    // 4. API 호출 상태 초기화
+    _isApiCallInProgress = false;
+  }
+
   Future<void> _sendAudioToBackend() async {
+    if (_isApiCallInProgress) return; // 이미 API 호출 중이면 중복 호출 방지
+    
     try {
+      _isApiCallInProgress = true;
       print('[디버그] _sendAudioToBackend 진입');
       final baseUrl = dotenv.env['BASE_URL']!;
       final file = File(_recordingPath!);
@@ -275,6 +305,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
       }
 
       var response = await request.send();
+      if (!mounted) return; // 위젯이 dispose된 경우 중단
+      
       print('[디버그] 서버 응답 코드: \\${response.statusCode}');
       var responseBody = await response.stream.bytesToString();
       print('[디버그] 서버 응답 바디: \\${responseBody}');
@@ -283,6 +315,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
         final data = jsonDecode(responseBody);
         print('[디버그] 받은 사용자 발화 텍스트: ${data['answer']}');
         
+        if (!mounted) return;
         setState(() {
           _recognizedText = data['answer'] ?? '';
           print('[디버그] _recognizedText 업데이트: $_recognizedText');
@@ -294,6 +327,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
           
           // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
           _audioService.onCompleted = () async {
+            if (!mounted) return;
+            
             // 기존 녹음 리소스 정리 및 새로 생성
             if (_isRecording) {
               await _audioRecorder.stop();
@@ -308,8 +343,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
             // 대화가 끝나지 않았다면 AI의 새로운 질문을 받아옴
             if (data['should_end'] != true) {
               final nextQuestion = await startConversation(photoId);
-              final conversation = ConversationResponse.fromJson(nextQuestion);
+              if (!mounted) return;
               
+              final conversation = ConversationResponse.fromJson(nextQuestion);
               setState(() {
                 apiResult = conversation.question;
               });
@@ -320,10 +356,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                 await _audioService.play();
                 // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
                 _audioService.onCompleted = () {
-                  _startRecording();
+                  if (mounted) _startRecording();
                 };
               } else {
-                _startRecording();
+                if (mounted) _startRecording();
               }
             }
           };
@@ -333,8 +369,9 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
           // 음성이 없는 경우 바로 다음 단계 진행
           if (data['should_end'] != true) {
             final nextQuestion = await startConversation(photoId);
-            final conversation = ConversationResponse.fromJson(nextQuestion);
+            if (!mounted) return;
             
+            final conversation = ConversationResponse.fromJson(nextQuestion);
             setState(() {
               apiResult = conversation.question;
             });
@@ -344,10 +381,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               await _audioService.play();
               // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
               _audioService.onCompleted = () {
-                _startRecording();
+                if (mounted) _startRecording();
               };
             } else {
-              _startRecording();
+              if (mounted) _startRecording();
             }
           }
         }
@@ -357,6 +394,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     } catch (e, st) {
       print('[에러] 오디오 전송 오류: \\${e}');
       print('[에러] 스택트레이스: \\${st}');
+    } finally {
+      _isApiCallInProgress = false;
     }
   }
 
@@ -493,15 +532,10 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
   }
 
   void showExitModal() async {
-    // 녹음 중지 및 리소스 정리
-    if (_isRecording) {
-      await _audioRecorder.stop();
-    }
-    await _amplitudeSubscription?.cancel();
-    _amplitudeSubscription = null;
-    _silenceTimer?.cancel();
-    _silenceTimer = null;
-    _audioRecorder.dispose();
+    // 모든 작업 취소
+    await _cancelAllOperations();
+    
+    if (!mounted) return;
     
     showModalBottomSheet(
       isScrollControlled: true,
@@ -538,10 +572,11 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               ),
               const SizedBox(height: 25),
               SizedBox(
-                width: double.infinity, // 너비만 확장하고 싶을 때
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
+                    _startRecording(); // 대화 계속하기 선택 시 녹음 다시 시작
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00C8B8),
@@ -563,14 +598,46 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                width: double.infinity, // 너비만 확장하고 싶을 때
+                width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    try {
+                      if (_conversationId != null) {
+                        final baseUrl = dotenv.env['BASE_URL']!;
+                        final url = Uri.parse('$baseUrl/api/chat/force-end');
+                        
+                        var request = http.MultipartRequest('POST', url);
+                        request.fields['conversation_id'] = _conversationId!;
+                        if (apiResult.isNotEmpty) {
+                          request.fields['current_question'] = apiResult;
+                        }
+                        
+                        // 5초 타임아웃 설정
+                        var response = await request.send().timeout(
+                          const Duration(seconds: 5),
+                          onTimeout: () {
+                            print('force-end API 타임아웃');
+                            Navigator.pushReplacementNamed(context, Routes.gallery);
+                            throw TimeoutException('force-end API 타임아웃');
+                          },
+                        );
+                        
+                        if (response.statusCode == 200) {
+                          print('대화 강제 종료 성공');
+                        } else {
+                          print('대화 강제 종료 실패: ${response.statusCode}');
+                        }
+                      }
+                    } catch (e) {
+                      print('대화 강제 종료 중 오류 발생: $e');
+                    }
+                    
+                    // 어떤 경우든 갤러리로 이동
                     Navigator.pushReplacementNamed(context, Routes.gallery);
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                      color: const Color(0xFF00C8B8),
+                      color: Color(0xFF00C8B8),
                       width: 2,
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
