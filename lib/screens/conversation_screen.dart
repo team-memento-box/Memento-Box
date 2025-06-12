@@ -399,6 +399,53 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     }
   }
 
+  // Fish-Speech API 호출 함수
+  Future<void> _convertVoice(String aVoiceUrl, String summaryText) async {
+    try {
+      final baseUrl = dotenv.env['BASE_URL']!;
+      final url = Uri.parse('$baseUrl/api/chat/convert');
+      
+      var request = http.MultipartRequest('POST', url);
+      request.fields['conversation_id'] = _conversationId!;
+      request.fields['a_voice_url'] = aVoiceUrl;
+      request.fields['summary_text'] = summaryText;
+      
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        print('음성 변환 성공: ${data['url']}');
+        
+        // 변환된 음성 URL을 저장하고 재생
+        if (data['url'] != null) {
+          await _audioService.loadAudio(data['url']);
+          await _audioService.play();
+        }
+      } else {
+        print('음성 변환 실패: ${response.statusCode}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('음성 변환에 실패했습니다.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('음성 변환 중 오류 발생: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('음성 변환 중 오류가 발생했습니다.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -624,6 +671,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
                         
                         if (response.statusCode == 200) {
                           print('대화 강제 종료 성공');
+                          // 대화 종료 후 음성 변환 요청
+                          await _convertVoice(photoUrl, apiResult);
                         } else {
                           print('대화 강제 종료 실패: ${response.statusCode}');
                         }
