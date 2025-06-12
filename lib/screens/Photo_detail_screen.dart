@@ -36,7 +36,7 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
   void initState() {
     super.initState();
     _audioService = AudioService(); // ✅ 화면 동안만 유지
-     // 디버깅용 Photo 객체 출력
+    // 디버깅용 Photo 객체 출력
     print('=== Photo 객체 디버깅 ===');
     print('id: ${widget.photo.id}');
     print('name: ${widget.photo.name}');
@@ -64,7 +64,8 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final familyName = Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
+    final familyName =
+        Provider.of<UserProvider>(context, listen: false).familyName ?? '우리 가족';
     final isGuardian = Provider.of<UserProvider>(context).isGuardian ?? true;
 
     return Scaffold(
@@ -89,12 +90,16 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.person, color: Colors.white),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: 50,
+                                height: 50,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                ),
+                              ),
                         )
                       : Container(
                           width: 50,
@@ -131,7 +136,8 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              widget.photo.user?['family_role'] ?? '', // ← Photo 객체의 user에서 family_role 사용
+                              widget.photo.user?['family_role'] ??
+                                  '', // ← Photo 객체의 user에서 family_role 사용
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontFamily: 'Pretendard',
@@ -218,18 +224,24 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                       child: isGuardian
                           ? ElevatedButton(
                               onPressed: () async {
-                                final result = await fetchSummaryAndOriginVoice(widget.photo.id);
+                                final result = await fetchSummaryAndOriginVoice(
+                                  widget.photo.id,
+                                );
                                 showSummaryModal(
-                                context,
-                                audioPath: result['summary_voice'] ?? '', // ✅ 실제 음성 파일 URL을 audioPath로 전달
-                                audioService: _audioService,
-                                summaryText: result['summaryText'],
-                                createdAt: result['createdAt'],
-                              );
+                                  context,
+                                  audioPath:
+                                      result['summary_voice'] ??
+                                      '', // ✅ 실제 음성 파일 URL을 audioPath로 전달
+                                  audioService: _audioService,
+                                  summaryText: result['summaryText'],
+                                  createdAt: result['createdAt'],
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00C8B8),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -246,17 +258,21 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
                           : ElevatedButton(
                               onPressed: () {
                                 Navigator.pushNamed(
-                                  context, 
+                                  context,
                                   Routes.conversation,
                                   arguments: {
-                                    'photoId': widget.photo.id,  // photo 객체에서 id 가져오기
-                                    'photoUrl': widget.photo.url, // photo 객체에서 url 가져오기
+                                    'photoId':
+                                        widget.photo.id, // photo 객체에서 id 가져오기
+                                    'photoUrl':
+                                        widget.photo.url, // photo 객체에서 url 가져오기
                                   },
                                 );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF00C8B8),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -323,7 +339,9 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
     }
   }
 
-  Future<Map<String, String?>> fetchSummaryAndOriginVoice(String photoId) async {
+  Future<Map<String, String?>> fetchSummaryAndOriginVoice(
+    String photoId,
+  ) async {
     print('fetchSummaryAndOriginVoice 호출됨');
     try {
       final baseUrl = dotenv.env['BASE_URL'];
@@ -333,16 +351,23 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
       }
 
       // 1. 최신 대화 정보 가져오기
-      final latestConvRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'));
-      if (latestConvRes.statusCode != 200) return {'summaryText': null, 'originVoiceUrl': null};
+      final latestConvRes = await http.get(
+        Uri.parse('$baseUrl/api/photos/$photoId/latest_conversation'),
+      );
+      if (latestConvRes.statusCode != 200)
+        return {'summaryText': null, 'originVoiceUrl': null};
       final latestConv = jsonDecode(utf8.decode(latestConvRes.bodyBytes));
-      
+
       final convId = latestConv['id'];
       final createdAt = latestConv['created_at'];
       print('convId: $convId');
 
       // 2. summary_text 가져오기
-      final summaryRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/conversations/$convId/summary_text'));
+      final summaryRes = await http.get(
+        Uri.parse(
+          '$baseUrl/api/photos/$photoId/conversations/$convId/summary_text',
+        ),
+      );
       String? summaryText;
       if (summaryRes.statusCode == 200) {
         final summary = jsonDecode(utf8.decode(summaryRes.bodyBytes));
@@ -350,7 +375,11 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
       }
 
       // 3. origin_voice 가져오기
-      final voiceRes = await http.get(Uri.parse('$baseUrl/api/photos/$photoId/conversations/$convId/summary_voice'));
+      final voiceRes = await http.get(
+        Uri.parse(
+          '$baseUrl/api/photos/$photoId/conversations/$convId/summary_voice',
+        ),
+      );
       String? summary_voice;
       if (voiceRes.statusCode == 200) {
         final voice = jsonDecode(utf8.decode(voiceRes.bodyBytes));
@@ -368,5 +397,4 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
       return {'summaryText': null, 'summary_voice': null, 'createdAt': null};
     }
   }
-
 }

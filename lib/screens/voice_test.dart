@@ -31,23 +31,23 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
   Future<bool> _requestPermissions() async {
     // 현재 권한 상태 확인
     final micStatus = await Permission.microphone.status;
-    
+
     if (micStatus.isGranted) {
       return true;
     }
-    
+
     // 권한이 없는 경우 요청
     final result = await Permission.microphone.request();
-    
+
     if (result.isGranted) {
       return true;
     }
-    
+
     if (result.isPermanentlyDenied) {
       // 영구적으로 거부된 경우 설정으로 이동
       await openAppSettings();
     }
-    
+
     return false;
   }
 
@@ -57,7 +57,8 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
 
       if (hasPermission) {
         final directory = await getTemporaryDirectory();
-        _recordingPath = '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
+        _recordingPath =
+            '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.wav';
 
         await _audioRecorder.start(
           RecordConfig(
@@ -103,23 +104,26 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
     _amplitudeSubscription = _audioRecorder
         .onAmplitudeChanged(const Duration(milliseconds: 300))
         .listen((amplitude) {
-      print('현재 dB: ${amplitude.current}'); // dB값 로그
-      if (amplitude.current < _silenceThreshold) {
-        if (_silenceTimer == null || !_silenceTimer!.isActive) {
-          print('무음 타이머 시작');
-          _silenceTimer = Timer(Duration(milliseconds: _silenceDuration), () {
-            if (_isRecording) {
-              print('무음 지속 ${_silenceDuration}ms, 녹음 중지 시도');
-              _stopRecording();
+          print('현재 dB: ${amplitude.current}'); // dB값 로그
+          if (amplitude.current < _silenceThreshold) {
+            if (_silenceTimer == null || !_silenceTimer!.isActive) {
+              print('무음 타이머 시작');
+              _silenceTimer = Timer(
+                Duration(milliseconds: _silenceDuration),
+                () {
+                  if (_isRecording) {
+                    print('무음 지속 ${_silenceDuration}ms, 녹음 중지 시도');
+                    _stopRecording();
+                  }
+                },
+              );
             }
-          });
-        }
-      } else {
-        if (_silenceTimer != null) print('소리 감지, 타이머 취소');
-        _silenceTimer?.cancel();
-        _silenceTimer = null;
-      }
-    });
+          } else {
+            if (_silenceTimer != null) print('소리 감지, 타이머 취소');
+            _silenceTimer?.cancel();
+            _silenceTimer = null;
+          }
+        });
   }
 
   Future<void> _stopRecording() async {
@@ -152,12 +156,7 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
         Uri.parse('$baseUrl/api/speech/speech-to-text'),
       );
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'audio',
-          file.path,
-        ),
-      );
+      request.files.add(await http.MultipartFile.fromPath('audio', file.path));
 
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
@@ -171,7 +170,7 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
         print('서버 오류: $responseBody');
       }
 
-      await file.delete();
+      // await file.delete();
     } catch (e) {
       print('오디오 전송 오류: $e');
     }
@@ -188,9 +187,7 @@ class _VoiceRecognitionScreenState extends State<VoiceRecognitionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('음성 인식'),
-      ),
+      appBar: AppBar(title: const Text('음성 인식')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

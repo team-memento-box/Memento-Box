@@ -29,6 +29,7 @@ import 'models/photo.dart';
 
 //라우트 추가
 import 'utils/routes.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides(); //우회용//
@@ -36,10 +37,8 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
 
   // ✅ 카카오 SDK 초기화
-  KakaoSdk.init(
-    nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY'],
-  );
-  
+  KakaoSdk.init(nativeAppKey: dotenv.env['KAKAO_NATIVE_APP_KEY']);
+
   //runApp(const MyCustomApp());
   runApp(
     MultiProvider(
@@ -50,6 +49,7 @@ Future<void> main() async {
     ),
   );
 }
+
 class MyCustomApp extends StatelessWidget {
   const MyCustomApp({super.key});
 
@@ -60,14 +60,16 @@ class MyCustomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal, fontFamily: 'Pretendard'),
       initialRoute: Routes.signin,
-      //initialRoute: Routes.voiceTest,
+      // initialRoute: Routes.voiceTest,
       //initialRoute: Routes.photoDetail,
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case Routes.intro:
             return MaterialPageRoute(builder: (_) => const IntroScreen());
           case Routes.request:
-            return MaterialPageRoute(builder: (_) => const AddPhotoRequestScreen());
+            return MaterialPageRoute(
+              builder: (_) => const AddPhotoRequestScreen(),
+            );
           case Routes.home:
             return MaterialPageRoute(builder: (_) => const HomeUpdateScreen());
           case Routes.signin:
@@ -91,7 +93,9 @@ class MyCustomApp extends StatelessWidget {
           case Routes.groupSelect:
             return MaterialPageRoute(builder: (_) => const GroupSelectScreen());
           case Routes.familyCodeInput:
-            return MaterialPageRoute(builder: (_) => const FamilyCodeInputScreen());
+            return MaterialPageRoute(
+              builder: (_) => const FamilyCodeInputScreen(),
+            );
           case Routes.groupCreate:
             return MaterialPageRoute(builder: (_) => const GroupCreateScreen());
           case Routes.profile:
@@ -99,12 +103,19 @@ class MyCustomApp extends StatelessWidget {
           case Routes.report:
             return MaterialPageRoute(builder: (_) => const ReportListScreen());
           case Routes.reportDetail:
+<<<<<<< HEAD
             final String reportId = settings.arguments as String;
             return MaterialPageRoute(
               builder: (_) => ReportDetailScreen(reportId: reportId),
+=======
+            return MaterialPageRoute(
+              builder: (_) => const ReportDetailScreen(),
+>>>>>>> front_suyeon
             );
           case Routes.voiceTest:
-            return MaterialPageRoute(builder: (_) => const VoiceRecognitionScreen());
+            return MaterialPageRoute(
+              builder: (_) => const VoiceRecognitionScreen(),
+            );
           // case Routes.photoDetail:
           //   return MaterialPageRoute(builder: (_) => const PhotoDetailScreen());
           case Routes.photoDetail:
@@ -112,24 +123,24 @@ class MyCustomApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (_) => PhotoDetailScreen(photo: photo), // ← Photo 객체 전달
             );
-          
 
           default:
             return MaterialPageRoute(
-              builder: (_) => const Scaffold(
-                body: Center(child: Text('❌ 존재하지 않는 경로입니다')),
-              ),
+              builder: (_) =>
+                  const Scaffold(body: Center(child: Text('❌ 존재하지 않는 경로입니다'))),
             );
         }
       },
     );
   }
 }
+
 //우회용..
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
