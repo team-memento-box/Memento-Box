@@ -103,14 +103,9 @@ class MyCustomApp extends StatelessWidget {
           case Routes.report:
             return MaterialPageRoute(builder: (_) => const ReportListScreen());
           case Routes.reportDetail:
-<<<<<<< HEAD
             final String reportId = settings.arguments as String;
             return MaterialPageRoute(
               builder: (_) => ReportDetailScreen(reportId: reportId),
-=======
-            return MaterialPageRoute(
-              builder: (_) => const ReportDetailScreen(),
->>>>>>> front_suyeon
             );
           case Routes.voiceTest:
             return MaterialPageRoute(

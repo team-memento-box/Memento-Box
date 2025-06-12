@@ -526,6 +526,8 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
 
               // 사용자 음성 응답 말풍선
               UserSpeechBubble(text: _recognizedText, isActive: isSTTActive),
+
+              const SizedBox(height: 40),
             ],
           ),
         ),
