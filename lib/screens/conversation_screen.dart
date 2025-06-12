@@ -82,7 +82,7 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
     print('photoUrl: $photoUrl');
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      while (_isConversationActive) {
+      while (true) {
         await _startConversation();
         await _startRecording();
         if (shouldEnd == true || !_isConversationActive) break;
@@ -321,28 +321,28 @@ class _PhotoConversationScreenState extends State<PhotoConversationScreen> {
             _audioRecorder.dispose();
             _audioRecorder = AudioRecorder();
 
-            // 대화가 끝나지 않았다면 AI의 새로운 질문을 받아옴
-            if (data['should_end'] != true) {
-              final nextQuestion = await startConversation(photoId);
-              final conversation = ConversationResponse.fromJson(nextQuestion);
+            // // 대화가 끝나지 않았다면 AI의 새로운 질문을 받아옴
+            // if (data['should_end'] != true) {
+            //   final nextQuestion = await startConversation(photoId);
+            //   final conversation = ConversationResponse.fromJson(nextQuestion);
 
-              setState(() {
-                apiResult = conversation.question;
-              });
+            //   setState(() {
+            //     apiResult = conversation.question;
+            //   });
 
-              // AI의 새로운 질문 음성 재생
-              if (conversation.audioUrl != null &&
-                  conversation.audioUrl.isNotEmpty) {
-                await _audioService.loadAudio(conversation.audioUrl);
-                await _audioService.play();
-                // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
-                _audioService.onCompleted = () {
-                  _startRecording();
-                };
-              } else {
-                _startRecording();
-              }
-            }
+            //   // AI의 새로운 질문 음성 재생
+            //   if (conversation.audioUrl != null &&
+            //       conversation.audioUrl.isNotEmpty) {
+            //     await _audioService.loadAudio(conversation.audioUrl);
+            //     await _audioService.play();
+            //     // TTS 재생 완료 후 녹음 시작을 위한 콜백 설정
+            //     _audioService.onCompleted = () {
+            //       _startRecording();
+            //     };
+            //   } else {
+            //     _startRecording();
+            //   }
+            // }
           };
 
           await _audioService.play();
