@@ -24,7 +24,7 @@
 
 ## ⚙️ Architecture
 
-<img src="./images/architecture.png" style="width: 100%; height: auto;" />
+<img src="./images/architecture_.png" style="width: 100%; height: auto;" />
 
 <p>
   <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=Python&logoColor=white" />
